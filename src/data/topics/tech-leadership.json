@@ -1,0 +1,63 @@
+{
+  "slug": "tech-leadership",
+  "title": "Technical Leadership & Communication",
+  "requirement": "Strong technical leadership, structured problem-solving, written communication skills.",
+  "questions": [
+    {
+      "id": "tech-leadership-q1",
+      "difficulty": "basic",
+      "tags": ["role", "fundamentals", "behavioral"],
+      "question": "How is a technical lead role different from a senior engineer role?",
+      "answer": "A senior engineer's success is measured by the systems they build; a technical lead's by what the whole team ships and how it evolves without them. The lead still writes code, but the highest-leverage work becomes unblocking others, making and explaining technical decisions, and keeping architecture coherent as many hands change it. Influence replaces control: you align people who do not report to you, and you spend your credibility carefully. When I moved into it, the hardest shift was reviewing less code line by line and reviewing more designs and trade-offs.",
+      "keyTakeaway": "Lead success is team output and system coherence, not personal throughput."
+    },
+    {
+      "id": "tech-leadership-q2",
+      "difficulty": "basic",
+      "tags": ["direction", "frontend", "backend"],
+      "question": "How do you set technical direction across both front-end and back-end teams?",
+      "answer": "Start from shared product goals and derive the technical priorities each team must align on, such as API contracts, observability, and release discipline, rather than dictating stacks. Publish a short set of directions as decisions with context, what we chose, why, what we rejected, so teams implement the intent, not just the letter. Create interface contracts between front end and back end early, schema, error semantics, performance budgets, because most cross-team friction lives there. Review adherence through design reviews and the exception process, not by policing pull requests.",
+      "keyTakeaway": "Few published decisions with context, hard contracts at the seams, exceptions through review."
+    },
+    {
+      "id": "tech-leadership-q3",
+      "difficulty": "intermediate",
+      "tags": ["problem-solving", "process", "behavioral"],
+      "question": "Describe your structured approach when handed an ambiguous technical problem.",
+      "answer": "First write the problem statement in one paragraph and get it corrected, because half of ambiguity is people solving different problems. Break it into knowns, unknowns, and constraints, then attack the unknowns with cheap experiments or a spike rather than debate. Generate at least two options with explicit trade-offs, cost, risk, reversibility, and get the people who will live with the result to poke holes. Decide, record the decision and its trigger conditions, and set a checkpoint to revisit it. In my experience the discipline people skip is writing the problem down, and it is the one that saves the most time.",
+      "keyTakeaway": "Written problem statement, experiments over debate, options with trade-offs, decision with a checkpoint."
+    },
+    {
+      "id": "tech-leadership-q4",
+      "difficulty": "intermediate",
+      "tags": ["writing", "documentation", "rfc"],
+      "question": "Why does the posting emphasize written communication, and how do you practice it?",
+      "answer": "Distributed technical decisions live or die in writing: an RFC or design doc forces vagueness into the open and gives every timezone the same input, which meetings never do. I practice it with short RFCs for any decision that outlives the meeting, problem, options, recommendation, risks, under two pages, plus decision logs with the trigger conditions for revisiting. Writing also scales the lead, since one clear document unblocks many people at once while repeating yourself in chats does not. The test I use: a new engineer should be able to act on the document without asking me a question.",
+      "keyTakeaway": "RFCs make decisions reviewable and permanent; a doc that still needs you is not done."
+    },
+    {
+      "id": "tech-leadership-q5",
+      "difficulty": "intermediate",
+      "tags": ["conflict", "decision", "behavioral"],
+      "question": "A senior engineer disagrees with your architectural decision openly. What do you do?",
+      "answer": "Take it seriously and publicly, because the team is watching how disagreement gets handled. Ask them to steelman the alternative in a design session with concrete criteria, performance, cost, delivery risk, operability, and let the data decide where it can. If their case is stronger, change the decision visibly and thank them; consistency beats ego, and reversing well is a credibility builder, not a loss. If the decision stands, explain the reasoning and explicitly record their dissent, then expect commitment to the chosen path. What I never do is win by role, because that teaches the team to stop raising risks.",
+      "keyTakeaway": "Disagree with criteria in the open, reverse yourself when wrong, never win by title."
+    },
+    {
+      "id": "tech-leadership-q6",
+      "difficulty": "advanced",
+      "tags": ["time", "hands-on", "priorities", "behavioral"],
+      "question": "How do you balance hands-on coding with leadership responsibilities?",
+      "answer": "Keep coding, but choose the work deliberately: small, non-critical-path stories, tooling, and reviews that teach, rather than owning the core of a feature the release depends on. Leadership duties are unpredictable, interrupts, incidents, people issues, so holding the critical path makes both the schedule and your attention fragile. I timebox deep-code blocks, batch reviews and 1:1s, and hand leadership of some tracks to seniors explicitly, which grows them and frees me. The balance I aim for is being technical enough that my judgment is trusted, while the team does not wait on me to ship.",
+      "keyTakeaway": "Code for judgment and teaching, not for the critical path; grow seniors to hold tracks."
+    },
+    {
+      "id": "tech-leadership-q7",
+      "difficulty": "advanced",
+      "tags": ["change", "standards", "adoption", "behavioral"],
+      "question": "How do you drive adoption of a new standard or technology the team does not want?",
+      "answer": "First check the objection, because teams resisting a change are often protecting delivery or carrying scar tissue from a previous mandate. Make the case with evidence, a spike, a benchmark, or the cost of the status quo, and pilot with a volunteer pair rather than announcing a rollout. Reduce the change's price: templates, migration tooling, a paved path that makes the new way the easy way. Set a sunset for the old approach with the team's input, then hold it. If after honest piloting the team is still right that it does not fit, dropping it publicly is also leading.",
+      "keyTakeaway": "Listen, prove with a pilot, make the new path easy, then hold the sunset date."
+    }
+  ]
+}

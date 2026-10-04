@@ -1,0 +1,16 @@
+/* The only file allowed to contain background declarations.
+   Values are limited to transparent and none. */
+
+button,
+input,
+select,
+textarea,
+details,
+summary,
+mark,
+.__remotion-player,
+.__remotion-player *,
+.search-match {
+    background: transparent;
+    background-image: none;
+}

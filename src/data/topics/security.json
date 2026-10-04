@@ -1,0 +1,75 @@
+{
+  "slug": "security",
+  "title": "Application Security & Encryption",
+  "requirement": "Application security standards, data encryption, vulnerability assessment.",
+  "questions": [
+    {
+      "id": "security-q1",
+      "difficulty": "basic",
+      "tags": ["owasp", "injection", "xss", "fundamentals"],
+      "question": "Which application security risks do you design against by default?",
+      "answer": "The recurring ones are injection, SQL and command, broken authentication and session handling, cross-site scripting, broken access control, and insecure direct object references where users guess each other's ids. The defenses are boring and proven: parameterized queries, framework-templated output with no raw HTML injection, centralized authentication, and authorization checked on every request server-side. Sensitive data exposure comes next, encryption in transit and at rest, plus secrets out of the repo. I assume user input is hostile at every boundary and treat client-side validation as UX, not security.",
+      "keyTakeaway": "Parameterize queries, template output, centralize auth, authorize server-side, assume hostile input."
+    },
+    {
+      "id": "security-q2",
+      "difficulty": "basic",
+      "tags": ["encryption", "symmetric", "asymmetric", "fundamentals"],
+      "question": "Explain symmetric and asymmetric encryption and where each is used.",
+      "answer": "Symmetric encryption uses one shared key for both directions, AES for example, and is fast, which suits bulk data, disk, database fields, large transfers. Asymmetric encryption uses a key pair, public to encrypt, private to decrypt, and solves key distribution and identity, TLS certificates and signatures, at a heavy performance cost. Real systems combine them: TLS handshake uses asymmetric crypto to authenticate and agree a session key, then symmetric crypto carries the actual traffic. The engineering rule is to use well-known protocols and libraries and never hand-roll cipher construction.",
+      "keyTakeaway": "Asymmetric for identity and key exchange, symmetric for bulk data; use standard libraries."
+    },
+    {
+      "id": "security-q3",
+      "difficulty": "intermediate",
+      "tags": ["authentication", "authorization", "oauth"],
+      "question": "Distinguish authentication from authorization, and session tokens from OAuth.",
+      "answer": "Authentication answers who you are, through passwords, passkeys, or identity-provider assertions; authorization answers what you may touch, enforced per resource in the service. Server-side sessions keep state in a store with an opaque cookie; tokens such as JWTs carry signed claims so services can authorize without a session lookup, at the cost of revocation planning, short lifetimes plus refresh. OAuth and OIDC fit federated identity, your product trusting an external identity provider, and machine-to-machine flows. Most real breaches in this area are authorization bugs, users reaching other users' objects, not broken login.",
+      "keyTakeaway": "AuthN is identity, authZ is per-request per-resource checks; token systems need revocation design."
+    },
+    {
+      "id": "security-q4",
+      "difficulty": "intermediate",
+      "tags": ["passwords", "hashing", "argon2"],
+      "question": "How should passwords be stored, and why not SHA-256?",
+      "answer": "Store a salted hash from a deliberately slow password function, bcrypt, scrypt, or Argon2, never a fast digest like SHA-256 or MD5. Fast hashes let an attacker try billions of guesses per second offline once the database leaks, and password entropy cannot survive that rate; slow functions with a per-user salt make each guess expensive and defeat precomputed rainbow tables. Use unique salts so identical passwords hash differently, and pick work factors that keep login under your latency budget today, raising them as hardware improves. Add rate limiting and breached-password checks at the door rather than leaning on storage alone.",
+      "keyTakeaway": "Slow salted hashes, Argon2 or bcrypt, unique salts, tuned work factor; never fast digests.",
+      "code": {
+        "language": "typescript",
+        "snippet": "import { hash, verify } from 'argon2';\n\n// unique random salt is generated internally per hash\nconst stored = await hash(password); // work factor tuned so verify() stays under ~200ms\n\n// constant-time comparison inside verify; never === on hashes or passwords yourself\nconst ok = await verify(stored, loginPassword);\nif (!ok) throw new Error('invalid credentials'); // same message for unknown user"
+      }
+    },
+    {
+      "id": "security-q5",
+      "difficulty": "intermediate",
+      "tags": ["secrets", "vault", "key-management"],
+      "question": "How do you manage secrets like API keys and database credentials?",
+      "answer": "Secrets never live in source control, config files in images, or CI logs; they come from a managed secret store or KMS at runtime, injected as environment or mounted volumes. Scope each credential least-privilege and per-environment, so a leaked dev key reads nothing production, and rotate on a schedule and immediately on suspicion. Audit access, who read which secret when, because secret misuse is usually an inside path or a compromised dependency. Client-side code gets nothing, anything shipped to the browser is public, and any key found there is treated as leaked.",
+      "keyTakeaway": "Runtime injection from a managed store, least-privilege per environment, rotate, audit, nothing in the client."
+    },
+    {
+      "id": "security-q6",
+      "difficulty": "intermediate",
+      "tags": ["tls", "encryption-at-rest", "data-protection"],
+      "question": "What does encrypting data in transit versus at rest actually cover?",
+      "answer": "In transit, TLS protects data moving between client, services, and databases, against interception and tampering on the network, and requires certificates, modern protocol versions, and correct configuration on internal links too, not just the public edge. At rest, encryption protects stored data, disks, database files, backups, and object storage, against physical theft or leaked snapshots, typically with provider-managed keys or a KMS. The gap people miss: at-rest encryption does not protect against an attacker inside the running application, which is where authorization and field-level encryption for the most sensitive data matter. Classify data, and let the classification drive which layer each field needs.",
+      "keyTakeaway": "TLS for the wire, at-rest for stolen disks, field-level plus authZ for in-app attackers."
+    },
+    {
+      "id": "security-q7",
+      "difficulty": "advanced",
+      "tags": ["threat-modeling", "process"],
+      "question": "How do you threat model a new feature before building it?",
+      "answer": "Gather the feature's data flows, trust boundaries, and actors, users, services, admins, third parties, in one room with the people who know the design. Walk a simple framework, per flow, what can go wrong, spoofing, tampering, repudiation, disclosure, denial, elevation, and write the threats as concrete scenarios, not vague worries. Rank by impact and likelihood, decide mitigations, acceptances, or transfers for each, and turn them into backlog items with owners so the model changes what gets built. Revisit when the design changes materially, because a threat model of version one quietly expires.",
+      "keyTakeaway": "Flows and trust boundaries, concrete threat scenarios, mitigations as backlog items, revisit on change."
+    },
+    {
+      "id": "security-q8",
+      "difficulty": "advanced",
+      "tags": ["vulnerability", "assessment", "patching", "process"],
+      "question": "How do you run vulnerability assessment and handle a critical finding?",
+      "answer": "Continuously, not annually: dependency and container scanning in CI, static analysis on pull requests, external penetration tests before major releases, and a triage owner for every reported finding. Classify by exploitability and blast radius, and set remediation SLAs by severity, critical in days, high in weeks, with exceptions approved and time-boxed in writing. For an actively exploited critical bug, patch or mitigate first, exploit details stay internal until mitigation is deployed, then root-cause how it got there and whether the class of bug repeats elsewhere. Track mean time to remediate as a team metric; a backlog of aging criticals is an incident in waiting.",
+      "keyTakeaway": "Scan in CI, triage with severity SLAs, patch exploited bugs before disclosure, track remediation time."
+    }
+  ]
+}

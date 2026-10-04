@@ -1,0 +1,55 @@
+{
+  "slug": "stakeholders",
+  "title": "Stakeholder Collaboration",
+  "requirement": "Collaborate with product managers, business analysts, UI/UX designers on technical architecture.",
+  "questions": [
+    {
+      "id": "stakeholders-q1",
+      "difficulty": "basic",
+      "tags": ["product", "scope", "behavioral"],
+      "question": "How do you work with a product manager on scope and schedule?",
+      "answer": "Bring options with costs, not verdicts: this scope is two weeks, dropping offline mode makes it one, this alternative buys the same user outcome for half the work. Agree on what a story must achieve, the user outcome, rather than only how it should be built, so trade-offs stay open. Give schedule truth early and repeatedly, bad news ages badly, and re-forecast when discovery changes the estimate. The PM owns value and priority, I own cost and technical risk, and the overlap, what we cut, is a joint decision with visible consequences.",
+      "keyTakeaway": "Trade scope with priced options, keep outcomes fixed, deliver schedule truth early."
+    },
+    {
+      "id": "stakeholders-q2",
+      "difficulty": "basic",
+      "tags": ["communication", "behavioral"],
+      "question": "How do you explain a technical constraint to a non-technical stakeholder?",
+      "answer": "Translate it into their currency, time, money, risk, or user experience, and drop the mechanism unless asked. For example, this data model cannot answer that report instantly, so the choice is a slower dashboard now or two weeks of work for a fast one. Use one concrete example with real numbers instead of abstractions, and show the smallest diagram that carries the point, boxes and arrows beat words. Check the understanding by asking what they would tell their own stakeholder, which surfaces the misread copy before it travels upward.",
+      "keyTakeaway": "Speak in time, money, risk, and user impact; verify with one concrete example."
+    },
+    {
+      "id": "stakeholders-q3",
+      "difficulty": "intermediate",
+      "tags": ["deadline", "pushback", "behavioral"],
+      "question": "The business demands a feature in a timeframe you believe is unsafe. What do you do?",
+      "answer": "Quantify unsafe: which quality attribute breaks, the probability, and the cost when it does, an outage window, a data-migration risk, an unreachable performance target. Offer the alternatives honestly, cut scope to fit the date, add people where it genuinely helps, a phased risky-first release, or accept the named risk in writing. Escalate the decision to whoever owns the risk, with my recommendation, because sometimes the business accepts a real risk for a real reason, and that is their call. What I do not do is silently agree to the impossible or fight the date as a matter of pride.",
+      "keyTakeaway": "Name the risk and its cost, offer cuts or phasing, and let the risk owner decide in writing."
+    },
+    {
+      "id": "stakeholders-q4",
+      "difficulty": "intermediate",
+      "tags": ["ux", "design", "collaboration", "behavioral"],
+      "question": "How do you involve UX designers so their work survives contact with implementation?",
+      "answer": "Bring designers in when the problem is framed, not after the spec is frozen, so constraints, data availability, latency budgets, platform limits, shape the design instead of rejecting it. Walk through the flows together against the real API surface early, because the expensive fights are designs that assume data or interactions the back end cannot serve. When something cannot be built as drawn, go back with what is possible and the cost of each option, not a bare no, so the design intent survives the compromise. Shared artifacts, a component library and a living style guide, keep the two disciplines honest between projects.",
+      "keyTakeaway": "Designers at problem framing, flows checked against real APIs, options instead of refusals."
+    },
+    {
+      "id": "stakeholders-q5",
+      "difficulty": "advanced",
+      "tags": ["conflict", "priorities", "quality", "behavioral"],
+      "question": "Business pressure pushes to ship a feature that skips engineering quality work you consider mandatory. What happens?",
+      "answer": "Separate negotiable from non-negotiable explicitly: test coverage on the money path, security review on auth flows, and data-migration reversibility are gates I will escalate on; internal refactoring and tooling are usually negotiable with a repayment date. Show the delayed cost of skipping, incidents, rework, speed loss on the next feature, in business units, because technical debt arguments land as budgets. If the decision goes against the gate, get the risk accepted in writing with a remediation date, and make the debt visible in the tracker. Escalation is the tool for the gates, and a visible, dated compromise is the tool for everything else.",
+      "keyTakeaway": "Escalate the true gates, price the debt, and record any accepted risk with a remediation date."
+    },
+    {
+      "id": "stakeholders-q6",
+      "difficulty": "advanced",
+      "tags": ["incident", "communication", "writing", "behavioral"],
+      "question": "A release causes an outage. How do you communicate with stakeholders during and after?",
+      "answer": "During the incident, short updates on a fixed cadence, what is broken, which users are affected, what we are doing, and when the next update comes, with one channel and one owner for the words. Do not speculate on cause before evidence, and never mix remediation messaging with blame. Afterwards, a written post-mortem in business-readable language, timeline, impact in numbers, root cause, and the fixes with owners and dates, plus what changed so it cannot repeat. Stakeholders remember the communication discipline longer than the outage itself; silence or jargon does more damage than downtime.",
+      "keyTakeaway": "Cadenced updates with one owner during, honest numbered post-mortem after, no speculation, no blame."
+    }
+  ]
+}

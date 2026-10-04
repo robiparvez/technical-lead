@@ -1,0 +1,55 @@
+/* Design tokens from DESIGN.md plus approved amendments.
+   Amendments: color.accent (renamed from color.surface.raised),
+   color.text.tertiary and all color.surface.* removed, border.width.1/2 added,
+   radius.lg dropped, font.lineHeight.reading added, Geist Mono added. */
+
+:root {
+    color-scheme: light;
+
+    /* color */
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #6b6b6b;
+    --color-accent: #c8553d;
+    --color-border-strong: #e8e4dd;
+
+    /* border width (amendment) */
+    --border-width-1: 1px;
+    --border-width-2: 2px;
+
+    /* font */
+    --font-family-primary: var(--font-geist-sans), 'Geist Fallback', sans-serif;
+    --font-family-mono: var(--font-geist-mono), 'Geist Mono Fallback', monospace;
+    --font-size-xs: 11px;
+    --font-size-sm: 11.5px;
+    --font-size-md: 12px;
+    --font-size-lg: 12.5px;
+    --font-size-xl: 13px;
+    --font-size-2xl: 13.5px;
+    --font-size-3xl: 14px;
+    --font-size-4xl: 16px;
+    --font-weight-base: 400;
+    --font-line-height-base: 22.75px;
+    /* amendment: reading rhythm on phones, derived from base ratio 22.75/14 * 16 */
+    --font-line-height-reading: 26px;
+
+    /* space */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 10px;
+    --space-4: 12px;
+    --space-5: 14px;
+    --space-6: 15px;
+    --space-7: 16px;
+    --space-8: 18px;
+
+    /* radius (radius.lg dropped: corrupted value in DESIGN.md) */
+    --radius-xs: 4px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+
+    /* shadow */
+    --shadow-1:
+        rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px,
+        rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px,
+        rgba(0, 0, 0, 0.04) 0px 1px 2px 0px, rgba(0, 0, 0, 0.04) 0px 4px 12px 0px;
+}

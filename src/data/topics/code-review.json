@@ -1,0 +1,63 @@
+{
+  "slug": "code-review",
+  "title": "Code Review & Engineering Standards",
+  "requirement": "Conduct code reviews, establish engineering standards, enforce architectural best practices.",
+  "questions": [
+    {
+      "id": "code-review-q1",
+      "difficulty": "basic",
+      "tags": ["code-review", "fundamentals", "goals"],
+      "question": "What is the purpose of code review beyond catching bugs?",
+      "answer": "Bugs are the visible yield, but the durable value is knowledge spread, so more than one person understands each subsystem, and shared standards, taught through concrete examples instead of a wiki page nobody reads. Review is the cheapest architecture checkpoint: drift from the design shows up in a diff long before it shows up in an incident. It also trains judgment both ways, the author learns the reviewers' heuristics and reviewers learn patterns from other code. If reviews only find typos, the team is reviewing the wrong things or the tests are carrying too little weight.",
+      "keyTakeaway": "Review spreads knowledge, enforces design, and catches bugs, in that order of leverage."
+    },
+    {
+      "id": "code-review-q2",
+      "difficulty": "basic",
+      "tags": ["checklist", "process"],
+      "question": "What is on your personal checklist when you review a pull request?",
+      "answer": "I start with the diff title and description: does the stated intent match what the code does, because most review errors come from reviewing syntax instead of intent. Then correctness of the change and its edge cases, test coverage of the new behavior, and whether naming would let a newcomer follow the logic in six months. After that the structural questions: does this belong in this layer, does it duplicate something that exists, does it widen a contract other teams rely on. Style and formatting are tools' job; I do not spend human review budget on them.",
+      "keyTakeaway": "Intent, correctness, tests, structure, naming; leave style to the tools."
+    },
+    {
+      "id": "code-review-q3",
+      "difficulty": "intermediate",
+      "tags": ["feedback", "behavioral", "communication"],
+      "question": "How do you give hard feedback in a review without making it personal?",
+      "answer": "Attach every comment to the code and its consequences, not to the author: this loop retries forever when the broker is down, here is what I would do, rather than you always do this. Ask questions before issuing verdicts, did you consider X, because sometimes the author knows something the reviewer does not, and the diff alone never carries that context. Separate blocking from non-blocking clearly, must-fix versus preference, so the author knows what is negotiable. Praise genuinely where the code is clever, because reviews that only ever criticize teach people to hide work.",
+      "keyTakeaway": "Critique the code and consequences, question before judging, label blocking versus preference."
+    },
+    {
+      "id": "code-review-q4",
+      "difficulty": "intermediate",
+      "tags": ["pr-size", "latency", "standards"],
+      "question": "How do you set standards for pull request size and review turnaround?",
+      "answer": "Big pull requests get skimmed, so the standard is small, single-purpose changes, and teams get there by trunk-based flow and stacked PRs rather than by shaming. I set a turnaround expectation, first review within one business day, because slow reviews push people onto long branches, which makes the next PR bigger, the classic death spiral. Measuring review latency and merge size as team trends, not individual scores, makes the problem discussable without blame. When a large PR is unavoidable, a walkthrough call before formal review replaces three rounds of line comments.",
+      "keyTakeaway": "Small PRs plus one-day first review; measure trends, and pre-walk through the unavoidable monsters."
+    },
+    {
+      "id": "code-review-q5",
+      "difficulty": "intermediate",
+      "tags": ["standards", "automation", "enforcement"],
+      "question": "How do you enforce standards without turning reviews into a rule fight?",
+      "answer": "Every rule that can be executed belongs in automation: formatters, linters, type checks, dependency policies, and pipeline gates, because machines enforce perfectly and reviewers fatigue. The review then covers only what machines cannot: design fit, failure handling, test honesty, and readability. When a new rule emerges from a review, the follow-up is to codify it, a lint rule, a template, a checklist item, so it is applied by the system next time. Rules that resist automation should earn their place through recurring real incidents, not one memorable disagreement.",
+      "keyTakeaway": "Automate every enforceable rule; keep human review for judgment, and codify new rules on the spot."
+    },
+    {
+      "id": "code-review-q6",
+      "difficulty": "advanced",
+      "tags": ["design-disagreement", "behavioral"],
+      "question": "You and another senior disagree about a design inside a pull request. How is it resolved?",
+      "answer": "Move it out of line comments and into a short design discussion, because PR threads compress trade-offs into yes-no replies and collect an audience. Frame it as options against criteria, delivery risk, operability, reversibility, and write the two positions down, which usually reveals the disagreement is about weights, not facts. Agree on a decider, a default owner of that area, or a documented escalation, and record the decision with its revisit trigger. What must not happen is a stalemate resolved by whoever merges first; the team loses trust in the process faster than in either design.",
+      "keyTakeaway": "Promote the fight to a design decision with criteria and a decider; never merge-race a disagreement."
+    },
+    {
+      "id": "code-review-q7",
+      "difficulty": "advanced",
+      "tags": ["metrics", "culture", "quality"],
+      "question": "How do you know your review culture is working?",
+      "answer": "Watch defect flow and knowledge spread rather than review counts. Escaped defects whose root cause a review should have caught, repeated instances of the same mistake, and PRs that only one person can review are the signals that the culture is leaking. Healthy signs: review comments shift from correctness toward design over time, juniors review seniors without ceremony, and post-mortems rarely find a diff-approved obvious flaw. Survey the temperature too, whether authors feel helped or policed, because a fearful review culture ships hidden work and quiet rework instead.",
+      "keyTakeaway": "Track escaped defects and single-reviewer risk; the comments should drift from bugs to design."
+    }
+  ]
+}

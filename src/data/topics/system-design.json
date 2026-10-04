@@ -1,0 +1,87 @@
+{
+  "slug": "system-design",
+  "title": "System Design & Scalability",
+  "requirement": "Architect, design, implement high-performance, scalable, secure full-stack apps.",
+  "questions": [
+    {
+      "id": "system-design-q1",
+      "difficulty": "basic",
+      "tags": ["process", "fundamentals", "interview"],
+      "question": "Walk me through how you approach designing a new system from scratch.",
+      "answer": "Start with requirements and numbers: who uses it, what operations dominate, expected reads and writes per second, data size, and latency targets, because every later trade-off hangs on those. Define the data model and the API surface next, since they are the hardest things to change. Then sketch a boring architecture, load balancer, stateless services, a database, and add complexity, caches, queues, shards, only where the numbers demand it. Close with failure modes, what breaks, how you detect it, and what you would build first to validate the riskiest assumption.",
+      "keyTakeaway": "Numbers first, data model second, boring architecture third, complexity only where proven."
+    },
+    {
+      "id": "system-design-q2",
+      "difficulty": "basic",
+      "tags": ["scaling", "vertical", "horizontal"],
+      "question": "What is the difference between vertical and horizontal scaling?",
+      "answer": "Vertical scaling makes one machine bigger, more CPU, RAM, or faster storage, and it is the simplest first move: no code changes, no new failure modes. It has a ceiling and a price cliff, and the system stays a single point of failure. Horizontal scaling adds machines, which removes that ceiling and survives node loss, but requires stateless services, shared data strategy, and load balancing to work. Most real systems scale up until it hurts, then out, and the interesting design work is everything horizontal scaling forces you to solve.",
+      "keyTakeaway": "Up is simple but capped; out is elastic but demands statelessness and shared-state design."
+    },
+    {
+      "id": "system-design-q3",
+      "difficulty": "intermediate",
+      "tags": ["load-balancer", "availability", "stateless"],
+      "question": "What role does a load balancer play, and what must services do to sit behind one?",
+      "answer": "A load balancer spreads traffic across instances by health and capacity, terminates TLS, and takes failed instances out of rotation using health checks. For that to work, services must be stateless, since any instance can receive any request, and they must expose honest health endpoints that reflect actual ability to serve. Health checks need tuning: too eager and a slow GC pause removes capacity and cascades, too lazy and users hit dead pods. In cloud systems the balancer is also the enforcement point for rate limits and routing rules between service versions.",
+      "keyTakeaway": "The balancer routes around failure; services owe it statelessness and honest health checks."
+    },
+    {
+      "id": "system-design-q4",
+      "difficulty": "intermediate",
+      "tags": ["caching", "latency", "performance"],
+      "question": "Where do caches fit in a scalable system, and what do you cache first?",
+      "answer": "Caches cut latency and load by serving hot data from memory, and they appear at several layers: browser and CDN at the edge, in-process caches inside services, and shared stores like Redis for cross-instance data. Cache the expensive and frequently read first: reference data, rendered fragments, session lookups, and the top queries by volume. Every cache needs a TTL as a safety net, explicit invalidation for correctness-sensitive entries, and protection against stampedes with request coalescing. Measure hit rate and staleness, because an unmonitored cache is both a performance mystery and a correctness risk.",
+      "keyTakeaway": "Cache hot, expensive reads; TTL for safety, invalidation for freshness, coalescing for stampedes."
+    },
+    {
+      "id": "system-design-q5",
+      "difficulty": "intermediate",
+      "tags": ["cap", "consistency", "trade-offs"],
+      "question": "Explain the CAP trade-off and how it shows up in practical decisions.",
+      "answer": "CAP says a distributed store, when a network partition happens, must choose either consistency, refusing or blocking writes, or availability, serving possibly stale data. Partitions are inevitable, so the real design question per feature is which side each data type takes when the network splits. Payments and inventory counts lean consistent, better unavailable than wrong; carts, feeds, and analytics lean available with eventual consistency. In interviews, name the choice per data type and the reconciliation job that cleans up after an available-but-stale window, which is what separates the answer from reciting the theorem.",
+      "keyTakeaway": "Choose C or A per data type under partition, and design the reconciliation path."
+    },
+    {
+      "id": "system-design-q6",
+      "difficulty": "advanced",
+      "tags": ["redundancy", "failure", "high-availability"],
+      "question": "How do you design a system to survive infrastructure failure?",
+      "answer": "Remove every single point of failure: multiple instances across availability zones, replicated data with automated failover, and load balancers or entry points that are themselves redundant. Assume components fail, so add timeouts, retries with backoff, circuit breakers, and graceful degradation so one dependency's death does not become an outage. Practice the failures with game days and restore drills, because an untested failover is a hypothesis, not a capability. Define availability targets per service and spend redundancy budget where the business actually feels downtime.",
+      "keyTakeaway": "Redundant everything, degrade gracefully, and rehearse failover before you need it."
+    },
+    {
+      "id": "system-design-q7",
+      "difficulty": "advanced",
+      "tags": ["performance", "bottlenecks", "process"],
+      "question": "The application got slow at peak load. How do you find the bottleneck?",
+      "answer": "Follow the request with tracing and metrics: latency percentiles per tier, saturation signals like CPU, memory, connection pools, thread pools, and queue depths, until the time concentrates somewhere. Common culprits are a database missing an index or exhausting connections, a lock or pool sized for average rather than peak, garbage collection pauses, and a downstream dependency that queues silently. Distinguish latency added by waiting from work added by computation, because the fixes are different, more capacity versus less work. Fix, verify at the same load, ideally with a load test, and record the capacity limit you found for release planning.",
+      "keyTakeaway": "Trace the request, read saturation signals, separate waiting from working, then re-test at peak."
+    },
+    {
+      "id": "system-design-q8",
+      "difficulty": "advanced",
+      "tags": ["estimation", "capacity", "interview"],
+      "question": "How do you do back-of-the-envelope capacity estimation for a new feature?",
+      "answer": "Start from users and usage patterns: daily active users, actions per user, read-to-write ratio, then derive per-second rates by spreading load over peak hours, typically assuming the peak hour carries a multiple of the average. Size storage from record size times growth rate, add indexes and replication overhead, and check memory fit for anything you intend to cache. Sanity-check each tier, requests per second, connections, storage, bandwidth, against realistic per-node capacity to see where the first wall appears. The numbers are coarse by design; they tell you which architecture is even plausible before you draw boxes.",
+      "keyTakeaway": "Users to per-second rates to per-tier capacity: find the first wall before designing around it."
+    },
+    {
+      "id": "system-design-q9",
+      "difficulty": "intermediate",
+      "tags": ["consistent-hashing", "partitioning", "scaling"],
+      "question": "How does consistent hashing distribute data across servers, and why is hash modulo N a problem?",
+      "answer": "Placing servers with hash(key) % N breaks the moment N changes: adding or removing one server remaps most keys, which storms a cache with misses or forces a mass data migration. Consistent hashing maps both servers and keys onto a ring over the hash space, typically 0 to 2^160 minus 1, and a key belongs to the first server found walking clockwise, so a membership change moves only the keys in that server's arc. The basic ring skews, with uneven partition sizes and hotspots, so each physical server is represented by many virtual nodes spread uniformly around the ring, and more virtual nodes mean a flatter distribution. This is the placement machinery inside Dynamo-style stores, Cassandra, and CDN and load-balancer routers.",
+      "keyTakeaway": "Ring placement plus virtual nodes: membership changes move only neighboring keys."
+    },
+    {
+      "id": "system-design-q10",
+      "difficulty": "advanced",
+      "tags": ["scaling", "evolution", "cdn", "replication"],
+      "question": "Describe how an architecture evolves from a single server to millions of users.",
+      "answer": "Start with one box serving the app and the database, then split the database onto its own machine so each tier scales and fails independently. Add a load balancer and make the web tier stateless to scale horizontally, and replicate the database, one primary taking writes and replicas serving reads, promoting a replica when the primary dies. Put a cache tier in front of hot reads and a CDN in front of static assets, both with expiry and invalidation rules. Take slow or spiky work, email, feeds, media processing, into a message queue so traffic surges buffer instead of tipping the system over. Each step is a response to a measured pain, and the order is not fashion: statelessness unlocks the balancer, replication precedes sharding, and multi-region comes only after the earlier steps stop hurting.",
+      "keyTakeaway": "Grow by measured pain: split tiers, balance stateless web, replicate, cache and CDN, queue the spikes."
+    }
+  ]
+}

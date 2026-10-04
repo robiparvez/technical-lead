@@ -1,0 +1,75 @@
+{
+  "slug": "front-end",
+  "title": "Front-End Engineering: JavaScript, TypeScript, React",
+  "requirement": "Proficiency in modern front-end tech: JavaScript, TypeScript, React, Angular, or Vue.",
+  "questions": [
+    {
+      "id": "front-end-q1",
+      "difficulty": "basic",
+      "tags": ["typescript", "javascript", "fundamentals"],
+      "question": "Why adopt TypeScript over plain JavaScript on a large codebase?",
+      "answer": "TypeScript checks contracts between modules at compile time, so a renamed field or a changed function signature breaks the build instead of production. Types are executable documentation: they state what a function accepts without reading its body, which matters when dozens of engineers touch the same code. Plain JavaScript defers those mistakes to runtime, where they surface as undefined-is-not-a-function in a customer's browser. The win is proportional to codebase size and team churn; on a two-person prototype it can be overhead.",
+      "keyTakeaway": "Types move integration bugs from runtime to compile time; value grows with team size."
+    },
+    {
+      "id": "front-end-q2",
+      "difficulty": "basic",
+      "tags": ["react", "fundamentals", "keys"],
+      "question": "What are state and props in React, and why does the key prop matter in lists?",
+      "answer": "Props are read-only inputs passed from a parent; state is data the component owns and can change over time. When state changes, React re-renders and reconciles the new output with the old by comparing element types and keys. Keys give list items a stable identity across renders: with a stable id, React moves the existing component instance; with the array index, it reuses the wrong instance when items are inserted, removed, or reordered, which corrupts local state and input values. Use stable business ids as keys, never indices for dynamic lists.",
+      "keyTakeaway": "Props flow down, state stays local; stable keys keep list identity correct across re-renders."
+    },
+    {
+      "id": "front-end-q3",
+      "difficulty": "intermediate",
+      "tags": ["react", "angular", "vue", "decision"],
+      "question": "How do you choose between React, Angular, and Vue for a new project?",
+      "answer": "Decide on team skills, hiring pool, and ecosystem fit before syntax preferences. React is a library with a huge ecosystem and maximal flexibility, so it suits teams that want to assemble their own stack; Angular ships a full opinionated framework with DI and tooling built in, which large enterprise teams value for consistency; Vue offers a gentler middle ground with well-integrated defaults. Ask what the product needs: heavy forms and standards-heavy enterprise suites favor Angular, component-driven product UIs favor React or Vue. The worst choice is retraining a productive team for fashion.",
+      "keyTakeaway": "Team capability and ecosystem depth decide; framework syntax is a rounding error."
+    },
+    {
+      "id": "front-end-q4",
+      "difficulty": "intermediate",
+      "tags": ["react", "state-management", "context"],
+      "question": "When do you reach for Context, and when for a state library like Redux or Zustand?",
+      "answer": "Built-in state plus prop drilling is fine for local and parent-owned UI state. Context solves prop drilling for low-frequency global data, such as the current theme or locale, but every consumer re-renders on each value change, so it is wrong for rapidly changing data. A state library earns its place when many distant components share frequently updated state, when updates must be transactional, or when you need devtools time-travel for debugging. Default to the simplest thing, and extract a store when re-render pain is measured, not imagined.",
+      "keyTakeaway": "Context for slow global values; a store when shared state changes often."
+    },
+    {
+      "id": "front-end-q5",
+      "difficulty": "intermediate",
+      "tags": ["performance", "react", "typescript"],
+      "question": "A React page is slow. How do you diagnose and fix the rendering cost?",
+      "answer": "Measure first with the React profiler and find whether the cost is render work or commit work. Typical causes: large lists rendering every row, expensive computations inside render, new object or function props defeating memoization, and oversized bundles delaying first paint. Fixes in order of payoff: virtualize long lists, memoize derived data with useMemo keyed narrowly, stabilize prop identities, and code-split routes so users only download what they open. Re-measure after each change; memoizing everything adds complexity and usually fixes nothing.",
+      "keyTakeaway": "Profile before optimizing: virtualize lists, stabilize props, split routes, then re-measure.",
+      "code": {
+        "language": "typescript",
+        "snippet": "// derived rows recompute only when the filter changes\nconst visibleRows = useMemo(\n  () => rows.filter((r) => r.status === filter),\n  [rows, filter],\n);\n// stable handler identity keeps memoized children from re-rendering\nconst onRowClick = useCallback((id: string) => select(id), [select]);"
+      }
+    },
+    {
+      "id": "front-end-q6",
+      "difficulty": "intermediate",
+      "tags": ["ssr", "next", "rendering"],
+      "question": "Compare client-side rendering with server-side rendering and static generation.",
+      "answer": "Client-side rendering ships a small HTML shell and builds the page in the browser, which is simple and interactive but shows a blank shell until JavaScript loads, hurting slow connections and SEO. Server-side rendering produces HTML per request, so first contentful paint is fast and crawlers see content, at the cost of server work per page. Static generation prebuilds HTML at deploy time, giving the fastest delivery for content that changes on deploy or revalidation cadence. Pick per route: marketing and content pages static or SSR, authenticated interactive dashboards CSR or a mix.",
+      "keyTakeaway": "Choose rendering per route: static for content, SSR for dynamic first paint, CSR for heavy interaction."
+    },
+    {
+      "id": "front-end-q7",
+      "difficulty": "advanced",
+      "tags": ["typescript", "typing", "code-quality"],
+      "question": "How do you keep TypeScript strict without the types fighting the team?",
+      "answer": "Turn on strict mode from day one, because retrofitting strictness onto a loose codebase is far more expensive than starting strict. Ban any by lint rule, allow unknown at boundaries and narrow it, and prefer discriminated unions over optional-field soup, which makes impossible states unrepresentable. Reserve generics for real reuse; a generic that always gets the same parameter is ceremony. The remaining 5 percent of pragmatic escapes, typed as, non-null assertions, get an eslint-disable comment with a reason, so every lie in the types is visible in review.",
+      "keyTakeaway": "Strict from the start, unknown at the edges, unions for state, commented exceptions only."
+    },
+    {
+      "id": "front-end-q8",
+      "difficulty": "advanced",
+      "tags": ["accessibility", "spa", "focus"],
+      "question": "What does accessibility require in a single-page app beyond semantic HTML?",
+      "answer": "A SPA swaps content without a page load, so the browser's built-in announcements break and you must restore them. Manage focus: move it to new content after route or dialog transitions, trap it inside modals, and return it to the trigger on close. Announce async changes with aria-live regions so screen readers hear errors and loaded results, and keep keyboard paths working for every hover-only interaction. Test the whole flow with keyboard only and a screen reader at least once per feature, because automated audits catch markup issues but not focus order or announcement problems.",
+      "keyTakeaway": "SPAs own focus management and live announcements; audit with keyboard and a screen reader."
+    }
+  ]
+}

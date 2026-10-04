@@ -1,0 +1,72 @@
+{
+  "slug": "cloud-serverless",
+  "title": "Cloud, Containers & Serverless",
+  "requirement": "Solid understanding of cloud deployment, containerization, CI/CD pipelines.",
+  "questions": [
+    {
+      "id": "cloud-serverless-q1",
+      "difficulty": "basic",
+      "tags": ["docker", "containers", "fundamentals"],
+      "question": "How are containers different from virtual machines?",
+      "answer": "A virtual machine virtualizes hardware and runs a full guest operating system, so it is heavy, taking gigabytes and minutes to start. A container shares the host kernel and isolates processes with namespaces and control groups, so it starts in seconds and megabytes. Containers package the application with its exact dependencies, which kills works-on-my-machine drift between environments. The trade-off is weaker isolation than a VM, since the kernel is shared, which is why multi-tenant workloads sometimes still run inside VMs.",
+      "keyTakeaway": "VMs virtualize hardware with full isolation; containers share the kernel for speed and density."
+    },
+    {
+      "id": "cloud-serverless-q2",
+      "difficulty": "basic",
+      "tags": ["kubernetes", "orchestration", "fundamentals"],
+      "question": "What problem does a container orchestrator like Kubernetes solve?",
+      "answer": "An orchestrator turns a fleet of machines into one scheduling surface: it starts the number of replicas you declare, restarts crashed containers, reschedules pods when a node dies, and scales on load. It gives service discovery and load balancing between pods, rolling updates with rollback, and secrets or config injection. Without it, a team scripts deployment and failover by hand per host, which stops scaling past a handful of services. The cost is real operational complexity, so smaller deployments often start with managed platform services.",
+      "keyTakeaway": "Orchestration replaces hand-run deployments with declared replicas, self-healing, and rolling updates.",
+      "diagram": "container-deploy"
+    },
+    {
+      "id": "cloud-serverless-q3",
+      "difficulty": "intermediate",
+      "tags": ["docker", "images", "layers"],
+      "question": "How do Docker image layers work, and how do you keep images small?",
+      "answer": "Each Dockerfile instruction creates a layer; layers are cached and shared, so rebuilds only redo changed steps and base images are downloaded once per host. Order instructions from stable to volatile, dependencies before source code, so a code edit does not invalidate the dependency-download layer. Keep images small with a slim or distroless base, a .dockerignore for build artifacts, multi-stage builds that compile in one image and copy only runtime output to another, and no build tools in the final image. Small images mean faster pulls, faster deploys, and a smaller attack surface.",
+      "keyTakeaway": "Layer order maximizes cache hits; multi-stage builds ship only runtime artifacts."
+    },
+    {
+      "id": "cloud-serverless-q4",
+      "difficulty": "intermediate",
+      "tags": ["kubernetes", "rolling-update", "deployment"],
+      "question": "What do you consider when running a rolling update in Kubernetes?",
+      "answer": "A Deployment replaces pods gradually, and the two dials are maxSurge, how many extra pods may exist during the update, and maxUnavailable, how many may be down. Set them to keep capacity and error budget intact, typically surge 1 and unavailable 0 for customer-facing services. Pair them with readiness probes so traffic only reaches the new version when it is actually serving, and resource requests so the scheduler can place the new pods. Define the rollback trigger before the release, watch error rate and latency during the rollout, and roll back on breach rather than debugging forward.",
+      "keyTakeaway": "Tune surge and availability, gate traffic with readiness probes, and predefine the rollback trigger."
+    },
+    {
+      "id": "cloud-serverless-q5",
+      "difficulty": "intermediate",
+      "tags": ["serverless", "decision", "trade-offs"],
+      "question": "When would you choose serverless functions over containers?",
+      "answer": "Serverless fits spiky, short, event-driven work: you pay per invocation, scale is the provider's problem, and there is nothing to patch at the OS level. Containers fit long-running, latency-sensitive, or stateful services: no cold starts, full control of the runtime, and predictable cost under steady high traffic. Serverless constraints bite on execution time limits, package sizes, and per-request costs at sustained volume, and debugging distributed functions is harder than one service. A common split keeps steady core services in containers and puts bursty glue, webhooks, and scheduled jobs on functions.",
+      "keyTakeaway": "Functions for spiky glue; containers for steady, latency-critical, stateful services."
+    },
+    {
+      "id": "cloud-serverless-q6",
+      "difficulty": "intermediate",
+      "tags": ["stateless", "scaling", "cloud"],
+      "question": "Why do cloud architectures insist on stateless services, and where does state go?",
+      "answer": "A stateless service treats every request independently, so any instance can serve any request, which makes horizontal scaling and rolling deploys trivial. State moves down the stack: sessions to a shared store such as Redis, files to object storage, and durable data to the database or a queue. When state sneaks into local memory, instances become irreplaceable, autoscaling strands users, and a deploy drops in-flight work. If sticky sessions are used as a bridge, treat them as debt with a plan to externalize the state.",
+      "keyTakeaway": "Keep compute stateless; push session, file, and durable state into purpose-built stores."
+    },
+    {
+      "id": "cloud-serverless-q7",
+      "difficulty": "advanced",
+      "tags": ["iac", "terraform", "environments"],
+      "question": "How do you manage infrastructure across multiple environments without drift?",
+      "answer": "Define every environment in infrastructure as code, Terraform, Pulumi, or CloudFormation, and provision exclusively through it; manual console changes are reverted on sight and audited. Use modules so dev, staging, and production differ by parameters, not by copy-pasted divergence, and keep the state remote and locked so concurrent applies cannot corrupt it. Promote the same artifact through environments, changing configuration only, so staging actually proves production. Review infrastructure diffs like code in pull requests, and plan before every apply in a regulated environment.",
+      "keyTakeaway": "One parameterized module per environment, applied only through IaC with reviewed diffs."
+    },
+    {
+      "id": "cloud-serverless-q8",
+      "difficulty": "advanced",
+      "tags": ["serverless", "cold-start", "limits"],
+      "question": "What are the real costs and limits of serverless at production scale?",
+      "answer": "Cold starts add latency when a new instance boots, which hurts p99 and timeouts on bursty traffic; provisioning concurrency fixes it by pre-warming, but at always-on price. Execution time, memory, payload size, and concurrent invocation limits are platform ceilings you must design around with shorter functions and queue buffering. Observability is the biggest jump: you need structured logs, distributed tracing across function boundaries, and cost telemetry per function, because a chatty fan-out can quietly cost more than a container. Model the cost curve against steady containers before committing, and re-check it as traffic grows.",
+      "keyTakeaway": "Pre-warm for latency, design inside platform limits, and watch per-function cost as traffic grows."
+    }
+  ]
+}

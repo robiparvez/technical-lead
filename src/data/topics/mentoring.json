@@ -1,0 +1,55 @@
+{
+  "slug": "mentoring",
+  "title": "Mentoring & Professional Development",
+  "requirement": "Mentor engineers, foster professional development.",
+  "questions": [
+    {
+      "id": "mentoring-q1",
+      "difficulty": "basic",
+      "tags": ["mentoring", "fundamentals", "behavioral"],
+      "question": "How do you mentor a junior engineer in practice?",
+      "answer": "Start by learning their goals and gaps, then give work one notch beyond their comfort, reachable with support, because growth happens at the edge, not in the safe middle. Pair on the first pass of something new, then step back and review their solo attempt, so they own the outcome while I own the safety net. Make thinking visible: walk through how I would approach their problem, including the dead ends, since juniors see our conclusions and not the reasoning. Debrief after milestones, what they would do differently, so the lesson is articulated instead of absorbed by accident.",
+      "keyTakeaway": "Assign stretch work, pair then step back, and narrate your reasoning out loud."
+    },
+    {
+      "id": "mentoring-q2",
+      "difficulty": "basic",
+      "tags": ["mentoring", "coaching", "behavioral"],
+      "question": "What is the difference between mentoring, coaching, and managing?",
+      "answer": "Mentoring shares experience, here is how I have seen this problem go, and is most useful for craft and career judgment. Coaching draws answers out of the person with questions, reserved for when they own the problem and need to build their own decision muscle rather than borrow mine. Managing owns outcomes and consequences, assignments, performance, and organizational removes. A technical lead wears all three, and the failure mode is mentoring when the moment needs coaching, handing answers to someone who needed to struggle productively. I check myself by asking, whose problem is this, and whose answer does the growth need.",
+      "keyTakeaway": "Mentor lends experience, coach draws out judgment, manager owns outcomes; pick per moment."
+    },
+    {
+      "id": "mentoring-q3",
+      "difficulty": "intermediate",
+      "tags": ["growth", "plateau", "senior", "behavioral"],
+      "question": "How do you help a senior engineer who has plateaued?",
+      "answer": "Diagnose the plateau honestly with them: is it motivation, missing skills, no visibility for their work, or a role that stopped growing faster than they did. Plateaued seniors usually need scope, not tutorials, so I hand them a cross-team problem, an incident post-mortem to lead, or a rewrite decision to own, something with organizational weight. Protect time for it explicitly, because plateau often means their calendar is full of other people's interrupts. Revisit in a quarterly growth conversation with concrete evidence, and if the ceiling is structural, say so and help them aim at the next role honestly.",
+      "keyTakeaway": "Plateaued seniors need heavier scope and protected time, plus honest talk about ceilings."
+    },
+    {
+      "id": "mentoring-q4",
+      "difficulty": "intermediate",
+      "tags": ["feedback", "one-on-one", "behavioral"],
+      "question": "How do you structure feedback conversations so they actually change something?",
+      "answer": "Anchor on one specific observed moment, situation, behavior, impact, rather than a generalized character assessment, which triggers defense instead of reflection. Deliver it close to the event and in private, ask for their read before prescribing, because you often lack half the context. End with one agreed change and a follow-up date; feedback without a check-in evaporates. For praise, the mirror rule applies: specific and public beats generic, because it tells the rest of the team what good looks like.",
+      "keyTakeaway": "One specific moment, their read first, one agreed change, and a follow-up date."
+    },
+    {
+      "id": "mentoring-q5",
+      "difficulty": "advanced",
+      "tags": ["growth-plan", "progress", "behavioral"],
+      "question": "How do you build and measure a growth plan that survives delivery pressure?",
+      "answer": "Define the plan as two or three capabilities with observable evidence, leads a design review, handles an on-call week solo, ships a migration end to end, not as course completions. Wire the evidence into real roadmap work so growth uses delivery instead of competing with it, and keep the plan to one page the engineer writes themselves. Review monthly for ten minutes, adjust scope rather than morale when deadlines hit, because the first casualty of pressure is usually the plan nobody wrote down. At promotion or review time the evidence trail already exists, which turns a persuasion exercise into a reading exercise.",
+      "keyTakeaway": "Growth goals become roadmap work with observable evidence, reviewed monthly on one page."
+    },
+    {
+      "id": "mentoring-q6",
+      "difficulty": "advanced",
+      "tags": ["delegation", "development", "behavioral"],
+      "question": "How do you delegate critical work without abandoning it?",
+      "answer": "Delegate outcomes with explicit guardrails, the acceptance criteria, the risks I know about, and where I must be consulted, rather than delegating tasks piecemeal. Match the stakes to the person's runway, and for truly critical pieces keep the failure cheap: a reversible migration step, a flagged rollout, a shadow cutover run. Stay in the loop by reviewing checkpoints and artifacts, not by rewriting their work at the last moment, which teaches helplessness. Afterward debrief publicly, because the team learning that this person delivered is part of the development.",
+      "keyTakeaway": "Delegate outcomes with guardrails, keep failure cheap, review checkpoints instead of rewriting."
+    }
+  ]
+}

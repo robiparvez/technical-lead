@@ -1,0 +1,87 @@
+{
+    "slug": "system-design-exercises",
+    "title": "System Design Exercises",
+    "requirement": "Architect, design, implement high-performance, scalable, secure full-stack apps.",
+    "questions": [
+        {
+            "id": "system-design-exercises-q1",
+            "difficulty": "basic",
+            "tags": ["url-shortener", "base62", "redirect", "exercise"],
+            "question": "Design a URL shortener like TinyURL. How do you generate the short keys and handle redirects?",
+            "answer": "Two operations carry the design: shorten, POST a long URL and get back a short key, and redirect, GET the key and return the long URL. Generate keys either by hashing the long URL and taking a prefix, which collides and needs resolution, or by taking a unique ID from a distributed generator and encoding it in base 62, the characters 0-9, a-z, A-Z, where 7 characters cover about 3.5 trillion URLs. Reads dominate roughly 10 to 1, so serve mappings from a cache in front of the key-value store. Choose a 301 permanent redirect so browsers cache and skip you, or a 302 temporary redirect when you need every click for analytics. Finish with rate limiting on creation and an expiration policy for links.",
+            "keyTakeaway": "Base62-encoded unique IDs avoid collisions; cache the read-heavy redirect path."
+        },
+        {
+            "id": "system-design-exercises-q2",
+            "difficulty": "basic",
+            "tags": ["unique-id", "snowflake", "exercise"],
+            "question": "How do you generate unique, time-ordered 64-bit IDs in a distributed system?",
+            "answer": "Walk the options: multi-master auto-increment with a step of k breaks ordering across data centers and hates resizes; UUID needs no coordination but is 128 bits, non-numeric, and unsorted; a central ticket server is simple but a single point of failure. The Snowflake layout wins: one sign bit, 41 bits of millisecond timestamp since a custom epoch, roughly 69 years, 5 bits of datacenter, 5 bits of machine, and a 12-bit sequence that resets each millisecond, giving 4096 IDs per machine per millisecond. Each node generates IDs independently, so there is no coordination, and IDs are roughly time-ordered, which makes good B-tree keys. Keep clocks close with NTP and, when the sequence overflows, wait for the next millisecond rather than emit a duplicate.",
+            "keyTakeaway": "Snowflake: timestamp + machine bits + per-millisecond sequence, no coordination."
+        },
+        {
+            "id": "system-design-exercises-q3",
+            "difficulty": "intermediate",
+            "tags": ["web-crawler", "politeness", "bfs", "exercise"],
+            "question": "Design a scalable, polite web crawler.",
+            "answer": "Treat the web as a directed graph and walk it breadth-first: seed URLs enter a URL frontier, a downloader with a DNS cache fetches pages, a parser validates them, a content-hash check discards duplicates, a link extractor pulls new URLs, a filter drops blacklisted ones, and survivors rejoin the frontier. Politeness is the constraint people miss: one request per host at a time, enforced by per-host FIFO queues each drained by its own worker thread with a delay, and full compliance with robots.txt. Priority comes from front queues selected with a bias toward important or frequently updated pages, while the back queues handle politeness. Scale out by consistent-hashing URL hashes onto crawl servers, and keep it robust with timeouts, checksums, and monitoring.",
+            "keyTakeaway": "Frontier with per-host back queues for politeness, priority front queues for value, dedupe by content hash."
+        },
+        {
+            "id": "system-design-exercises-q4",
+            "difficulty": "intermediate",
+            "tags": ["autocomplete", "trie", "top-k", "exercise"],
+            "question": "Design a search autocomplete service that returns the top 5 popular completions.",
+            "answer": "Split it into a data-gathering half and a query half. Gathering: analytics logs are aggregated into a frequency table on a schedule, and a trie, prefix tree, is rebuilt from that table, because updating a trie per keystroke across billions of daily queries is not practical and the top suggestions barely move day to day. Querying: walk the trie to the prefix node and return the top-k children, accelerated by storing the top-k list on every node so there is no subtree traversal and no per-request sorting. Cap prefix length, since nobody types 50 characters, cache aggressively including the browser, and put a filter layer in front to remove harmful suggestions. Accept the staleness of periodic rebuilds; it is the correct trade for the speed.",
+            "keyTakeaway": "Trie with cached top-k per node, built offline from logs; serve reads from cache."
+        },
+        {
+            "id": "system-design-exercises-q5",
+            "difficulty": "intermediate",
+            "tags": ["news-feed", "fan-out", "cache", "exercise"],
+            "question": "Design a news feed: do you push posts to followers or pull them at read time?",
+            "answer": "Two flows frame it: publishing, a post service stores the post and a fanout service propagates it, and retrieval, the feed service assembles the timeline. Fan-out on write pushes each new post ID into every follower's feed cache at publish time, which makes reads instant but burns resources when one account has millions of followers. Fan-out on read aggregates follows at request time, cheap for inactive users but slow feeds under load. The hybrid is the real answer: push for normal users, pull-on-read for celebrity accounts, with the feed cache holding capped lists of post IDs, not hydrated posts, and separate cache layers for content, the social graph, and counters. Publish through a message queue so a slow fan-out never blocks the poster.",
+            "keyTakeaway": "Hybrid fan-out: push to normal users, pull for celebrities; cache capped ID lists."
+        },
+        {
+            "id": "system-design-exercises-q6",
+            "difficulty": "intermediate",
+            "tags": ["geospatial", "geohash", "proximity", "exercise"],
+            "question": "How do you find all businesses within a radius of a user's location at scale?",
+            "answer": "The naive lat-between AND long-between scan cannot use an index well, because two one-dimensional indexes do not compose into a two-dimensional region query, and fixed even grids skew badly between dense cities and empty countryside. Encode the two dimensions into one: geohash recursively bisects latitude and longitude ranges into a base-32 string where a shared prefix means nearby cells, so you index the geohash and query the cells that cover the radius plus their neighbors to handle boundary effects. Quadtree, S2, and R-tree are the same idea, a hierarchy that collapses 2D into an indexable 1D key. Serve it from a stateless, read-heavy location service with a cache, and let business-owner writes land on a primary-replica database whose slight staleness nobody notices.",
+            "keyTakeaway": "Encode 2D into 1D (geohash or quadtree), index it, query covering cells plus neighbors."
+        },
+        {
+            "id": "system-design-exercises-q7",
+            "difficulty": "advanced",
+            "tags": ["chat", "websocket", "presence", "exercise"],
+            "question": "Design a chat system with reliable delivery, presence, and offline users.",
+            "answer": "Receiving is the driver: polling wastes requests, long polling holds servers, so clients hold persistent bidirectional WebSocket connections to stateful chat servers, with service discovery routing each user to their server. A message from a sender reaches the recipient's connection when online, or a push notification service when not, with the server as the source of truth so multiple devices converge. Ordering needs only per-conversation local sequence numbers, not a global generator, since a group message is keyed by (channel_id, message_id) and nobody needs cross-channel order. Store history in a key-value store, which scales horizontally and stays fast at the long tail where relational indexes degrade; presence comes from heartbeats to presence servers with subscription-based status fan-out.",
+            "keyTakeaway": "Stateful WebSocket servers, per-channel sequence numbers, KV store for the long tail."
+        },
+        {
+            "id": "system-design-exercises-q8",
+            "difficulty": "advanced",
+            "tags": ["video", "transcoding", "cdn", "exercise"],
+            "question": "Design a video platform like YouTube: upload, transcode, and stream.",
+            "answer": "Separate metadata from bytes from the first diagram: the upload goes to blob storage while the metadata request hits the database in parallel. Transcoding is the compute heart, modeled as a directed acyclic graph of tasks, encode each resolution, extract thumbnails, add watermarks, split audio and video, so independent stages run in parallel; outputs land in transcoded storage and then the CDN, with a completion queue notifying handlers to update metadata and tell the user. Streaming never touches your origin if the CDN can help it: adaptive-bitrate protocols such as HLS and DASH serve chunked encodings so the player switches quality with network conditions. Metadata shards by video ID, and bandwidth cost dominates the design, so edge caching of popular content is an economic feature, not an optimization.",
+            "keyTakeaway": "Upload to blob plus a DAG transcoding pipeline, stream adaptive bitrate from the CDN."
+        },
+        {
+            "id": "system-design-exercises-q9",
+            "difficulty": "advanced",
+            "tags": ["payment", "ledger", "idempotency", "reconciliation", "exercise"],
+            "question": "Design the payment backend for an e-commerce platform.",
+            "answer": "Never store card data; delegate capture to a payment service provider and stay out of PCI scope. The pay-in flow: a payment service accepts a payment event, persists it, and splits it into payment orders; an executor submits each order to the PSP; on success, the wallet service credits the merchant's balance and the ledger records the movement. Throughput is modest, single-digit to low tens of TPS per million daily transactions, so the design lives or dies on correctness: idempotency keys on every order, bounded retries against the PSP, debit and credit legs paired inside an internal wallet so a refund cannot credit one side without debiting the other, and an append-only ledger as the source of truth with balances derived from it. Close the loop with daily reconciliation against PSP statements, because distributed failures leave drift, and reconciliation is how you find it.",
+            "keyTakeaway": "Idempotent orders, append-only ledger, paired wallet legs, and a reconciliation loop."
+        },
+        {
+            "id": "system-design-exercises-q10",
+            "difficulty": "advanced",
+            "tags": ["stock-exchange", "sequencing", "event-sourcing", "matching", "exercise"],
+            "question": "Design a stock exchange: how do you match orders with strict ordering and low latency?",
+            "answer": "Gate orders through risk checks, exposure limits, funds withheld for pending orders, then through a sequencer that assigns one strict global order per symbol, because deterministic processing matters more than per-request parallelism. The matching engine per symbol maintains the order book with price-time priority, and the simplest correct design is single-threaded per symbol, buying determinism and cache locality, scaling throughput by adding symbols rather than threads. Treat everything as an event log: places, cancels, and matches are appended, and the books, balances, and market data are derived state that can be rebuilt by replay, which yields reproducibility and fast disaster recovery onto a hot standby fed the same sequence. Fan executions and L1 or L2 market data out to clients as broadcasts, and hold the availability bar, four nines, with millisecond-level 99th-percentile latency at open-time peaks.",
+            "keyTakeaway": "Sequence first, match single-threaded per symbol, event log as the source of truth."
+        }
+    ]
+}

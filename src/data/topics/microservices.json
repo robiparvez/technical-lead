@@ -1,0 +1,76 @@
+{
+    "slug": "microservices",
+    "title": "Microservices & Back-End Architecture",
+    "requirement": "Extensive back-end experience: Node.js, Python, Java, or C#, plus microservices architecture.",
+    "questions": [
+        {
+            "id": "microservices-q1",
+            "difficulty": "basic",
+            "tags": ["monolith", "fundamentals", "trade-offs"],
+            "question": "What is a microservices architecture and how does it differ from a monolith?",
+            "answer": "A microservices architecture splits an application into small, independently deployable services, each owning one business capability and its data. A monolith ships as a single unit, so any change redeploys everything. Microservices allow independent scaling and team autonomy, but add network latency, distributed data consistency problems, and operational overhead. Judge the split by business boundaries, not technical layers.",
+            "keyTakeaway": "Trade deployment simplicity for independent scaling and team autonomy.",
+            "diagram": "request-flow"
+        },
+        {
+            "id": "microservices-q2",
+            "difficulty": "basic",
+            "tags": ["trade-offs", "when-not-to-use", "fundamentals"],
+            "question": "When would you advise against microservices for a new product?",
+            "answer": "Advise against them when the domain is still unstable, the team is small, or traffic does not justify independent scaling. Early-stage products usually need fast iteration on an unclear domain, and service boundaries drawn too early become expensive to move. A well-modularized monolith with clear internal modules can split later using the strangler fig approach. The operational cost of microservices, monitoring, deployment, and network failure handling, only pays off with multiple teams or divergent scaling needs.",
+            "keyTakeaway": "Start with a modular monolith; split on stable boundaries, not on hype."
+        },
+        {
+            "id": "microservices-q3",
+            "difficulty": "intermediate",
+            "tags": ["communication", "grpc", "rest", "messaging"],
+            "question": "How do microservices communicate, and how do you choose between synchronous and asynchronous communication?",
+            "answer": "Synchronous calls, typically REST or gRPC, suit request-response flows where the caller needs an immediate answer, such as validating a payment. Asynchronous messaging through a broker suits state changes that other services react to, such as order-placed, because it decouples producers from consumers and absorbs traffic spikes. Prefer asynchronous for anything that can tolerate eventual consistency, since retries and backpressure are easier with a broker. Synchronous chains compound latency and outages, so keep them shallow.",
+            "keyTakeaway": "Request-response over RPC; state changes over the broker."
+        },
+        {
+            "id": "microservices-q4",
+            "difficulty": "intermediate",
+            "tags": ["data", "database-per-service", "consistency"],
+            "question": "What does database-per-service mean, and how do you keep data consistent without cross-service joins?",
+            "answer": "Each service owns its schema and is the only writer to it, so no other service queries another service's tables directly. Cross-service reads are served by APIs or by events that keep a local read model, a copy of the data another service needs. Cross-service writes give up immediate consistency: services publish events and accept eventual consistency, coordinated with sagas when a multi-step flow must complete together. Denormalize deliberately: the read model trades duplication for autonomy.",
+            "keyTakeaway": "Own your data, share state through events, accept eventual consistency."
+        },
+        {
+            "id": "microservices-q5",
+            "difficulty": "intermediate",
+            "tags": ["api-gateway", "edge", "routing"],
+            "question": "What role does an API gateway play in a microservices system?",
+            "answer": "The gateway is the single entry point that routes external requests to internal services, terminating TLS and authentication before traffic reaches them. It centralizes cross-cutting concerns: rate limiting, request logging, response shaping, and routing rules live in one place instead of every service. It also hides internal topology, so clients stay stable while services split or move. Avoid turning it into an integration layer; business logic stays in services.",
+            "keyTakeaway": "The gateway centralizes edge concerns; it must not accumulate business logic."
+        },
+        {
+            "id": "microservices-q6",
+            "difficulty": "intermediate",
+            "tags": ["resilience", "circuit-breaker", "retries", "typescript"],
+            "question": "How do you prevent one failing service from cascading failures through the system?",
+            "answer": "Combine timeouts, bounded retries with exponential backoff and jitter, and circuit breakers. A circuit breaker stops calling a failing dependency after a threshold, fails fast, and probes periodically before restoring traffic. Add fallbacks where a degraded answer is better than an error, and load-shed or queue at the edge when demand exceeds capacity. Test these paths with chaos exercises, because an untested timeout is a latent outage.",
+            "keyTakeaway": "Fail fast with timeouts, backoff, and breakers; degrade instead of cascading.",
+            "code": {
+                "language": "typescript",
+                "snippet": "async function callWithBreaker<T>(fn: () => Promise<T>, breaker: Breaker): Promise<T> {\n  if (breaker.isOpen()) throw new Error('circuit open: failing fast');\n  try {\n    const result = await withTimeout(fn(), 500);\n    breaker.recordSuccess();\n    return result;\n  } catch (err) {\n    breaker.recordFailure(); // opens after N failures within window\n    throw err;\n  }\n}"
+            }
+        },
+        {
+            "id": "microservices-q7",
+            "difficulty": "advanced",
+            "tags": ["migration", "strangler-fig", "monolith"],
+            "question": "How would you incrementally migrate a monolith to microservices without a big-bang rewrite?",
+            "answer": "Apply the strangler fig pattern: put a routing facade in front of the monolith, then move one bounded context at a time to a new service and reroute traffic. Start with a low-risk, high-value boundary that has few entanglements, and split shared data by giving the new service its own store fed from events or a sync job. Keep both paths working behind the facade, measure at each step, and roll back a route when errors rise. The monolith shrinks gradually until the remaining core is small enough to retire or keep.",
+            "keyTakeaway": "Strangle the monolith one boundary at a time behind a routing facade."
+        },
+        {
+            "id": "microservices-q8",
+            "difficulty": "advanced",
+            "tags": ["observability", "distributed-tracing", "debugging"],
+            "question": "A user request spans five services and fails intermittently. How do you find the cause?",
+            "answer": "Require distributed tracing: each entry request carries a trace id that flows through every hop via propagation headers, so one trace shows the full path with per-span latency. Correlate traces with structured logs and metrics tagged with the same ids, and alert on RED metrics, rate, errors, duration, per service. The trace pinpoints where time goes and which hop drops the request, replacing guesswork across teams. Without correlation ids, intermittent cross-service failures are nearly undebuggable, so tracing is a day-one requirement, not an afterthought.",
+            "keyTakeaway": "Trace ids across every hop turn a five-service mystery into one timeline."
+        }
+    ]
+}

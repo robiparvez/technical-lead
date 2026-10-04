@@ -1,0 +1,84 @@
+{
+  "slug": "cicd-release",
+  "title": "CI/CD & Release Planning",
+  "requirement": "Oversee release planning, integration, CI/CD across multi-environment infrastructure.",
+  "questions": [
+    {
+      "id": "cicd-release-q1",
+      "difficulty": "basic",
+      "tags": ["ci", "cd", "fundamentals"],
+      "question": "What do CI and CD actually mean, and what do people get wrong about them?",
+      "answer": "Continuous integration means every change merges to main frequently and is built and tested automatically, keeping the branch releasable. Continuous delivery means the pipeline produces a deployable artifact and can release it to production on demand with one approval; continuous deployment goes further and releases every green build without a human gate. The common failure is calling a build server CI while teams sit on long-lived branches and merge weekly with conflicts. If main cannot ship at any time, you have a build chain, not CI.",
+      "keyTakeaway": "CI keeps main releasable; CD makes releasing a non-event, not a quarterly project.",
+      "diagram": "ci-cd-pipeline"
+    },
+    {
+      "id": "cicd-release-q2",
+      "difficulty": "basic",
+      "tags": ["pipeline", "stages", "yaml"],
+      "question": "Walk through the stages of a healthy pipeline for a web service.",
+      "answer": "Fast feedback first: lint and unit tests in minutes on every commit, then an artifact build once, then integration and end-to-end tests against that immutable artifact. After tests, publish and deploy to a staging environment that mirrors production, run smoke tests, and gate production behind approval or automated promotion. Security scans, dependency audits, and image scans run in parallel rather than in series where they slow every commit. Each stage fails loudly with a clear log, and nothing manual happens between commit and staging.",
+      "keyTakeaway": "Fast gates first, one artifact promoted through environments, nothing manual before staging.",
+      "code": {
+        "language": "yaml",
+        "snippet": "stages:\n  - lint-unit      # minutes: typecheck, lint, unit tests on every commit\n  - build          # one immutable artifact, tagged with the commit sha\n  - integration    # contract + API tests against the artifact\n  - staging        # auto-deploy, smoke tests, security scans in parallel\n  - production     # manual approval or automated canary promotion"
+      }
+    },
+    {
+      "id": "cicd-release-q3",
+      "difficulty": "intermediate",
+      "tags": ["branching", "trunk-based", "git"],
+      "question": "Trunk-based development or feature branches with pull requests?",
+      "answer": "Trunk-based development merges small changes to main behind feature flags, integrating within a day or two, which keeps integration pain proportional to change size and pairs naturally with CI. Long-lived feature branches isolate work for weeks, and the merge becomes a mini-integration project with conflicts and semantic clashes no diff shows. Pull requests still exist in trunk-based teams, but they stay small and short-lived. The workable middle ground is short branches with a strict merge-within-days rule and stacked changes for bigger features; the failure mode to kill is the two-week branch.",
+      "keyTakeaway": "Integrate daily in small slices; hide unfinished work with flags, not branches."
+    },
+    {
+      "id": "cicd-release-q4",
+      "difficulty": "intermediate",
+      "tags": ["testing", "test-pyramid", "quality-gates"],
+      "question": "Which tests gate the pipeline, and which run elsewhere?",
+      "answer": "The pipeline gates on the fast and deterministic layers: unit tests, contract tests, and a thin set of critical-path end-to-end tests, because a flaky gate trains people to retry instead of read. The slow, broad UI suites and exploratory testing run nightly or on demand, reporting into the same dashboards without blocking merges. Every gate must have an owner and an on-call fix expectation, or flakiness accumulates. When a defect escapes, add the cheapest test that would have caught it at the earliest layer, not another end-to-end case.",
+      "keyTakeaway": "Gate on fast deterministic tests; run slow breadth out-of-band; fix flakiness like production debt."
+    },
+    {
+      "id": "cicd-release-q5",
+      "difficulty": "intermediate",
+      "tags": ["deployment", "blue-green", "canary"],
+      "question": "Compare rolling, blue-green, and canary deployments.",
+      "answer": "Rolling replaces instances gradually, needs no extra capacity beyond surge, and mixes versions briefly, which breaks schemas that change incompatibly. Blue-green stands up a full second environment and switches traffic at once, making rollback a switch flip, at double the infrastructure cost during release. Canary sends a small slice of real traffic to the new version, watches errors and latency, and auto-promotes or backs out, which is the safest way to catch rare production-only failures. Choose by blast radius and cost: internal tools roll, money paths canary.",
+      "keyTakeaway": "Rolling is cheap, blue-green flips back instantly, canary proves with real traffic first."
+    },
+    {
+      "id": "cicd-release-q6",
+      "difficulty": "advanced",
+      "tags": ["release-planning", "rollback", "multi-environment"],
+      "question": "How do you plan a release across dev, staging, and production when three teams contribute?",
+      "answer": "Freeze the release content by what has passed staging, not by calendar aspiration, and cut a release branch or tag from that proven commit. Sequence dependencies explicitly: database migrations ship backward-compatible first, services that tolerate both versions second, cleanup last, so a rollback never strands data. Each team owns its service's readiness checklist and sign-off, while one release owner tracks the train, the environment state, and the abort criteria. Communicate the window, the expected errors, and the rollback plan in writing before touching production.",
+      "keyTakeaway": "Release what staging proved; sequence migrations for rollback; one owner, written abort criteria."
+    },
+    {
+      "id": "cicd-release-q7",
+      "difficulty": "advanced",
+      "tags": ["security", "secrets", "supply-chain"],
+      "question": "How do you secure a CI/CD pipeline itself?",
+      "answer": "Treat the pipeline as production: least-privilege credentials per environment, injected at deploy time from a secret manager, never checked into the repo or echoed into logs. Pin dependencies and base images by digest, verify signatures, and scan artifacts so a compromised upstream package cannot walk into production. Restrict who can change pipeline definitions and require review on those files exactly like application code, because a pipeline edit is a key to production. Audit who deployed what, when, and from which commit, and alert on out-of-band deployments.",
+      "keyTakeaway": "Least-privilege deploy credentials, pinned and scanned supply chain, reviewed pipeline changes."
+    },
+    {
+      "id": "cicd-release-q8",
+      "difficulty": "advanced",
+      "tags": ["metrics", "dora", "process"],
+      "question": "Which delivery metrics do you watch to know the pipeline is healthy?",
+      "answer": "Lead time from commit to production shows flow, deployment frequency shows batch size, change failure rate shows quality, and time to restore shows resilience; together they are the DORA set. Rising lead time with falling failure rate means fear is accumulating, and frequent failed deploys mean the gates are weak or the tests lie. Pair them with pipeline-specific signals: stage duration, flake rate, queue time, and rollback rate. Use trends as conversation starters with the team, never as individual performance scores, or the numbers get gamed.",
+      "keyTakeaway": "Watch lead time, frequency, failure rate, and restore time as trends, never as blame."
+    },
+    {
+      "id": "cicd-release-q9",
+      "difficulty": "advanced",
+      "tags": ["observability", "time-series", "alerting"],
+      "question": "How would you design the metrics monitoring and alerting pipeline for a large infrastructure?",
+      "answer": "Five stages: agents collect metrics from sources, a transport layer ships them, a time-series store persists them, an alerting layer evaluates rules over the stream, and dashboards visualize. The data model is a time series identified by metric name plus labels, each point a timestamp and a value, and the access pattern is write-heavy with bursty reads during incidents, which is why general-purpose databases fit poorly and time-series stores win. Roll data up to survive retention: raw resolution for days, one-minute for a month, one-hour for a year, trading resolution for storage. Alert rules run against the stream or rollups and route through channels like email, phone, and pager services, with grouping and suppression so alert fatigue does not bury a real incident. The monitoring stack must be more available than what it watches, so run it out-of-band with its own failure alerts, or the outage takes its own telemetry with it.",
+      "keyTakeaway": "Collect, ship, store as time series with rollups, alert with grouping, out-of-band from production."
+    }
+  ]
+}

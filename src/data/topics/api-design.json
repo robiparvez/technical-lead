@@ -1,0 +1,84 @@
+{
+    "slug": "api-design",
+    "title": "API Design: REST & GraphQL",
+    "requirement": "Experience designing, building, maintaining RESTful and GraphQL APIs.",
+    "questions": [
+        {
+            "id": "api-design-q1",
+            "difficulty": "basic",
+            "tags": ["rest", "fundamentals", "http"],
+            "question": "What are the core constraints that make an API RESTful?",
+            "answer": "REST is an architectural style built on uniform resource identification, standard HTTP verbs with their semantics, and representations, usually JSON, transferred between client and server. It is stateless: every request carries all context the server needs, which makes scaling horizontal. Cacheability through HTTP cache headers, a layered system, and, in the strict form, hypermedia controls complete the constraints. In interviews, emphasize resource modeling and correct verb and status-code usage over purism.",
+            "keyTakeaway": "Model resources, not actions; let HTTP verbs and status codes carry meaning."
+        },
+        {
+            "id": "api-design-q2",
+            "difficulty": "basic",
+            "tags": ["graphql", "fundamentals", "over-fetching"],
+            "question": "What problem does GraphQL solve compared with REST, and what does the diagram show?",
+            "answer": "REST endpoints return fixed shapes, so clients over-fetch fields they do not need or under-fetch and must call several endpoints to build one view. GraphQL exposes a single endpoint where the client declares exactly the fields it wants and gets exactly those back in one round trip, which suits mobile clients and nested data graphs. The trade-off is that flexibility moves complexity server-side: caching, cost control, and N+1 resolution become your problem. Choose by client diversity and data shape, not by fashion.",
+            "keyTakeaway": "GraphQL trades server complexity for exactly-shaped, single-request responses.",
+            "diagram": "rest-vs-graphql"
+        },
+        {
+            "id": "api-design-q3",
+            "difficulty": "intermediate",
+            "tags": ["trade-offs", "caching", "decision"],
+            "question": "How do you decide between REST and GraphQL for a new public API?",
+            "answer": "Default to REST for public APIs: it leverages HTTP caching, CDN behavior, well-understood tooling, and simple per-endpoint rate limiting, and consumers already know it. Choose GraphQL when clients have highly variable data needs, deep nested graphs, or when the API aggregates many backend services behind one schema, typical for internal product APIs feeding mobile and web apps. Weigh operational cost: GraphQL needs persisted queries, depth limiting, and dataloader-style batching to stay safe and fast. A mixed answer, REST for resources, GraphQL for the product gateway, is often the strongest.",
+            "keyTakeaway": "REST for public cacheable resources; GraphQL for diverse clients over a nested graph."
+        },
+        {
+            "id": "api-design-q4",
+            "difficulty": "intermediate",
+            "tags": ["versioning", "evolution", "compatibility"],
+            "question": "How do you evolve an API without breaking existing clients?",
+            "answer": "Make additive changes the default: new optional fields, new endpoints, and new enum values, when clients tolerate them, are non-breaking. Design clients to ignore unknown fields from day one, which makes most additions free. When a genuinely breaking change is unavoidable, version the API at the URL or media-type level, publish a deprecation timeline, and monitor usage of old versions before retiring them. Contract tests and a consumer-driven test suite catch accidental breaks in CI.",
+            "keyTakeaway": "Evolve additively; version only for real breaks, with a published sunset."
+        },
+        {
+            "id": "api-design-q5",
+            "difficulty": "intermediate",
+            "tags": ["graphql", "n+1", "dataloader", "typescript"],
+            "question": "What is the N+1 problem in GraphQL and how do you fix it?",
+            "answer": "A resolver that fetches per field issues one query per related object, so a list of 50 orders with an author field fires 51 database or service calls. Fix it with batching: collect all keys for a field within one request, then load them in a single query, typically with a DataLoader that coalesces loads per tick and caches per request. Move authorization and filtering into the batched query, not the individual resolver. Measure with tracing to confirm the call count actually dropped from N+1 to a constant.",
+            "keyTakeaway": "Batch field loads per request with DataLoader; N+1 calls become one.",
+            "code": {
+                "language": "typescript",
+                "snippet": "const userLoader = new DataLoader(async (ids: readonly string[]) => {\n  const users = await db.users.whereIn('id', ids as string[]); // 1 query\n  return ids.map((id) => users.find((u) => u.id === id) ?? null);\n});\n// resolver: (order) => userLoader.load(order.authorId) — coalesced per request"
+            }
+        },
+        {
+            "id": "api-design-q6",
+            "difficulty": "intermediate",
+            "tags": ["http", "idempotency", "safety"],
+            "question": "Which HTTP methods are safe and idempotent, and why does it matter for clients?",
+            "answer": "GET and HEAD are safe: they change no state, so caches and prefetchers can repeat them freely. PUT and DELETE are idempotent but not safe: repeating them leaves the same result, so a client can safely retry after a timeout. POST is neither, so retries can double-charge or double-create unless the server deduplicates with an idempotency key. Getting this right lets clients retry on flaky networks without corrupting data.",
+            "keyTakeaway": "Safe methods never change state; idempotent methods are retry-safe; POST needs a key."
+        },
+        {
+            "id": "api-design-q7",
+            "difficulty": "advanced",
+            "tags": ["pagination", "cursor", "scale"],
+            "question": "How do you design pagination for a large, changing collection?",
+            "answer": "Use cursor pagination: return an opaque cursor encoding the sort position of the last item, and the next page starts after it. Offset pagination breaks under writes, offset 1000 skips or repeats rows when items are inserted or deleted, and degrades because the database still scans all skipped rows. Encode the sort key plus id in the cursor so the ordering stays stable and unique, and expose total counts only when required, since counting is expensive. Cursors also work with keyset indexes, keeping page latency flat.",
+            "keyTakeaway": "Cursor pagination stays correct under writes and fast at depth; offsets do not."
+        },
+        {
+            "id": "api-design-q8",
+            "difficulty": "advanced",
+            "tags": ["security", "rate-limiting", "graphql", "cost"],
+            "question": "How do you protect an API, especially GraphQL, from abusive or expensive queries?",
+            "answer": "Authenticate at the edge and authorize per resource, never just at the endpoint, and rate-limit per identity, not just per IP. GraphQL needs query cost control: depth limiting, complexity scoring with per-client budgets, persisted queries so clients cannot send arbitrary text, and timeouts on resolver execution. Disable introspection in production for public APIs so the schema is not a free reconnaissance map. Log rejected queries with their complexity scores to tune budgets over time.",
+            "keyTakeaway": "Limit depth, cost, and introspection; authorize per resource, per identity."
+        },
+        {
+            "id": "api-design-q9",
+            "difficulty": "intermediate",
+            "tags": ["rate-limiting", "algorithms", "gateway"],
+            "question": "How do you design a rate limiter, and which algorithm fits which case?",
+            "answer": "Enforce server-side, either in middleware or at the API gateway, because client-side limits are trivially bypassed, and return 429 with Retry-After so well-behaved clients back off. Token bucket, a fixed refill rate into a bounded capacity, is the default: memory-cheap, and it tolerates bursts up to the bucket size. Leaky bucket drains at a constant outflow, which protects a downstream that needs an even rate, but bursts queue and wait. Sliding window counters avoid the fixed-window edge problem, where a burst straddling a boundary doubles the effective limit, by blending two adjacent windows cheaply. In a cluster, keep counters in a shared in-memory store and update them atomically, one round trip or a stored script, so concurrent nodes cannot over-admit, and log rejections per client to tune the limits.",
+            "keyTakeaway": "Token bucket by default, sliding window against edge bursts, atomic shared counters."
+        }
+    ]
+}

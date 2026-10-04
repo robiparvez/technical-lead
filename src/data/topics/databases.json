@@ -1,0 +1,96 @@
+{
+    "slug": "databases",
+    "title": "Databases: SQL & NoSQL",
+    "requirement": "Strong knowledge of relational and non-relational databases: schema design, query optimization, data persistence.",
+    "questions": [
+        {
+            "id": "databases-q1",
+            "difficulty": "basic",
+            "tags": ["sql", "nosql", "decision", "fundamentals"],
+            "question": "How do you decide between a relational and a non-relational database for a service?",
+            "answer": "Start from access patterns and consistency needs, not from the technology. Relational databases enforce schema, constraints, and ACID transactions, so they fit complex relationships, ad-hoc queries, and financial correctness. Document, key-value, or wide-column stores fit huge write volumes, flexible or aggregated shapes, and horizontal scale, usually with eventual consistency. Match the model to queries: if the dominant shape is joins across normalized entities, stay relational; if it is key lookups or append-heavy feeds, NoSQL wins.",
+            "keyTakeaway": "Let access patterns and consistency needs pick the engine, not the trend."
+        },
+        {
+            "id": "databases-q2",
+            "difficulty": "basic",
+            "tags": ["schema-design", "normalization"],
+            "question": "When do you normalize and when do you denormalize a schema?",
+            "answer": "Normalize to remove redundancy and protect integrity: one fact stored once, updated once, which keeps writes consistent and suits operational systems. Denormalize deliberately for reads: duplicate or precompute data to match a hot query and eliminate joins, which is standard in analytics, read-heavy paths, and most NoSQL modeling. Every denormalized copy needs a refresh strategy, event-driven updates, scheduled sync, or acceptable staleness. Decide per query, not per database.",
+            "keyTakeaway": "Normalize for write integrity; denormalize per hot read, with a refresh plan."
+        },
+        {
+            "id": "databases-q3",
+            "difficulty": "intermediate",
+            "tags": ["indexing", "b-tree", "performance"],
+            "question": "How does a B-tree index speed up queries, and what does it cost?",
+            "answer": "A B-tree keeps indexed keys sorted in a balanced tree, so a lookup descends a few pages instead of scanning the whole table, turning O(n) reads into O(log n), and range queries walk adjacent leaves. The cost is on every write: each insert, update, or delete must maintain every index on the table, and each index consumes storage and cache. Index the columns your queries filter, join, and sort on, and drop indexes that no query uses. A diagram of the tree makes the descent obvious.",
+            "keyTakeaway": "Indexes buy log-time lookups and range scans; they tax every write.",
+            "diagram": "b-tree-index"
+        },
+        {
+            "id": "databases-q4",
+            "difficulty": "intermediate",
+            "tags": ["indexing", "compound-index", "sql"],
+            "question": "Why does column order matter in a compound index?",
+            "answer": "A compound index on (a, b) sorts by a first, then b within equal a, so it serves queries filtering on a, or on a and b, but not queries filtering on b alone, which cannot seek. Follow the equality-first rule: columns compared with equality lead, then the first range column, since nothing after a range can seek. The order also decides which sorts and covered queries the index supports. Verify with the query plan, not intuition.",
+            "keyTakeaway": "Equality columns first, range last; the plan confirms the index is used.",
+            "code": {
+                "language": "sql",
+                "snippet": "-- serves: WHERE tenant_id = ? AND created_at > ? ORDER BY created_at\nCREATE INDEX idx_orders_tenant_created ON orders (tenant_id, created_at);\nEXPLAIN ANALYZE SELECT * FROM orders\nWHERE tenant_id = 42 AND created_at > now() - interval '7 days';\n-- want: Index Scan using idx_orders_tenant_created, not Seq Scan on orders"
+            }
+        },
+        {
+            "id": "databases-q5",
+            "difficulty": "intermediate",
+            "tags": ["query-optimization", "performance", "process"],
+            "question": "A query got slow in production. Walk through your optimization process.",
+            "answer": "Start with the execution plan and measure where time goes: scans, joins, sorts, or waits. Check the obvious first, missing or unused index, a function wrapped around an indexed column that defeats it, stale statistics, or a row explosion from a bad join. Fix the shape before tuning knobs: select only needed columns, paginate, push filters down, and split one monster query into staged steps when plans misbehave. Re-measure after each change, and keep a before/after so the win is provable, not felt.",
+            "keyTakeaway": "Read the plan, fix the shape, add indexes deliberately, re-measure."
+        },
+        {
+            "id": "databases-q6",
+            "difficulty": "intermediate",
+            "tags": ["transactions", "acid", "isolation"],
+            "question": "Explain ACID and what isolation levels trade away.",
+            "answer": "Atomicity makes a transaction all-or-nothing, consistency keeps constraints valid, isolation hides concurrent transactions from each other, and durability survives a crash after commit. Full isolation, serializable, behaves correctly but costs throughput through locking or conflicts. Weaker levels buy concurrency and allow anomalies: read committed permits non-repeatable reads, snapshot or repeatable read removes those but allows write skew, and serializable removes all anomalies. Pick the weakest level whose anomalies your logic tolerates, and handle serialization failures with retries.",
+            "keyTakeaway": "Isolation level is a throughput-versus-anomalies dial; retry on conflict."
+        },
+        {
+            "id": "databases-q7",
+            "difficulty": "advanced",
+            "tags": ["sharding", "replication", "scale"],
+            "question": "How do replication and sharding differ, and when do you need each?",
+            "answer": "Replication copies the same data across nodes: it improves read throughput and availability, but every replica holds the full dataset, so write volume and storage still scale on one primary, or a small quorum. Sharding partitions data by a key, such as user id or region, so each node holds a slice, scaling writes and storage horizontally at the cost of cross-shard queries, rebalancing, and resharding pain. Replicate first, it is operationally simpler, and shard when data or write volume outgrows one machine. Choose the shard key for even distribution and query locality, because changing it later is a migration.",
+            "keyTakeaway": "Replication scales reads; sharding scales writes and storage at high operational cost."
+        },
+        {
+            "id": "databases-q8",
+            "difficulty": "advanced",
+            "tags": ["caching", "consistency", "invalidation"],
+            "question": "You add a cache in front of the database. How do you keep it from serving stale data?",
+            "answer": "Decide per data type how stale is acceptable, then pick the strategy: cache-aside with a TTL is the default, and explicit invalidation on write narrows the staleness window for hot entities. Invalidate or update the cache in the same flow as the write, and accept a small race window rather than distributed locks, which cost more than they save. Guard the database behind the cache with request coalescing so one expired key triggers one reload, not a stampede. Monitor staleness and hit rate, because an unmeasured cache is a correctness risk.",
+            "keyTakeaway": "TTL for safety, write-through invalidation for freshness, coalescing against stampedes."
+        },
+        {
+            "id": "databases-q9",
+            "difficulty": "intermediate",
+            "tags": ["concurrency", "locking", "idempotency"],
+            "question": "Two users reserve the last available room at the same time. How do you prevent a double booking?",
+            "answer": "A check-then-update sequence is a race: under weak isolation both transactions read the same inventory, both pass the check, and both commit. For the same user double-clicking, make the request idempotent, a client-generated reservation id with a unique constraint, so the second insert fails instead of duplicating. For genuinely concurrent users, optimistic locking adds a version column and rejects updates built on stale data with an application retry, which scales well when contention is low. When contention on a hot row is heavy, pessimistic locking with SELECT FOR UPDATE serializes access at the cost of blocking and deadlock risk. The cheapest correct option is often a conditional update that re-checks the invariant inside the statement itself, so the database, not the application, enforces the limit.",
+            "keyTakeaway": "Push the invariant into the update; idempotency keys stop double clicks.",
+            "code": {
+                "language": "sql",
+                "snippet": "-- atomic: updates 0 rows when the cap is exceeded, no read-then-write race\nUPDATE room_type_inventory\nSET total_reserved = total_reserved + $rooms\nWHERE hotel_id = $hotel AND room_type_id = $type\n  AND date BETWEEN $start AND $end\n  AND total_reserved + $rooms <= total_inventory * 1.1; -- 10% overbooking allowed\n-- rows_updated < nights requested means the reservation must be rejected"
+            }
+        },
+        {
+            "id": "databases-q10",
+            "difficulty": "advanced",
+            "tags": ["key-value", "quorum", "replication", "cap"],
+            "question": "How would you design a distributed key-value store that stays available and scales horizontally?",
+            "answer": "Partition with consistent hashing and virtual nodes so adding a node moves only nearby keys, and give nodes capacity-proportional virtual node counts for heterogeneous hardware. Replicate each key to N nodes walking the ring, spread across data centers, and tune consistency with quorums: a write acknowledges from W replicas, a read waits for R, and W plus R greater than N guarantees overlap, with N=3, W=R=2 the common middle. Concurrent updates to different replicas create sibling versions; versioning with vector clocks detects which versions conflict, and the application or client reconciles the siblings. Detect failure through gossip, heartbeats exchanged between random nodes, and ride out temporary failures with a sloppy quorum and hinted handoff that forwards writes to healthy nodes and backfills later. The result is an AP store with tunable consistency, the Dynamo model.",
+            "keyTakeaway": "Consistent-hash partitions, N replicas, quorum W+R>N, vector clocks for conflicts."
+        }
+    ]
+}

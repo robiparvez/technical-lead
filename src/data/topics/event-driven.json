@@ -1,0 +1,92 @@
+{
+    "slug": "event-driven",
+    "title": "Event-Driven Architecture & Messaging",
+    "requirement": "Serverless architecture, event-driven architecture, messaging system integrations.",
+    "questions": [
+        {
+            "id": "event-driven-q1",
+            "difficulty": "basic",
+            "tags": ["queue", "pub-sub", "fundamentals"],
+            "question": "What is the difference between a message queue and publish-subscribe?",
+            "answer": "A queue delivers each message to exactly one consumer, which suits work distribution: many workers pull tasks from one pool and each item is handled once. Publish-subscribe delivers each message to every subscriber of the topic, which suits notification: one order-placed event reaches inventory, email, and analytics independently. Modern log brokers such as Kafka blur the line: a topic with consumer groups gives per-group pub-sub and per-consumer queue semantics. Choose by delivery intent, one worker or all interested parties.",
+            "keyTakeaway": "Queue means one consumer wins; pub-sub means every subscriber sees it."
+        },
+        {
+            "id": "event-driven-q2",
+            "difficulty": "basic",
+            "tags": ["event", "command", "semantics"],
+            "question": "What distinguishes an event from a command message?",
+            "answer": "An event states a fact that already happened, past tense and non-negotiable: order-placed, user-signed-up, and publishers do not care who listens. A command is an instruction to do something in the future, charged to a specific handler: reserve-inventory, and it expects an outcome and can be refused. Events make systems loosely coupled because adding a subscriber needs no producer change, while commands couple producer to consumer by intent. Publishing commands everywhere creates hidden workflows nobody can trace, so reserve commands for directed flows.",
+            "keyTakeaway": "Events are facts anyone may consume; commands are orders with an owner."
+        },
+        {
+            "id": "event-driven-q3",
+            "difficulty": "intermediate",
+            "tags": ["delivery-semantics", "idempotency", "kafka", "typescript"],
+            "question": "Compare at-most-once, at-least-once, and exactly-once delivery, and explain how you make retries safe.",
+            "answer": "At-most-once sends without retry, fast but lossy; at-least-once retries until acknowledged, safe from loss but duplicates deliveries; exactly-once is the claimed ideal, but across arbitrary systems it is really at-least-once plus deduplication at the consumer. Design consumers to be idempotent, so a duplicate delivery has no extra effect, using a processed-message id store or an upsert keyed by a natural key. This makes the whole pipeline effectively exactly-once without trusting any single broker promise.",
+            "keyTakeaway": "Assume duplicates: build idempotent consumers instead of trusting exactly-once.",
+            "code": {
+                "language": "typescript",
+                "snippet": "async function handleMessage(msg: Message) {\n  const seen = await db.processedMessages.has(msg.id); // dedup store\n  if (seen) return; // duplicate delivery, already applied\n  await db.transaction(async (tx) => {\n    await applyEffect(tx, msg);       // business change\n    await tx.processedMessages.add(msg.id); // same tx = atomic with effect\n  });\n}"
+            }
+        },
+        {
+            "id": "event-driven-q4",
+            "difficulty": "intermediate",
+            "tags": ["kafka", "partitions", "ordering", "consumer-groups"],
+            "question": "How do Kafka partitions and consumer groups determine throughput and ordering?",
+            "answer": "A topic splits into partitions, which are independent ordered logs; producers spread messages across partitions by key, so all messages with the same key land in one partition and keep order. A consumer group divides partitions among its members: adding consumers raises parallelism up to the partition count, after which extra members stay idle. Ordering is therefore per key, not per topic, so choose the key to match what must stay ordered, such as order id. Rebalancing, when members join or leave, pauses consumption, so keep handlers fast and stateless.",
+            "keyTakeaway": "Partition by ordering key; scale consumers to the partition count."
+        },
+        {
+            "id": "event-driven-q5",
+            "difficulty": "intermediate",
+            "tags": ["outbox-pattern", "reliability", "dual-write"],
+            "question": "Why is publishing to a broker inside a service's own transaction not enough, and what is the outbox pattern?",
+            "answer": "Writing to the database and publishing to the broker are two systems, so a dual write can commit the row and lose the publish, or publish an event for a rolled-back transaction; there is no atomic commit across both. The outbox pattern fixes it: the service writes its state change and the event into the same database transaction, then a relay reads the outbox table and publishes to the broker, marking rows sent. If the relay crashes, unsent rows remain and are retried, so nothing is silently lost. Consumers still deduplicate, because the relay can publish twice before marking.",
+            "keyTakeaway": "Commit event and state together in the database; a relay publishes the outbox."
+        },
+        {
+            "id": "event-driven-q6",
+            "difficulty": "advanced",
+            "tags": ["saga", "distributed-transaction", "consistency"],
+            "question": "How do you handle a transaction that spans three services?",
+            "answer": "Avoid two-phase commit where possible: it locks participants and couples availability. Use the saga pattern: each service runs a local transaction and publishes an event, and the next service continues the flow; a failure triggers compensating actions in earlier services, such as releasing the reserved stock. Choose orchestration when the flow needs central visibility and control, and choreography when services should stay loosely coupled and the flow is simple. Make every step idempotent so retries after partial failure are safe.",
+            "keyTakeaway": "Sagas with compensating actions replace distributed ACID.",
+            "diagram": "saga-flow"
+        },
+        {
+            "id": "event-driven-q7",
+            "difficulty": "advanced",
+            "tags": ["schema-evolution", "compatibility", "governance"],
+            "question": "How do you evolve an event schema without breaking consumers?",
+            "answer": "Treat event schemas as contracts and manage them in a schema registry with enforced compatibility rules. Make changes additive and backward compatible: new optional fields with defaults, never repurpose or narrow an existing field, and remove fields in two steps, deprecate then drop after consumers migrate. Check compatibility in CI so an incompatible producer change fails the build rather than production. For hard breaks, publish a new event version and run both during migration.",
+            "keyTakeaway": "Additive changes, registry-enforced compatibility, and CI checks before consumers break."
+        },
+        {
+            "id": "event-driven-q8",
+            "difficulty": "advanced",
+            "tags": ["backpressure", "dlq", "failure-handling"],
+            "question": "A consumer falls behind and messages start failing. How do you keep the system healthy?",
+            "answer": "Detect lag with consumer-group metrics and alert before it matters, since growing lag means capacity or failure trouble, not silence. Apply backpressure: pause pulling, shed or defer non-critical work, and scale consumers within the partition limit. Isolate poison messages into a dead-letter queue after a bounded retry count with exponential backoff, so one bad record cannot block the stream, and make the DLQ visible with tooling to fix and replay. Track DLQ depth as an error budget, because an unwatched DLQ is silent data loss.",
+            "keyTakeaway": "Watch lag, retry with backoff, dead-letter poison, and replay deliberately."
+        },
+        {
+            "id": "event-driven-q9",
+            "difficulty": "intermediate",
+            "tags": ["notification", "fan-out", "reliability"],
+            "question": "Design a notification system that sends millions of push, SMS, and email notifications per day.",
+            "answer": "Trigger services, billing, shipping, cron jobs, call an API on notification servers, which validate the request, load templates, and check the user's per-channel opt-out settings and rate limits. Accepted events are persisted to a notification log and published to per-channel message queues, which buffer spikes and let workers scale independently per channel. Workers pull events, render templates, and deliver through each channel's third party: platform push services for mobile, SMS and email providers. Reliability comes from the write-ahead log plus retries on delivery failure, deduplication by event id so a retried trigger does not double-send, and queue-depth monitoring to scale workers before backlogs grow. Track delivery, open, and click events so notification quality is measurable, not assumed.",
+            "keyTakeaway": "Log, queue per channel, deliver via providers; dedupe by event id and watch queue depth."
+        },
+        {
+            "id": "event-driven-q10",
+            "difficulty": "advanced",
+            "tags": ["log", "offsets", "brokers", "retention"],
+            "question": "What are the internals of a distributed message queue or log such as Kafka?",
+            "answer": "A topic is split into partitions, each an append-only log on a broker, and the partition key decides placement so all events for one key stay ordered in one partition. Every message gets an offset, its position in the log, and consumers, grouped in consumer groups, track their own offsets, which is what enables independent consumers, replay from any point, and competing workers within a group. Partitions are replicated across brokers with one leader handling writes, so a broker loss fails over without data loss, and retention is time- or size-based rather than delete-on-read, which is what separates a durable log from a classic queue. Sequential disk appends and batched transfers give throughput that random-access storage cannot. Design consequence: more partitions raise parallelism but also rebalance cost and end-to-end latency, so partition count is a capacity decision, not a knob.",
+            "keyTakeaway": "Partitioned append-only logs with per-group offsets: ordering per key, replay per group."
+        }
+    ]
+}
