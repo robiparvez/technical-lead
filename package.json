@@ -13,7 +13,8 @@
     "next": "16.3.8",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "remotion": "^4.0.532"
+    "remotion": "^4.0.532",
+    "sugar-high": "^2.5.1"
   },
   "devDependencies": {
     "@types/node": "^20",

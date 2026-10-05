@@ -30,24 +30,30 @@ Remotion license: free for individuals, including personal use
 - `src/components/QuestionRail.tsx` — difficulty rail with stations and progress glyphs
 - `src/components/Diagram.tsx` — diagram host: static SVG inline, animated via @remotion/player
 - `src/components/diagrams/` — Remotion compositions and static SVG diagrams
-- `src/styles/tokens.css` — every DESIGN.md token as a CSS custom property
-- `src/styles/reset.css` — the only file with background declarations (transparent/none only)
+- `src/styles/tokens.css` — every design token as a CSS custom property, with light and dark values
+- `src/styles/reset.css` — the only file with background declarations (the themed page canvas; everything else transparent/none)
+- `src/components/ThemeSwitch.tsx` — System / Light / Dark choice, saved in localStorage
 
 ## Token-to-component mapping
 
+Every color token is `light-dark(light, dark)`. The OS preference picks the branch unless the reader chooses Light or Dark.
+
 | Token | Used by |
 | --- | --- |
-| `color.text.primary` | headings, question text, borders on hover/active, answer body, static SVG labels |
-| `color.text.secondary` | eyebrows, metadata, nav idle text, input borders, badges, SVG idle strokes |
-| `color.accent` | difficulty rail line, focus rings, known-check glyph, search match underline, key-takeaway rule, active diagram path, selected-nav border |
-| `color.border.strong` | card outlines, code block border, frame edges (decorative) |
-| `space.1`-`space.8` | all paddings/gaps; section rhythm composes `calc(var(--space-8) * 2)` |
-| `radius.md` | outlined cards, player frames |
-| `radius.sm` / `radius.xs` | search input / buttons, badges |
-| `shadow.1` | question cards, index cards, result cards |
-| `border.width.1` / `border.width.2` | default borders / active + focus + rail weights |
-| `font.size.xs`-`font.size.4xl` | labels 11-13px, body 14px, titles 16px |
-| `font.lineHeight.reading` | phone answer body (16px/26px) |
+| `--color-canvas` | page background (`html`, in `reset.css`) |
+| `--color-text-primary` | headings, question text, answer body, borders on hover/active, static SVG labels |
+| `--color-text-secondary` | eyebrows, metadata, nav idle text, code comments and punctuation |
+| `--color-accent` | difficulty rail line, focus rings, known-check glyph, search match underline, key-takeaway rule, active diagram path, selected-nav and pressed-theme border |
+| `--color-border-control` | control boundaries at 3:1: buttons, search input, quiz options and radios, code block rule, progress rings |
+| `--color-border-subtle` | card outlines, hairlines, frame edges (decorative only) |
+| `--color-code-*` | syntax tokens: keyword, string, entity, type, property |
+| `--space-3xs`-`--space-3xl` | all paddings and gaps (4px to 80px) |
+| `--radius-md` | outlined cards, player frames |
+| `--radius-sm` / `--radius-xs` | search input and buttons / badges |
+| `--border-width-1` / `--border-width-2` | default borders / active, focus, and rail weights |
+| `--text-xs`-`--text-xl` | labels 13px, controls and code 15px, body 17px, questions 19px, titles 24-34px |
+| `--leading-*` | label, UI, body (1.65), code, and title line heights |
+| `--measure` | answer line length (about 75 characters) |
 | Geist / Geist Mono | `next/font` variables `--font-geist-sans`, `--font-geist-mono` |
 
 ## DESIGN.md amendments
@@ -60,6 +66,7 @@ Remotion license: free for individuals, including personal use
 6. Added `font.lineHeight.reading = 26px` for 16px phone answer body (derived from 22.75/14).
 7. Added Geist Mono (`font.family.mono`) via `next/font`.
 8. Space scale gap: `space.8` (18px) is too tight for section separation; sections compose `calc(var(--space-8) * 2)` = 36px instead of a new token, as instructed.
+9. Reading-comfort redesign (supersedes parts of 1, 2, 6, and 8; see PROMPT.md): low-glare light and dark themes that follow `prefers-color-scheme` or a saved choice; a themed page canvas (never pure white or black) is the only fill; DESIGN.md's hex palette, px type scale, and space scale replaced by OKLCH colors, a rem type scale with a 17px body, and a 4px-to-80px space scale; muted syntax colors for TypeScript snippets via `sugar-high`; `shadow.1` removed (unused).
 
 ## Component behavior
 
@@ -77,10 +84,12 @@ Every interactive component: keyboard, pointer, touch. State rules live in `src/
 | Play / Pause / Restart | Tab + Enter/Space; label announces the action | Tap; 44 px target |
 | Diagram player | Group with `aria-label`; no autoplay; controls are regular buttons | Never autoplays, including under `prefers-reduced-motion` |
 | Index / result / reference links | Tab reachable; focus-visible outline; Enter navigates | Tap navigates |
+| Theme switch | Tab + Enter/Space picks System, Light, or Dark; `aria-pressed` marks the choice | Tap picks; in the sidebar and the phone menu; 44 px targets |
 
 ## Verification
 
 - `npm run build` passes; 15 topic pages prerendered (SSG), references static.
 - Greps over `src/` (including SVG) excluding `tokens.css`/`reset.css`: zero gradient values, zero background declarations, zero raw hex.
-- `reset.css` holds only `transparent`/`none` backgrounds.
-- Computed `background-color` on body, buttons, inputs, cards, code blocks, badges, mark, and `__remotion-player` (Player root): all `rgba(0, 0, 0, 0)`.
+- `reset.css` holds the `html` canvas background and otherwise only `transparent`/`none` backgrounds.
+- Computed `background-color` on body, buttons, inputs, cards, code blocks, badges, mark, and `__remotion-player` (Player root): all `rgba(0, 0, 0, 0)`; only `html` carries the canvas color.
+- Rendered contrast on the canvas (light / dark): primary text 12.73 / 11.95, secondary text 6.36 / 6.59, accent 4.56 / 6.58, control borders 3.19 / 3.29, syntax tokens 5.71-7.00 / 7.97-8.70.

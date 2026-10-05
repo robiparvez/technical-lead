@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { highlight } from 'sugar-high';
 import type { Question } from '@/data/types';
 import { useKnownQuestions } from '@/lib/progress';
 import Diagram from '@/components/Diagram';
@@ -88,9 +89,7 @@ function QuestionCard({
                     {question.code && (
                         <>
                             <p className='code-lang label'>{question.code.language} snippet</p>
-                            <pre className='code'>
-                                <code>{question.code.snippet}</code>
-                            </pre>
+                            <CodeSnippet {...question.code} />
                         </>
                     )}
                     {question.diagram && <Diagram id={question.diagram} />}
@@ -128,6 +127,25 @@ function RailNode({ known }: { known: boolean }) {
             <circle className='ring' cx='7' cy='7' r='6' fill='none' strokeWidth='2' />
             {known && <ResultMark result='correct' />}
         </svg>
+    );
+}
+
+// sugar-high tokenizes JavaScript-family syntax only; SQL and YAML stay plain
+const HIGHLIGHTED = new Set(['typescript', 'javascript']);
+
+function CodeSnippet({ language, snippet }: { language: string; snippet: string }) {
+    if (!HIGHLIGHTED.has(language)) {
+        return (
+            <pre className='code'>
+                <code>{snippet}</code>
+            </pre>
+        );
+    }
+    // highlight() escapes the source, so the markup carries no raw snippet HTML
+    return (
+        <pre className='code'>
+            <code dangerouslySetInnerHTML={{ __html: highlight(snippet) }} />
+        </pre>
     );
 }
 
