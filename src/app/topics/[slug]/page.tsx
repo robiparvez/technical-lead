@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import QuestionRail from '@/components/QuestionRail';
 import { getTopic, getTopics } from '@/data';
@@ -30,9 +31,12 @@ export default async function TopicPage({ params }: { params: Promise<{ slug: st
                     <span>{topic.requirement}</span>
                 </p>
                 <h1 className='topic-title'>{topic.title}</h1>
-                <p className='topic-meta label'>
-                    {topic.questions.length} questions, basic to advanced
-                </p>
+                <div className='topic-meta topic-meta-row'>
+                    <p className='label'>{topic.questions.length} questions, basic to advanced</p>
+                    <Link className='text-link' href={`/quiz/${topic.slug}`}>
+                        Quiz this topic
+                    </Link>
+                </div>
             </header>
             <QuestionRail questions={topic.questions} />
         </div>

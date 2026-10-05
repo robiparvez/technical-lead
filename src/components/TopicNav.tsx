@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useKnownQuestions } from '@/lib/progress';
+import { formatPoints } from '@/lib/quiz';
+import { totalScore, useQuizScores } from '@/lib/scores';
 
 export interface NavTopic {
     slug: string;
@@ -14,6 +16,7 @@ export interface NavTopic {
 export default function TopicNav({ topics }: { topics: NavTopic[] }) {
     const pathname = usePathname();
     const { known } = useKnownQuestions();
+    const { scores } = useQuizScores();
 
     return (
         <nav className='nav' aria-label='Topics'>
@@ -39,6 +42,14 @@ export default function TopicNav({ topics }: { topics: NavTopic[] }) {
                 );
             })}
             <h2 className='nav-heading label'>Pages</h2>
+            <Link
+                className='nav-link'
+                href='/quiz'
+                aria-current={pathname.startsWith('/quiz') ? 'page' : undefined}
+            >
+                <span>Quiz</span>
+                <span className='nav-count'>{formatPoints(totalScore(scores))} pts</span>
+            </Link>
             <Link
                 className='nav-link'
                 href='/references'

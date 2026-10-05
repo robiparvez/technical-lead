@@ -786,3 +786,320 @@ pre.code {
     font-size: var(--font-size-lg);
     color: var(--color-text-secondary);
 }
+
+/* ---------- text links ---------- */
+
+.text-link {
+    color: var(--color-text-primary);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-medium);
+    text-decoration: underline;
+    text-decoration-color: var(--color-accent);
+    text-decoration-thickness: var(--border-width-2);
+    text-underline-offset: var(--space-1);
+    border-radius: var(--radius-xs);
+}
+.text-link:hover {
+    text-decoration-color: var(--color-text-primary);
+}
+.text-link:focus-visible {
+    outline: var(--border-width-2) solid var(--color-accent);
+    outline-offset: var(--space-1);
+}
+
+.topic-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2) calc(var(--space-8) * 2);
+}
+.topic-meta-row p {
+    margin: 0;
+}
+
+/* ---------- quiz ----------
+   Nodes reuse the rail's language: hollow ring upcoming, thick accent ring
+   current, accent check correct, primary cross wrong. Option states follow
+   the shared rules: selected gets the accent inline-start, answered options
+   lock to the disabled style except the correct and chosen ones. */
+
+.quiz-lede {
+    max-width: 64ch;
+    margin: 0 0 var(--space-8);
+    color: var(--color-text-secondary);
+}
+
+.quiz-points {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-5) calc(var(--space-8) * 2);
+    margin: 0;
+}
+.quiz-points dt {
+    margin-bottom: var(--space-1);
+}
+.quiz-points dd {
+    margin: 0;
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-4xl);
+}
+
+/* reset sits beside the total; the question wraps onto its own line */
+.quiz-reset {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+}
+.quiz-reset-question {
+    flex-basis: 100%;
+    margin: 0;
+    font-size: var(--font-size-3xl);
+    color: var(--color-text-primary);
+}
+.quiz-reset-status {
+    margin: 0;
+}
+.quiz-reset-status:empty {
+    display: none;
+}
+.quiz-reset-status:focus {
+    outline: none;
+}
+
+.quiz-index {
+    margin-top: calc(var(--space-8) * 2);
+}
+
+.quiz-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-4) var(--space-8);
+    margin-top: calc(var(--space-8) * 2);
+}
+
+.quiz-status {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-8);
+}
+.quiz-status p {
+    margin: 0;
+}
+
+.quiz-track {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    list-style: none;
+    margin: var(--space-4) 0 calc(var(--space-8) * 2);
+    padding: 0;
+}
+.quiz-track li {
+    display: flex;
+}
+.quiz-node,
+.quiz-glyph {
+    width: var(--space-5);
+    height: var(--space-5);
+    flex: none;
+}
+.quiz-node .ring {
+    stroke: var(--color-text-secondary);
+}
+.quiz-node[data-status='current'] .ring,
+.quiz-node[data-status='correct'] .ring,
+.quiz-node[data-status='correct'] .glyph,
+.quiz-glyph[data-result='correct'] .ring,
+.quiz-glyph[data-result='correct'] .glyph {
+    stroke: var(--color-accent);
+}
+.quiz-node[data-status='wrong'] .ring,
+.quiz-node[data-status='wrong'] .glyph,
+.quiz-glyph[data-result='wrong'] .ring,
+.quiz-glyph[data-result='wrong'] .glyph {
+    stroke: var(--color-text-primary);
+}
+
+.quiz-form .eyebrow {
+    margin-bottom: var(--space-4);
+}
+.quiz-prompt {
+    margin: 0;
+    font-size: var(--font-size-display-sm);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--font-line-height-display-sm);
+    letter-spacing: var(--letter-spacing-tight);
+    text-wrap: balance;
+}
+.quiz-prompt:focus {
+    outline: none;
+}
+.quiz-prompt:focus-visible {
+    outline: var(--border-width-2) solid var(--color-accent);
+    outline-offset: var(--space-1);
+}
+
+.quiz-options {
+    display: grid;
+    gap: var(--space-4);
+    min-width: 0;
+    margin: calc(var(--space-8) + var(--space-2)) 0 0;
+    padding: 0;
+    border: 0;
+}
+.quiz-option {
+    display: grid;
+    grid-template-columns: var(--space-5) minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-2) var(--space-4);
+    min-height: 44px;
+    padding: var(--space-5) var(--space-8);
+    border: var(--border-width-1) solid var(--color-text-secondary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+}
+.quiz-option:hover {
+    border-color: var(--color-text-primary);
+}
+.quiz-option:has(.quiz-radio:focus-visible) {
+    outline: var(--border-width-2) solid var(--color-accent);
+    outline-offset: var(--space-1);
+}
+.quiz-option:active {
+    box-shadow: inset 0 0 0 var(--border-width-1) var(--color-text-primary);
+}
+.quiz-option[data-state='open']:has(.quiz-radio:checked) {
+    border-inline-start-color: var(--color-accent);
+    box-shadow: inset var(--border-width-1) 0 0 0 var(--color-accent);
+    font-weight: var(--font-weight-semibold);
+}
+.quiz-option[data-state='correct'] {
+    border-color: var(--color-accent);
+    box-shadow: inset 0 0 0 var(--border-width-1) var(--color-accent);
+    cursor: default;
+}
+.quiz-option[data-state='wrong'] {
+    border-color: var(--color-text-primary);
+    box-shadow: inset 0 0 0 var(--border-width-1) var(--color-text-primary);
+    cursor: default;
+}
+.quiz-option[data-state='locked'] {
+    border-style: dashed;
+    border-color: var(--color-text-secondary);
+    color: var(--color-text-secondary);
+    cursor: not-allowed;
+}
+
+.quiz-radio {
+    appearance: none;
+    width: var(--space-5);
+    height: var(--space-5);
+    margin: calc((var(--font-line-height-base) - var(--space-5)) / 2) 0 0;
+    border: var(--border-width-2) solid var(--color-text-secondary);
+    border-radius: 50%;
+    cursor: inherit;
+}
+.quiz-radio:checked {
+    border-width: var(--space-1);
+    border-color: var(--color-accent);
+}
+.quiz-radio:focus-visible {
+    outline: none;
+}
+
+.quiz-verdict {
+    grid-column: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-text-primary);
+}
+
+.quiz-feedback {
+    min-height: var(--font-line-height-base);
+    margin-top: var(--space-8);
+}
+.quiz-feedback p {
+    margin: 0;
+}
+.quiz-feedback strong {
+    font-weight: var(--font-weight-semibold);
+}
+.quiz-form .quiz-actions {
+    margin-top: var(--space-8);
+}
+
+/* attempt history: a real table, rows separated by whitespace, one rule
+   under the header */
+.quiz-history {
+    width: 100%;
+    max-width: 64ch;
+    margin-top: calc(var(--space-8) * 2);
+    border-collapse: collapse;
+    font-size: var(--font-size-xl);
+}
+.quiz-history caption {
+    margin-bottom: var(--space-2);
+    text-align: start;
+}
+.quiz-history th,
+.quiz-history td {
+    padding: var(--space-2) var(--space-4) var(--space-2) 0;
+    text-align: start;
+    vertical-align: baseline;
+}
+.quiz-history thead th {
+    border-bottom: var(--border-width-1) solid var(--color-border-strong);
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: var(--letter-spacing-label);
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+}
+.quiz-history tbody th {
+    font-family: var(--font-family-mono);
+    font-weight: var(--font-weight-semibold);
+}
+.quiz-history td:nth-child(3) {
+    font-family: var(--font-family-mono);
+}
+.quiz-history-note {
+    color: var(--color-text-secondary);
+}
+
+.quiz-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-8) calc(var(--space-8) * 3);
+    margin: 0;
+}
+.quiz-summary dt {
+    margin-bottom: var(--space-2);
+}
+.quiz-summary dd {
+    margin: 0;
+    font-size: var(--font-size-display);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--font-line-height-display);
+    letter-spacing: var(--letter-spacing-tight);
+}
+.topic-title:focus {
+    outline: none;
+}
+
+@media (max-width: 40rem) {
+    .quiz-option {
+        padding: var(--space-5);
+    }
+    .quiz-option > span:not(.quiz-verdict) {
+        font-size: var(--font-size-4xl);
+        line-height: var(--font-line-height-reading);
+    }
+    .quiz-radio {
+        margin-top: calc((var(--font-line-height-reading) - var(--space-5)) / 2);
+    }
+}
