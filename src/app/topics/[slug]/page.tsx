@@ -25,10 +25,13 @@ export default async function TopicPage({ params }: { params: Promise<{ slug: st
     return (
         <div>
             <header className='topic-header'>
-                <p className='eyebrow'>Requirement: &ldquo;{topic.requirement}&rdquo;</p>
+                <p className='eyebrow'>
+                    <span className='label'>Requirement</span>
+                    <span>{topic.requirement}</span>
+                </p>
                 <h1 className='topic-title'>{topic.title}</h1>
-                <p className='topic-meta'>
-                    {topic.questions.length} questions, ordered basic to advanced
+                <p className='topic-meta label'>
+                    {topic.questions.length} questions, basic to advanced
                 </p>
             </header>
             <QuestionRail questions={topic.questions} />

@@ -117,9 +117,12 @@ export default function ReferencesPage() {
     return (
         <div>
             <header className='topic-header'>
-                <p className='eyebrow'>Sources consulted while selecting questions</p>
+                <p className='eyebrow'>
+                    <span className='label'>Sources</span>
+                    <span>Consulted while selecting questions</span>
+                </p>
                 <h1 className='topic-title'>References</h1>
-                <p className='topic-meta'>
+                <p className='topic-meta ref-note'>
                     Question themes were cross-checked against these sources; themes kept for the
                     guide appear in more than one of them.
                 </p>

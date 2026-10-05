@@ -1,24 +1,36 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-const OPEN_EVENT = 'tl-open-search';
+/** Asks the shell to reveal a search input (sidebar or phone panel). */
+export const REVEAL_SEARCH_EVENT = 'tl-reveal-search';
+/** Focuses whichever search input is visible once the shell has revealed it. */
+export const FOCUS_SEARCH_EVENT = 'tl-focus-search';
+const CLEAR_EVENT = 'tl-clear-search';
 
 export function openSearch() {
-    window.dispatchEvent(new Event(OPEN_EVENT));
+    window.dispatchEvent(new Event(REVEAL_SEARCH_EVENT));
+}
+
+/** Empties every search input; the debounce then commits '/' to the URL. */
+export function clearSearch() {
+    window.dispatchEvent(new Event(CLEAR_EVENT));
+    openSearch();
 }
 
 /**
  * Search input. Query lives in the URL (?q=); typing commits after a short
  * debounce so results stay live without per-keystroke navigation.
- * "/" anywhere focuses the search.
+ * The shell renders two instances (sidebar and phone panel), so ids come
+ * from useId and only the visible instance takes focus.
  */
 export default function SearchBox() {
     const router = useRouter();
     const inputRef = useRef<HTMLInputElement>(null);
     const [value, setValue] = useState('');
     const [disabled] = useState(false);
+    const inputId = useId();
     // null until the mount effect syncs the URL query into state
     const committed = useRef<string | null>(null);
 
@@ -42,46 +54,42 @@ export default function SearchBox() {
     }, [value, router]);
 
     useEffect(() => {
-        const onKey = (e: KeyboardEvent) => {
-            const target = e.target as HTMLElement;
-            const typing =
-                target.tagName === 'INPUT' ||
-                target.tagName === 'TEXTAREA' ||
-                target.isContentEditable;
-            if (e.key === '/' && !typing) {
-                e.preventDefault();
-                window.dispatchEvent(new Event(OPEN_EVENT));
-                inputRef.current?.focus();
-            }
+        const onFocus = () => {
+            const input = inputRef.current;
+            // offsetParent is null while the instance's panel is display: none
+            if (input && input.offsetParent !== null) input.focus();
         };
-        const onOpen = () => inputRef.current?.focus();
-        window.addEventListener('keydown', onKey);
-        window.addEventListener(OPEN_EVENT, onOpen);
+        const onClear = () => setValue('');
+        window.addEventListener(FOCUS_SEARCH_EVENT, onFocus);
+        window.addEventListener(CLEAR_EVENT, onClear);
         return () => {
-            window.removeEventListener('keydown', onKey);
-            window.removeEventListener(OPEN_EVENT, onOpen);
+            window.removeEventListener(FOCUS_SEARCH_EVENT, onFocus);
+            window.removeEventListener(CLEAR_EVENT, onClear);
         };
     }, []);
 
     return (
         <div className='search' role='search'>
-            <label className='search-label' htmlFor='search-input'>
-                Search questions
+            <label className='sr-only' htmlFor={inputId}>
+                Search questions, answers, and tags
             </label>
             <input
                 ref={inputRef}
-                id='search-input'
+                id={inputId}
                 className='search-input'
                 type='search'
-                placeholder='Search questions, answers, tags'
+                placeholder='Search questions'
                 value={value}
                 disabled={disabled}
                 autoComplete='off'
+                aria-keyshortcuts='/'
                 onChange={(e) => setValue(e.target.value)}
             />
-            <p className='search-hint'>
-                Press <kbd>/</kbd> to search. Matches show question, answer, and tags.
-            </p>
+            {!value && (
+                <kbd className='search-kbd' aria-hidden='true'>
+                    /
+                </kbd>
+            )}
         </div>
     );
 }

@@ -1,7 +1,9 @@
 /* Design tokens from DESIGN.md plus approved amendments.
    Amendments: color.accent (renamed from color.surface.raised),
    color.text.tertiary and all color.surface.* removed, border.width.1/2 added,
-   radius.lg dropped, font.lineHeight.reading added, Geist Mono added. */
+   radius.lg dropped, font.lineHeight.reading added, Geist Mono added,
+   font.size.display(-sm) + font.lineHeight.display(-sm), font.lineHeight.compact,
+   font.weight.medium/semibold, and letter-spacing added. */
 
 :root {
     color-scheme: light;
@@ -28,9 +30,22 @@
     --font-size-3xl: 14px;
     --font-size-4xl: 16px;
     --font-weight-base: 400;
+    /* amendment: named weights for labels, questions, and titles */
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
     --font-line-height-base: 22.75px;
     /* amendment: reading rhythm on phones, derived from base ratio 22.75/14 * 16 */
     --font-line-height-reading: 26px;
+    /* amendment: display step for page titles; 16px left no hierarchy */
+    --font-size-display: 32px;
+    --font-line-height-display: 38px;
+    /* amendment: phone display step and a compact line for nav, kbd, and labels */
+    --font-size-display-sm: 24px;
+    --font-line-height-display-sm: 30px;
+    --font-line-height-compact: 18px;
+    /* amendment: tracking for display titles and mono labels */
+    --letter-spacing-tight: -0.02em;
+    --letter-spacing-label: 0.06em;
 
     /* space */
     --space-1: 4px;

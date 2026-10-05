@@ -17,7 +17,10 @@ export default function TopicNav({ topics }: { topics: NavTopic[] }) {
 
     return (
         <nav className='nav' aria-label='Topics'>
-            <h2 className='nav-heading'>Topics</h2>
+            <h2 className='nav-heading label'>
+                <span>Topics</span>
+                <span aria-hidden='true'>Known</span>
+            </h2>
             {topics.map((t) => {
                 const knownCount = t.questionIds.filter((id) => known.has(id)).length;
                 return (
@@ -29,14 +32,13 @@ export default function TopicNav({ topics }: { topics: NavTopic[] }) {
                     >
                         <span>{t.title}</span>
                         <span className='nav-count'>
-                            {knownCount === 0
-                                ? `${t.questionIds.length} questions`
-                                : `${knownCount}/${t.questionIds.length} known`}
+                            {knownCount}/{t.questionIds.length}
+                            <span className='sr-only'> known</span>
                         </span>
                     </Link>
                 );
             })}
-            <h2 className='nav-heading'>Pages</h2>
+            <h2 className='nav-heading label'>Pages</h2>
             <Link
                 className='nav-link'
                 href='/references'

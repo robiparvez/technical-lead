@@ -16,14 +16,14 @@ const STATIONS: Array<{
 
 /**
  * Difficulty rail: one vertical accent line per topic, three labeled
- * stations, questions hanging from their station in order. Known
- * questions show a check glyph.
+ * stations drawn as rings, questions hanging from the line as nodes in
+ * order. Known questions show a checked node.
  */
 export default function QuestionRail({ questions }: { questions: Question[] }) {
     const { known, toggle } = useKnownQuestions();
 
     return (
-        <>
+        <div className='rail'>
             {STATIONS.map((station) => {
                 const stationQuestions = questions.filter((q) => q.difficulty === station.key);
                 if (stationQuestions.length === 0) return null;
@@ -35,6 +35,7 @@ export default function QuestionRail({ questions }: { questions: Question[] }) {
                         aria-labelledby={`station-${station.key}`}
                     >
                         <h2 className='rail-station' id={`station-${station.key}`}>
+                            <span className='station-ring' aria-hidden='true' />
                             <span>{station.label}</span>
                             <span className='station-count'>
                                 {stationKnown === 0
@@ -45,6 +46,7 @@ export default function QuestionRail({ questions }: { questions: Question[] }) {
                         <ul className='rail-list'>
                             {stationQuestions.map((q) => (
                                 <li key={q.id}>
+                                    <RailNode known={known.has(q.id)} />
                                     <QuestionCard
                                         question={q}
                                         isKnown={known.has(q.id)}
@@ -56,7 +58,7 @@ export default function QuestionRail({ questions }: { questions: Question[] }) {
                     </section>
                 );
             })}
-        </>
+        </div>
     );
 }
 
@@ -81,28 +83,18 @@ function QuestionCard({
                 aria-controls={answerId}
                 onClick={() => setOpen((o) => !o)}
             >
-                {isKnown ? <CheckGlyph /> : <span className='q-mark' aria-hidden='true' />}
-                <span>
-                    <span>{question.question}</span>
-                    <span className='q-badges'>
-                        <span className='badge'>
-                            {question.difficulty.charAt(0).toUpperCase() +
-                                question.difficulty.slice(1)}
-                        </span>
-                        {question.tags.map((tag) => (
-                            <span className='badge' key={tag}>
-                                {tag}
-                            </span>
-                        ))}
-                    </span>
+                <span className='q-text'>
+                    <span className='q-question'>{question.question}</span>
+                    <span className='q-tags'>{question.tags.join(' · ')}</span>
                 </span>
+                <ChevronGlyph />
             </button>
             {open && (
                 <div className='answer' id={answerId}>
                     <p>{question.answer}</p>
                     {question.code && (
                         <>
-                            <p className='code-lang'>{question.code.language} snippet</p>
+                            <p className='code-lang label'>{question.code.language} snippet</p>
                             <pre className='code'>
                                 <code>{question.code.snippet}</code>
                             </pre>
@@ -110,10 +102,10 @@ function QuestionCard({
                     )}
                     {question.diagram && <Diagram id={question.diagram} />}
                     <p className='key-takeaway'>
-                        <span className='kt-label'>Key takeaway: </span>
-                        {question.keyTakeaway}
+                        <span className='label'>Key takeaway</span>
+                        <span>{question.keyTakeaway}</span>
                     </p>
-                    <p style={{ marginTop: 'var(--space-4)' }}>
+                    <p className='answer-actions'>
                         <button
                             type='button'
                             className='btn'
@@ -130,14 +122,39 @@ function QuestionCard({
     );
 }
 
-function CheckGlyph() {
+/** Question node on the rail: hollow ring, checked once known. */
+function RailNode({ known }: { known: boolean }) {
     return (
-        <svg className='q-mark' viewBox='0 0 14 14' width='13.5' height='13.5' aria-hidden='true'>
+        <svg
+            className='q-node'
+            data-known={known}
+            viewBox='0 0 14 14'
+            aria-hidden='true'
+            focusable='false'
+        >
+            <circle className='ring' cx='7' cy='7' r='6' fill='none' strokeWidth='2' />
+            {known && (
+                <path
+                    className='glyph'
+                    d='M4.4 7.2 L6.2 9 L9.6 5.2'
+                    fill='none'
+                    strokeWidth='1.75'
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                />
+            )}
+        </svg>
+    );
+}
+
+function ChevronGlyph() {
+    return (
+        <svg className='q-chevron' viewBox='0 0 14 26' aria-hidden='true' focusable='false'>
             <path
-                className='glyph'
-                d='M2.5 7.5 L5.5 10.5 L11.5 3.5'
+                d='M3 11 L7 15 L11 11'
                 fill='none'
-                strokeWidth='2'
+                stroke='currentColor'
+                strokeWidth='1.75'
                 strokeLinecap='round'
                 strokeLinejoin='round'
             />

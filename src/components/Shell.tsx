@@ -2,11 +2,16 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import { FOCUS_SEARCH_EVENT, REVEAL_SEARCH_EVENT } from '@/components/SearchBox';
+
+// matches the sidebar breakpoint in app.css
+const DESKTOP_QUERY = '(min-width: 60rem)';
 
 /**
- * App shell. Desktop: collapsible sticky sidebar with nav, search above
- * content; a hamburger toggles it, floating top-left when collapsed.
+ * App shell. Desktop: collapsible sticky sidebar with brand, search, and nav;
+ * a hamburger toggles it, floating top-left when collapsed.
  * Phone: top bar with hamburger and search buttons opening in-flow panels.
+ * "/" reveals the search for the current layout and focuses it.
  */
 export default function Shell({
     nav,
@@ -36,6 +41,35 @@ export default function Shell({
         pendingFocus.current = 'inline';
         setSidebarOpen(true);
     };
+
+    useEffect(() => {
+        const reveal = () => {
+            if (window.matchMedia(DESKTOP_QUERY).matches) {
+                setSidebarOpen(true);
+            } else {
+                setPanel('search');
+            }
+            // focus once React has committed the revealed sidebar or panel
+            requestAnimationFrame(() => window.dispatchEvent(new Event(FOCUS_SEARCH_EVENT)));
+        };
+        const onKey = (e: KeyboardEvent) => {
+            const target = e.target as HTMLElement;
+            const typing =
+                target.tagName === 'INPUT' ||
+                target.tagName === 'TEXTAREA' ||
+                target.isContentEditable;
+            if (e.key === '/' && !typing) {
+                e.preventDefault();
+                reveal();
+            }
+        };
+        window.addEventListener('keydown', onKey);
+        window.addEventListener(REVEAL_SEARCH_EVENT, reveal);
+        return () => {
+            window.removeEventListener('keydown', onKey);
+            window.removeEventListener(REVEAL_SEARCH_EVENT, reveal);
+        };
+    }, []);
 
     useEffect(() => {
         if (pendingFocus.current === 'inline') inlineToggleRef.current?.focus();
@@ -70,7 +104,15 @@ export default function Shell({
                 </button>
             </header>
 
-            <div id='phone-menu' className='phone-panel' data-open={panel === 'menu'}>
+            {/* close the menu once a link in it is followed, including the current page */}
+            <div
+                id='phone-menu'
+                className='phone-panel'
+                data-open={panel === 'menu'}
+                onClick={(e) => {
+                    if ((e.target as HTMLElement).closest('a')) setPanel('none');
+                }}
+            >
                 {nav}
             </div>
             <div id='phone-search' className='phone-panel' data-open={panel === 'search'}>
@@ -93,11 +135,14 @@ export default function Shell({
                 )}
                 {sidebarOpen && (
                     <aside className='sidebar' id='sidebar'>
-                        <div className='sidebar-inner'>
+                        <div className='sidebar-head'>
+                            <Link className='brand' href='/'>
+                                Tech lead study
+                            </Link>
                             <button
                                 type='button'
                                 ref={inlineToggleRef}
-                                className='btn btn-icon sidebar-toggle-inline'
+                                className='btn btn-icon'
                                 aria-label='Hide navigation'
                                 aria-expanded='true'
                                 aria-controls='sidebar'
@@ -105,12 +150,14 @@ export default function Shell({
                             >
                                 <HamburgerIcon />
                             </button>
-                            {search}
-                            {nav}
                         </div>
+                        {search}
+                        {nav}
                     </aside>
                 )}
-                <main id='main'>{children}</main>
+                <main id='main'>
+                    <div className='content'>{children}</div>
+                </main>
             </div>
         </>
     );

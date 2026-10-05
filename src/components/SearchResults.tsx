@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import type { SearchEntry } from '@/data';
 import { useKnownQuestions } from '@/lib/progress';
+import { clearSearch } from '@/components/SearchBox';
 
 interface TopicSummary {
     slug: string;
@@ -25,23 +26,28 @@ export default function SearchResults({
     const q = query.trim().toLowerCase();
 
     if (!q) {
+        const questionCount = topics.reduce((n, t) => n + t.questionIds.length, 0);
         return (
             <div>
-                <h1 className='topic-title' style={{ marginBottom: 'var(--space-5)' }}>
-                    Topics
-                </h1>
-                <ul className='index-list' style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                <header className='topic-header'>
+                    <h1 className='topic-title'>Topics</h1>
+                    <p className='topic-meta label'>
+                        {topics.length} topics, {questionCount} questions
+                    </p>
+                </header>
+                <ul className='index-list'>
                     {topics.map((t) => {
                         const knownCount = t.questionIds.filter((id) => known.has(id)).length;
                         return (
                             <li key={t.slug}>
                                 <Link className='index-card' href={`/topics/${t.slug}`}>
-                                    <span className='index-title'>{t.title}</span>
-                                    <span className='index-meta'>
-                                        {knownCount === 0
-                                            ? `${t.questionIds.length} questions`
-                                            : `${knownCount}/${t.questionIds.length} known`}
+                                    <span className='index-head'>
+                                        <span className='index-title'>{t.title}</span>
+                                        <span className='index-meta'>
+                                            {knownCount}/{t.questionIds.length} known
+                                        </span>
                                     </span>
+                                    <span className='index-requirement'>{t.requirement}</span>
                                 </Link>
                             </li>
                         );
@@ -60,22 +66,32 @@ export default function SearchResults({
 
     if (matches.length === 0) {
         return (
-            <div className='search-empty' role='status'>
-                <p style={{ margin: 0 }}>
-                    No questions match <strong>&ldquo;{query.trim()}&rdquo;</strong>. Clear the
-                    search or try a broader term.
-                </p>
+            <div>
+                <header className='topic-header'>
+                    <h1 className='topic-title'>No matches</h1>
+                </header>
+                <div className='search-empty' role='status'>
+                    <p>
+                        No questions match <strong>&ldquo;{query.trim()}&rdquo;</strong>. Clear the
+                        search or try a broader term.
+                    </p>
+                    <button type='button' className='btn' onClick={clearSearch}>
+                        Clear search
+                    </button>
+                </div>
             </div>
         );
     }
 
     return (
         <div>
-            <h1 className='topic-title' style={{ marginBottom: 'var(--space-5)' }}>
-                {matches.length} {matches.length === 1 ? 'question' : 'questions'} match &ldquo;
-                {query.trim()}&rdquo;
-            </h1>
-            <ul className='search-results' style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+            <header className='topic-header'>
+                <h1 className='topic-title'>
+                    {matches.length} {matches.length === 1 ? 'question' : 'questions'} match
+                    &ldquo;{query.trim()}&rdquo;
+                </h1>
+            </header>
+            <ul className='search-results'>
                 {matches.map((m) => (
                     <li className='result-card' key={m.questionId}>
                         <Link
@@ -87,7 +103,7 @@ export default function SearchResults({
                         <span className='index-meta'>
                             {m.topicTitle} · {m.difficulty}
                         </span>
-                        <p className='result-excerpt' style={{ margin: 0 }}>
+                        <p className='result-excerpt'>
                             <MatchText text={m.answer.slice(0, 160) + '…'} query={q} />
                         </p>
                     </li>
