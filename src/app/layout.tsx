@@ -1,12 +1,18 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { Fragment } from 'react';
 import '../styles/tokens.css';
 import '../styles/reset.css';
 import '../styles/app.css';
 import Shell from '@/components/Shell';
 import TopicNav from '@/components/TopicNav';
 import SearchBox from '@/components/SearchBox';
+import ThemeSwitch from '@/components/ThemeSwitch';
 import { TOPICS } from '@/data';
+
+// Applies a saved theme choice before first paint, so a dark reader never
+// sees a light flash. The key and JSON format match ThemeSwitch's store.
+const THEME_SCRIPT = `try{var t=JSON.parse(localStorage.getItem('tl-theme'));if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}`;
 
 const geist = Geist({
     variable: '--font-geist-sans',
@@ -31,13 +37,22 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     }));
 
     return (
-        <html lang='en' className={`${geist.variable} ${geistMono.variable}`}>
+        // data-theme is set by the script below before hydration
+        <html lang='en' className={`${geist.variable} ${geistMono.variable}`} suppressHydrationWarning>
+            <head>
+                <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+            </head>
             <body>
                 <a className='skip-link' href='#main'>
                     Skip to content
                 </a>
                 <Shell
-                    nav={<TopicNav key='nav' topics={topics} />}
+                    nav={
+                        <Fragment key='nav'>
+                            <TopicNav topics={topics} />
+                            <ThemeSwitch />
+                        </Fragment>
+                    }
                     search={<SearchBox key='search' />}
                 >
                     {children}

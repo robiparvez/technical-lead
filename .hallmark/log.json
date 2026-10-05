@@ -1,0 +1,12 @@
+[
+    {
+        "date": "2026-10-05",
+        "scope": "app",
+        "macrostructure": "Long Document (reading column + difficulty rail)",
+        "theme": "custom",
+        "theme_axes": "light+dark / grotesk-sans / warm accent",
+        "vibe": "low-glare slate for long reading sessions",
+        "enrichment": "none",
+        "brief": "Technical lead study guide · reading-comfort redesign with light and dark themes"
+    }
+]

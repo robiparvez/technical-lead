@@ -1,70 +1,99 @@
-/* Design tokens from DESIGN.md plus approved amendments.
-   Amendments: color.accent (renamed from color.surface.raised),
-   color.text.tertiary and all color.surface.* removed, border.width.1/2 added,
-   radius.lg dropped, font.lineHeight.reading added, Geist Mono added,
-   font.size.display(-sm) + font.lineHeight.display(-sm), font.lineHeight.compact,
-   font.weight.medium/semibold, and letter-spacing added. */
+/* Hallmark · genre: modern-minimal · theme: custom (vibe: "low-glare slate, long reading
+ * sessions" · paper oklch(97.5% 0.005 255) / oklch(23% 0.012 255) · accent oklch(56% 0.12 40)
+ * terracotta · Geist + Geist Mono) · axes: light+dark / grotesk-sans / warm accent
+ *
+ * Design tokens. DESIGN.md is the original source; the reading-comfort
+ * amendment in PROMPT.md replaces its palette, type scale, and spacing scale.
+ * Earlier amendments kept: color.accent (renamed from color.surface.raised),
+ * no surface fills, border.width.1/2, radius.lg dropped, Geist Mono.
+ *
+ * Themes: every color is light-dark(light, dark). color-scheme picks the
+ * branch: the OS preference by default, or data-theme on <html> when the
+ * reader chooses one. Contrast on the canvas (light / dark):
+ *   text-primary   12.68 / 11.95    text-secondary  6.35 / 6.56
+ *   accent          4.56 /  6.58    border-control  3.19 / 3.27
+ *   code tokens     5.73-7.01 / 7.94-8.70           border-subtle decorative only
+ */
 
 :root {
-    color-scheme: light;
+    color-scheme: light dark;
 
     /* color */
-    --color-text-primary: #1a1a1a;
-    --color-text-secondary: #6b6b6b;
-    --color-accent: #c8553d;
-    --color-border-strong: #e8e4dd;
+    --color-canvas: light-dark(oklch(97.5% 0.005 255), oklch(23% 0.012 255));
+    --color-text-primary: light-dark(oklch(30% 0.014 255), oklch(88.5% 0.008 255));
+    --color-text-secondary: light-dark(oklch(47% 0.014 255), oklch(71% 0.012 255));
+    --color-accent: light-dark(oklch(56% 0.12 40), oklch(72% 0.1 45));
+    /* 3:1 boundary for controls and progress rings */
+    --color-border-control: light-dark(oklch(63.5% 0.012 255), oklch(53.5% 0.012 255));
+    /* hairlines between content; never the only cue for a control */
+    --color-border-subtle: light-dark(oklch(90.5% 0.006 255), oklch(32.5% 0.012 255));
 
-    /* border width (amendment) */
+    /* code: muted hues at matched lightness, so no token shouts */
+    --color-code-keyword: light-dark(oklch(47% 0.11 305), oklch(77% 0.08 305));
+    --color-code-string: light-dark(oklch(47% 0.09 150), oklch(78% 0.08 150));
+    --color-code-entity: light-dark(oklch(50% 0.1 65), oklch(79% 0.08 70));
+    --color-code-type: light-dark(oklch(47% 0.09 235), oklch(77% 0.07 235));
+    --color-code-property: light-dark(oklch(44% 0.06 195), oklch(78% 0.05 195));
+
+    /* border width */
     --border-width-1: 1px;
     --border-width-2: 2px;
 
-    /* font */
+    /* font: rem so the reader's browser font size scales everything */
     --font-family-primary: var(--font-geist-sans), 'Geist Fallback', sans-serif;
     --font-family-mono: var(--font-geist-mono), 'Geist Mono Fallback', monospace;
-    --font-size-xs: 11px;
-    --font-size-sm: 11.5px;
-    --font-size-md: 12px;
-    --font-size-lg: 12.5px;
-    --font-size-xl: 13px;
-    --font-size-2xl: 13.5px;
-    --font-size-3xl: 14px;
-    --font-size-4xl: 16px;
+    --text-xs: 0.8125rem; /* 13px labels, counts, metadata */
+    --text-sm: 0.9375rem; /* 15px controls, nav, secondary text, code */
+    --text-base: 1.0625rem; /* 17px body and answers */
+    --text-md: 1.1875rem; /* 19px questions and card titles */
+    --text-lg: 1.5rem; /* 24px quiz prompt, phone page titles */
+    --text-xl: 2.125rem; /* 34px page titles */
+    --leading-label: 1.25rem;
+    --leading-ui: 1.375rem;
+    --leading-body: 1.75rem; /* 1.65 at 17px */
+    --leading-code: 1.5rem;
+    --leading-title-sm: 2rem;
+    --leading-title: 2.625rem;
     --font-weight-base: 400;
-    /* amendment: named weights for labels, questions, and titles */
     --font-weight-medium: 500;
     --font-weight-semibold: 600;
-    --font-line-height-base: 22.75px;
-    /* amendment: reading rhythm on phones, derived from base ratio 22.75/14 * 16 */
-    --font-line-height-reading: 26px;
-    /* amendment: display step for page titles; 16px left no hierarchy */
-    --font-size-display: 32px;
-    --font-line-height-display: 38px;
-    /* amendment: phone display step and a compact line for nav, kbd, and labels */
-    --font-size-display-sm: 24px;
-    --font-line-height-display-sm: 30px;
-    --font-line-height-compact: 18px;
-    /* amendment: tracking for display titles and mono labels */
+    --font-weight-bold: 700;
     --letter-spacing-tight: -0.02em;
-    --letter-spacing-label: 0.06em;
+    --letter-spacing-label: 0.08em;
+    /* answers stay inside a 65-80 character line. Measured in em, not ch:
+       Geist's "0" is 0.66em, well wider than its 0.48em average letter */
+    --measure: 36em;
 
-    /* space */
-    --space-1: 4px;
-    --space-2: 8px;
-    --space-3: 10px;
-    --space-4: 12px;
-    --space-5: 14px;
-    --space-6: 15px;
-    --space-7: 16px;
-    --space-8: 18px;
+    /* space: 4px base */
+    --space-3xs: 0.25rem; /* 4 */
+    --space-2xs: 0.5rem; /* 8 */
+    --space-xs: 0.75rem; /* 12 */
+    --space-sm: 1rem; /* 16 */
+    --space-md: 1.5rem; /* 24 */
+    --space-lg: 2rem; /* 32 */
+    --space-xl: 2.5rem; /* 40 */
+    --space-2xl: 3.5rem; /* 56 */
+    --space-3xl: 5rem; /* 80 */
 
-    /* radius (radius.lg dropped: corrupted value in DESIGN.md) */
+    /* radius */
     --radius-xs: 4px;
     --radius-sm: 8px;
     --radius-md: 12px;
+}
 
-    /* shadow */
-    --shadow-1:
-        rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px,
-        rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px,
-        rgba(0, 0, 0, 0.04) 0px 1px 2px 0px, rgba(0, 0, 0, 0.04) 0px 4px 12px 0px;
+:root[data-theme='light'] {
+    color-scheme: light;
+}
+:root[data-theme='dark'] {
+    color-scheme: dark;
+}
+
+/* light text on dark reads heavier; Geist is variable, so thin it slightly */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+        --font-weight-base: 370;
+    }
+}
+:root[data-theme='dark'] {
+    --font-weight-base: 370;
 }

@@ -1,5 +1,11 @@
 /* The only file allowed to contain background declarations.
-   Values are limited to transparent and none. */
+   The page canvas takes the themed canvas token (low-glare paper, never
+   pure white or black). Everything else is transparent or none: UI
+   surfaces carry no fills. */
+
+html {
+    background: var(--color-canvas);
+}
 
 button,
 input,
