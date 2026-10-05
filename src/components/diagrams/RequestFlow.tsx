@@ -1,16 +1,11 @@
-import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from 'remotion';
+import { AbsoluteFill, useCurrentFrame, useVideoConfig } from 'remotion';
+import { C, chevron, seg } from './shared';
 
 /**
  * Animated request flow: client -> API gateway -> orders service -> its
  * database -> response back. Outline shapes, open chevrons, position motion.
  * The active path is highlighted with the accent color.
  */
-
-const C = {
-    primary: 'var(--color-text-primary)',
-    secondary: 'var(--color-text-secondary)',
-    accent: 'var(--color-accent)',
-};
 
 const CLIENT = { x: 60, y: 180 };
 const GATEWAY = { x1: 150, y1: 140, x2: 280, y2: 220 };
@@ -20,25 +15,6 @@ const SERVICES = [
     { name: 'Inventory', x1: 400, y1: 260, x2: 540, y2: 330 },
 ];
 const DB = { x1: 590, y1: 50, x2: 690, y2: 90 };
-
-const seg = (frame: number, start: number, end: number) =>
-    interpolate(frame, [start, end], [0, 1], {
-        extrapolateLeft: 'clamp',
-        extrapolateRight: 'clamp',
-    });
-
-function chevron(x: number, y: number, angle: number, color: string) {
-    const s = 7;
-    return (
-        <polyline
-            points={`${x - s},${y - s} ${x},${y} ${x - s},${y + s}`}
-            fill='none'
-            stroke={color}
-            strokeWidth='2'
-            transform={`rotate(${angle} ${x} ${y})`}
-        />
-    );
-}
 
 export default function RequestFlow() {
     const frame = useCurrentFrame();

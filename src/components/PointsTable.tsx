@@ -1,6 +1,4 @@
-import { DIFFICULTIES, POINTS, formatPoints } from '@/lib/quiz';
-
-const LABELS = { basic: 'Basic', intermediate: 'Intermediate', advanced: 'Advanced' };
+import { DIFFICULTIES, DIFFICULTY_LABELS, POINTS, formatPoints } from '@/lib/quiz';
 
 /** Reward and penalty per difficulty, as shown before a round starts. */
 export default function PointsTable() {
@@ -8,7 +6,7 @@ export default function PointsTable() {
         <dl className='quiz-points'>
             {DIFFICULTIES.map((d) => (
                 <div key={d}>
-                    <dt className='label'>{LABELS[d]}</dt>
+                    <dt className='label'>{DIFFICULTY_LABELS[d]}</dt>
                     <dd>
                         {formatPoints(POINTS[d].reward)}
                         <span className='sr-only'> points if correct,</span>

@@ -1,15 +1,10 @@
-import { AbsoluteFill, interpolate, useCurrentFrame } from 'remotion';
+import { AbsoluteFill, useCurrentFrame } from 'remotion';
+import { C, chevron, seg } from './shared';
 
 /**
  * Animated saga: four local transactions chained by events; the last step
  * fails and compensation events roll the earlier steps back.
  */
-
-const C = {
-    primary: 'var(--color-text-primary)',
-    secondary: 'var(--color-text-secondary)',
-    accent: 'var(--color-accent)',
-};
 
 const Y = 150;
 const H = 70;
@@ -19,30 +14,6 @@ const NAMES = ['Order', 'Payment', 'Inventory', 'Shipping'];
 
 // phase boundaries in frames (30fps): forward steps, failure, compensation
 const PH = { fwd0: 0, fwd1: 45, fwd2: 90, fwd3: 135, fail: 180, comp1: 210, comp2: 255, done: 300 };
-const FPS = 30;
-const DURATION = 360; // 12s
-
-const seg = (frame: number, start: number, end: number) =>
-    interpolate(frame, [start, end], [0, 1], {
-        extrapolateLeft: 'clamp',
-        extrapolateRight: 'clamp',
-    });
-
-function chevron(x: number, y: number, angle: number, color: string) {
-    const s = 7;
-    return (
-        <polyline
-            points={`${x - s},${y - s} ${x},${y} ${x - s},${y + s}`}
-            fill='none'
-            stroke={color}
-            strokeWidth='2'
-            transform={`rotate(${angle} ${x} ${y})`}
-        />
-    );
-}
-
-export const sagaDurationInFrames = DURATION;
-export const sagaFps = FPS;
 
 export default function SagaFlow() {
     const frame = useCurrentFrame();

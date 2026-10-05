@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import QuizRunner from '@/components/QuizRunner';
-import { getTopic, getTopics } from '@/data';
+import { getTopic, TOPICS } from '@/data';
 
 export function generateStaticParams() {
-    return getTopics().map((t) => ({ slug: t.slug }));
+    return TOPICS.map((t) => ({ slug: t.slug }));
 }
 
 export async function generateMetadata({

@@ -4,15 +4,8 @@ import { useState } from 'react';
 import type { Question } from '@/data/types';
 import { useKnownQuestions } from '@/lib/progress';
 import Diagram from '@/components/Diagram';
-
-const STATIONS: Array<{
-    key: 'basic' | 'intermediate' | 'advanced';
-    label: string;
-}> = [
-    { key: 'basic', label: 'Basic' },
-    { key: 'intermediate', label: 'Intermediate' },
-    { key: 'advanced', label: 'Advanced' },
-];
+import ResultMark from '@/components/ResultMark';
+import { DIFFICULTIES, DIFFICULTY_LABELS } from '@/lib/quiz';
 
 /**
  * Difficulty rail: one vertical accent line per topic, three labeled
@@ -24,19 +17,19 @@ export default function QuestionRail({ questions }: { questions: Question[] }) {
 
     return (
         <div className='rail'>
-            {STATIONS.map((station) => {
-                const stationQuestions = questions.filter((q) => q.difficulty === station.key);
+            {DIFFICULTIES.map((difficulty) => {
+                const stationQuestions = questions.filter((q) => q.difficulty === difficulty);
                 if (stationQuestions.length === 0) return null;
                 const stationKnown = stationQuestions.filter((q) => known.has(q.id)).length;
                 return (
                     <section
                         className='rail-section'
-                        key={station.key}
-                        aria-labelledby={`station-${station.key}`}
+                        key={difficulty}
+                        aria-labelledby={`station-${difficulty}`}
                     >
-                        <h2 className='rail-station' id={`station-${station.key}`}>
+                        <h2 className='rail-station' id={`station-${difficulty}`}>
                             <span className='station-ring' aria-hidden='true' />
-                            <span>{station.label}</span>
+                            <span>{DIFFICULTY_LABELS[difficulty]}</span>
                             <span className='station-count'>
                                 {stationKnown === 0
                                     ? `${stationQuestions.length} questions`
@@ -133,16 +126,7 @@ function RailNode({ known }: { known: boolean }) {
             focusable='false'
         >
             <circle className='ring' cx='7' cy='7' r='6' fill='none' strokeWidth='2' />
-            {known && (
-                <path
-                    className='glyph'
-                    d='M4.4 7.2 L6.2 9 L9.6 5.2'
-                    fill='none'
-                    strokeWidth='1.75'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                />
-            )}
+            {known && <ResultMark result='correct' />}
         </svg>
     );
 }

@@ -114,7 +114,7 @@ export default function SearchResults({
 }
 
 /** Highlights matches with an accent underline and weight 600; never a fill. */
-export function MatchText({ text, query }: { text: string; query: string }) {
+function MatchText({ text, query }: { text: string; query: string }) {
     if (!query) return <>{text}</>;
     const parts = text.split(new RegExp(`(${escapeRegExp(query)})`, 'gi'));
     return (

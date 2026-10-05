@@ -6,7 +6,7 @@ import '../styles/app.css';
 import Shell from '@/components/Shell';
 import TopicNav from '@/components/TopicNav';
 import SearchBox from '@/components/SearchBox';
-import { getTopics } from '@/data';
+import { TOPICS } from '@/data';
 
 const geist = Geist({
     variable: '--font-geist-sans',
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-    const topics = getTopics().map((t) => ({
+    const topics = TOPICS.map((t) => ({
         slug: t.slug,
         title: t.title,
         questionIds: t.questions.map((q) => q.id),

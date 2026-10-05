@@ -1,6 +1,6 @@
 'use client';
 
-import { Component, ComponentType, Suspense, lazy, useCallback, useEffect, useState } from 'react';
+import { Component, ComponentType, Suspense, lazy, useEffect, useState } from 'react';
 import type { PlayerRef } from '@remotion/player';
 import RequestFlow from '@/components/diagrams/RequestFlow';
 import SagaFlow from '@/components/diagrams/SagaFlow';
@@ -91,10 +91,6 @@ function AnimatedDiagram({ def }: { def: AnimatedDef }) {
         };
     }, [player]);
 
-    const attachPlayer = useCallback((ref: PlayerRef | null) => {
-        setPlayer(ref);
-    }, []);
-
     if (failed) {
         return (
             <figure className='diagram'>
@@ -124,7 +120,7 @@ function AnimatedDiagram({ def }: { def: AnimatedDef }) {
                         }
                     >
                         <LazyPlayer
-                            ref={attachPlayer}
+                            ref={setPlayer}
                             component={def.component as never}
                             durationInFrames={def.durationInFrames}
                             fps={def.fps}

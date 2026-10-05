@@ -6,7 +6,7 @@ import { useKnownQuestions } from '@/lib/progress';
 import { formatPoints } from '@/lib/quiz';
 import { totalScore, useQuizScores } from '@/lib/scores';
 
-export interface NavTopic {
+interface NavTopic {
     slug: string;
     title: string;
     questionIds: string[];

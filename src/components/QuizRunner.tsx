@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useId, useRef, useState } from 'react';
 import PointsTable from '@/components/PointsTable';
+import ResultMark from '@/components/ResultMark';
 import {
     POINTS,
     attemptSize,
@@ -359,25 +360,7 @@ function RoundTrack({
                                 fill='none'
                                 strokeWidth={status === 'current' ? 4 : 2}
                             />
-                            {result === 'correct' && (
-                                <path
-                                    className='glyph'
-                                    d='M4.4 7.2 L6.2 9 L9.6 5.2'
-                                    fill='none'
-                                    strokeWidth='1.75'
-                                    strokeLinecap='round'
-                                    strokeLinejoin='round'
-                                />
-                            )}
-                            {result === 'wrong' && (
-                                <path
-                                    className='glyph'
-                                    d='M5 5 L9 9 M9 5 L5 9'
-                                    fill='none'
-                                    strokeWidth='1.75'
-                                    strokeLinecap='round'
-                                />
-                            )}
+                            {result && <ResultMark result={result} />}
                         </svg>
                         <span className='sr-only'>
                             Question {i + 1}: {status === 'upcoming' ? 'not answered' : status}
@@ -399,14 +382,7 @@ function ResultGlyph({ result }: { result: Result }) {
             focusable='false'
         >
             <circle className='ring' cx='7' cy='7' r='6' fill='none' strokeWidth='2' />
-            <path
-                className='glyph'
-                d={result === 'correct' ? 'M4.4 7.2 L6.2 9 L9.6 5.2' : 'M5 5 L9 9 M9 5 L5 9'}
-                fill='none'
-                strokeWidth='1.75'
-                strokeLinecap='round'
-                strokeLinejoin='round'
-            />
+            <ResultMark result={result} />
         </svg>
     );
 }

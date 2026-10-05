@@ -1,15 +1,10 @@
 import { AbsoluteFill, interpolate, useCurrentFrame } from 'remotion';
+import { C, chevron } from './shared';
 
 /**
  * Animated CI/CD pipeline: a commit travels lint and unit gates, becomes one
  * artifact, deploys to staging, then canary percentages grow to full rollout.
  */
-
-const C = {
-    primary: 'var(--color-text-primary)',
-    secondary: 'var(--color-text-secondary)',
-    accent: 'var(--color-accent)',
-};
 
 const STAGES = [
     { x: 30, label: 'commit' },
@@ -24,19 +19,6 @@ const W = 110;
 
 // phase boundaries in frames
 const PH = { start: 0, lint: 40, build: 90, stage: 140, canary: 190, full: 280 };
-
-function chevron(x: number, y: number, color: string, key: string) {
-    const s = 7;
-    return (
-        <polyline
-            key={key}
-            points={`${x - s},${y - s} ${x},${y} ${x - s},${y + s}`}
-            fill='none'
-            stroke={color}
-            strokeWidth='2'
-        />
-    );
-}
 
 export default function CiCdFlow() {
     const frame = useCurrentFrame();
@@ -93,7 +75,7 @@ export default function CiCdFlow() {
                     return (
                         <g key={`c${i}`}>
                             <line x1={x1} y1={Y + H / 2} x2={x2} y2={Y + H / 2} stroke={active ? C.accent : C.secondary} strokeWidth='2' />
-                            {chevron(x2, Y + H / 2, active ? C.accent : C.secondary, `ch${i}`)}
+                            {chevron(x2, Y + H / 2, 0, active ? C.accent : C.secondary, `ch${i}`)}
                         </g>
                     );
                 })}

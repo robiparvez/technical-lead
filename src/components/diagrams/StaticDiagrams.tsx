@@ -1,28 +1,10 @@
+import { C, chevron } from './shared';
+
 /**
  * Static outline SVG diagrams. Area shapes carry fill="none"; fill appears
  * only on text; arrowheads are open chevrons; the accent color marks the
  * single highlighted path or node.
  */
-
-const C = {
-    primary: 'var(--color-text-primary)',
-    secondary: 'var(--color-text-secondary)',
-    accent: 'var(--color-accent)',
-};
-
-function chevron(x: number, y: number, angle: number, color: string, key?: string) {
-    const s = 6;
-    return (
-        <polyline
-            key={key}
-            points={`${x - s},${y - s} ${x},${y} ${x - s},${y + s}`}
-            fill='none'
-            stroke={color}
-            strokeWidth='1.5'
-            transform={`rotate(${angle} ${x} ${y})`}
-        />
-    );
-}
 
 /** REST: three endpoints with fixed payloads vs GraphQL: one request, exact fields. */
 export function RestVsGraphQL() {
@@ -72,7 +54,7 @@ export function RestVsGraphQL() {
                         stroke={C.secondary}
                         strokeWidth='1.5'
                     />
-                    {chevron(195, e.y + 25, -27, C.secondary, e.path)}
+                    {chevron(195, e.y + 25, -27, C.secondary, e.path, 6, 1.5)}
                     <rect
                         x='198'
                         y={e.y}
@@ -96,7 +78,7 @@ export function RestVsGraphQL() {
             </text>
 
             {/* divider: not a rule, an open chevron pointing right */}
-            {chevron(355, 150, 0, C.secondary, 'divider')}
+            {chevron(355, 150, 0, C.secondary, 'divider', 6, 1.5)}
 
             {/* GraphQL half */}
             <text
@@ -124,7 +106,7 @@ export function RestVsGraphQL() {
             </text>
 
             <line x1='480' y1='150' x2='560' y2='150' stroke={C.accent} strokeWidth='2' />
-            {chevron(560, 150, 0, C.accent, 'gql')}
+            {chevron(560, 150, 0, C.accent, 'gql', 6, 1.5)}
             <rect
                 x='563'
                 y='120'
@@ -205,7 +187,7 @@ export function BTreeIndex() {
 
             {/* root -> internal */}
             <line x1='330' y1='70' x2='220' y2='118' stroke={C.accent} strokeWidth='2' />
-            {chevron(220, 118, 55, C.accent, 'r1')}
+            {chevron(220, 118, 55, C.accent, 'r1', 6, 1.5)}
             <line x1='390' y1='70' x2='500' y2='118' stroke={C.secondary} strokeWidth='1.5' />
 
             {/* leaves, one row */}
@@ -241,7 +223,7 @@ export function BTreeIndex() {
             {/* internal -> leaves: left node hot path to 22|28 */}
             <line x1='140' y1='170' x2='95' y2='228' stroke={C.secondary} strokeWidth='1.5' />
             <line x1='200' y1='170' x2='260' y2='228' stroke={C.accent} strokeWidth='2' />
-            {chevron(260, 228, -60, C.accent, 'l1')}
+            {chevron(260, 228, -60, C.accent, 'l1', 6, 1.5)}
             <line x1='510' y1='170' x2='435' y2='228' stroke={C.secondary} strokeWidth='1.5' />
             <line x1='575' y1='170' x2='605' y2='228' stroke={C.secondary} strokeWidth='1.5' />
 
@@ -274,7 +256,7 @@ export function ContainerDeploy() {
             </text>
 
             <line x1='100' y1='152' x2='170' y2='152' stroke={C.secondary} strokeWidth='1.5' />
-            {chevron(170, 152, 0, C.secondary, 'p1')}
+            {chevron(170, 152, 0, C.secondary, 'p1', 6, 1.5)}
 
             {/* registry with image layers */}
             <rect x='175' y='120' width='120' height='65' rx='8' fill='none' stroke={C.secondary} strokeWidth='1.5' />
@@ -289,7 +271,7 @@ export function ContainerDeploy() {
             </text>
 
             <line x1='295' y1='152' x2='365' y2='152' stroke={C.secondary} strokeWidth='1.5' />
-            {chevron(365, 152, 0, C.secondary, 'p2')}
+            {chevron(365, 152, 0, C.secondary, 'p2', 6, 1.5)}
 
             {/* orchestrator + nodes with pods */}
             <rect x='370' y='60' width='230' height='190' rx='10' fill='none' stroke={C.primary} strokeWidth='2' />
@@ -332,7 +314,7 @@ export function ContainerDeploy() {
 
             {/* users via load balancer */}
             <line x1='600' y1='152' x2='655' y2='152' stroke={C.accent} strokeWidth='2' />
-            {chevron(655, 152, 0, C.accent, 'p3')}
+            {chevron(655, 152, 0, C.accent, 'p3', 6, 1.5)}
             <circle cx='680' cy='152' r='16' fill='none' stroke={C.primary} strokeWidth='2' />
             <text x='680' y='156' textAnchor='middle' fontSize='9' fill={C.primary}>
                 users

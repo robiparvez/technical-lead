@@ -9,6 +9,12 @@ export const POINTS: Record<Difficulty, { reward: number; penalty: number }> = {
 
 export const DIFFICULTIES: Difficulty[] = ['basic', 'intermediate', 'advanced'];
 
+export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
+    basic: 'Basic',
+    intermediate: 'Intermediate',
+    advanced: 'Advanced',
+};
+
 const OPTION_COUNT = 4;
 
 export type QuizSource = Pick<Question, 'id' | 'difficulty' | 'question' | 'keyTakeaway'>;

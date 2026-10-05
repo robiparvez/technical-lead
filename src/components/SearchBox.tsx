@@ -9,7 +9,7 @@ export const REVEAL_SEARCH_EVENT = 'tl-reveal-search';
 export const FOCUS_SEARCH_EVENT = 'tl-focus-search';
 const CLEAR_EVENT = 'tl-clear-search';
 
-export function openSearch() {
+function openSearch() {
     window.dispatchEvent(new Event(REVEAL_SEARCH_EVENT));
 }
 
@@ -29,7 +29,6 @@ export default function SearchBox() {
     const router = useRouter();
     const inputRef = useRef<HTMLInputElement>(null);
     const [value, setValue] = useState('');
-    const [disabled] = useState(false);
     const inputId = useId();
     // null until the mount effect syncs the URL query into state
     const committed = useRef<string | null>(null);
@@ -80,7 +79,6 @@ export default function SearchBox() {
                 type='search'
                 placeholder='Search questions'
                 value={value}
-                disabled={disabled}
                 autoComplete='off'
                 aria-keyshortcuts='/'
                 onChange={(e) => setValue(e.target.value)}

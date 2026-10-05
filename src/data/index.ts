@@ -17,7 +17,7 @@ import security from './topics/security.json';
 
 // Topic order mirrors the posting: required qualifications first,
 // then preferred competencies, then responsibilities.
-const ordered: Topic[] = [
+export const TOPICS: Topic[] = [
     microservices as Topic,
     apiDesign as Topic,
     databases as Topic,
@@ -35,12 +35,8 @@ const ordered: Topic[] = [
     security as Topic,
 ];
 
-export function getTopics(): Topic[] {
-    return ordered;
-}
-
 export function getTopic(slug: string): Topic | undefined {
-    return ordered.find((t) => t.slug === slug);
+    return TOPICS.find((t) => t.slug === slug);
 }
 
 export interface SearchEntry {
@@ -55,7 +51,7 @@ export interface SearchEntry {
 }
 
 export function getSearchIndex(): SearchEntry[] {
-    return ordered.flatMap((topic) =>
+    return TOPICS.flatMap((topic) =>
         topic.questions.map((q) => ({
             topicSlug: topic.slug,
             topicTitle: topic.title,
