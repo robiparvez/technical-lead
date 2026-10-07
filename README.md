@@ -1,6 +1,6 @@
 # Technical Lead Study Guide
 
-Interview study app built from the technical-lead position profile. Runs locally only.
+Interview study app built from the technical-lead position profile. Live at https://robiparvez.github.io/technical-lead/.
 
 ## Run
 
@@ -9,7 +9,11 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000. Production build: `npm run build && npm start`.
+Open http://localhost:3000. Production build: `npm run build` writes a static site to `out/`; `npm start` serves it.
+
+## Deploy
+
+`.github/workflows/pages.yml` lints, builds the static export (`output: 'export'`, `trailingSlash: true`), and publishes `out/` to GitHub Pages on every push to `master`. The workflow sets `PAGES_BASE_PATH` to `/technical-lead`; local runs leave it unset and serve from `/`. There is no server: the home page reads `?q=` in the browser, and on the home page the search box updates the query with `history.replaceState`, since the export has no per-query payload.
 
 ## Versions
 
@@ -28,10 +32,10 @@ Remotion license: free for individuals, including personal use
 
 - `src/data/topics/*.json` — questions, answers, tags, diagrams, key takeaways
 - `src/components/QuestionRail.tsx` — difficulty rail with stations and progress glyphs
-- `src/components/Diagram.tsx` — diagram host: static SVG inline, animated via @remotion/player
-- `src/components/diagrams/` — Remotion compositions and static SVG diagrams
+- `src/components/Diagram.tsx` — diagram host: every diagram plays as a looping @remotion/player animation
+- `src/components/diagrams/` — Remotion compositions: hand-built diagrams and `SpecDiagram`, which animates any JSON-authored `DiagramSpec`
 - `src/styles/tokens.css` — every design token as a CSS custom property, with light and dark values
-- `src/styles/reset.css` — the only file with background declarations (the themed page canvas; everything else transparent/none)
+- `src/styles/reset.css` — the only file with background declarations (the themed page canvas, repeated on the sticky desktop header so scrolled content stays hidden; everything else transparent/none)
 - `src/components/ThemeSwitch.tsx` — System / Light / Dark choice, saved in localStorage
 
 ## Token-to-component mapping
@@ -77,19 +81,21 @@ Every interactive component: keyboard, pointer, touch. State rules live in `src/
 | Skip link | First Tab stop; Enter moves focus to `#main` | Tap jumps to content |
 | Search input | `/` anywhere focuses it; type filters live; Escape clears the browser's search text | Tap opens (phone panel); typing filters after 200 ms debounce |
 | Menu / Search buttons (phone) | Tab + Enter toggles panel; `aria-expanded` reflects state; Menu shows a hamburger icon | Tap toggles in-flow panel; 44 px target |
-| Sidebar toggle (desktop) | Tab + Enter collapses or restores the sidebar; focus moves to the toggle that replaces the unmounted one; `aria-expanded` reflects state | Click the hamburger at the top of the sidebar to collapse, the floating hamburger top-left to restore; 44 px target |
+| Sidebar toggle (desktop) | Tab + Enter, or Ctrl+B (Cmd+B on macOS) from anywhere except rich-text editors, collapses or restores the sidebar; focus moves to the toggle that replaces the unmounted one; `aria-expanded` and `aria-keyshortcuts` set | Click the hamburger at the top of the sidebar to collapse, the floating hamburger top-left to restore; 44 px target |
 | Nav links | Tab reachable; `aria-current="page"` on the open topic; Enter navigates | Tap navigates; 44 px min height |
 | Question toggle | Tab + Enter/Space expands or collapses; `aria-expanded` and `aria-controls` set | Tap anywhere on the header; 44 px min height |
 | Mark as known | Tab + Enter/Space toggles; `aria-pressed` reflects state; label swaps "Mark as known" / "Marked as known" | Tap toggles; glyph appears on the rail |
 | Play / Pause / Restart | Tab + Enter/Space; label announces the action | Tap; 44 px target |
 | Diagram player | Group with `aria-label`; no autoplay; controls are regular buttons | Never autoplays, including under `prefers-reduced-motion` |
+| Diagram animation | The figure's `aria-label` carries the full text alternative | The whole diagram is always visible; an accent dot walks the flow, the current node or path turns accent, visited ones turn primary; loops after a short hold |
 | Index / result / reference links | Tab reachable; focus-visible outline; Enter navigates | Tap navigates |
-| Theme switch | Tab + Enter/Space picks System, Light, or Dark; `aria-pressed` marks the choice | Tap picks; in the sidebar and the phone menu; 44 px targets |
+| Desktop header | Sticky at the top of the content column, its row aligned with the full-height sidebar's head; holds the search input and theme switch, centered over the content | Stays in view while the page scrolls; hidden on phone, where the top bar and panels take over |
+| Theme switch | Tab + Enter/Space picks System, Light, or Dark; `aria-pressed` marks the choice | Tap picks; in the desktop header and the phone menu; 44 px targets |
 
 ## Verification
 
-- `npm run build` passes; 15 topic pages prerendered (SSG), references static.
+- `npm run build` passes; 20 topic pages prerendered (SSG), references static.
 - Greps over `src/` (including SVG) excluding `tokens.css`/`reset.css`: zero gradient values, zero background declarations, zero raw hex.
-- `reset.css` holds the `html` canvas background and otherwise only `transparent`/`none` backgrounds.
-- Computed `background-color` on body, buttons, inputs, cards, code blocks, badges, mark, and `__remotion-player` (Player root): all `rgba(0, 0, 0, 0)`; only `html` carries the canvas color.
+- `reset.css` holds the canvas background for `html` and the sticky `.site-header`, and otherwise only `transparent`/`none` backgrounds.
+- Computed `background-color` on body, buttons, inputs, cards, code blocks, badges, mark, and `__remotion-player` (Player root): all `rgba(0, 0, 0, 0)`; only `html` and `.site-header` carry the canvas color.
 - Rendered contrast on the canvas (light / dark): primary text 12.73 / 11.95, secondary text 6.36 / 6.59, accent 4.56 / 6.58, control borders 3.19 / 3.29, syntax tokens 5.71-7.00 / 7.97-8.70.

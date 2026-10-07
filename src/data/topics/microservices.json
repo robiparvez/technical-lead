@@ -6,71 +6,986 @@
         {
             "id": "microservices-q1",
             "difficulty": "basic",
-            "tags": ["monolith", "fundamentals", "trade-offs"],
+            "tags": [
+                "monolith",
+                "fundamentals",
+                "trade-offs"
+            ],
             "question": "What is a microservices architecture and how does it differ from a monolith?",
-            "answer": "A microservices architecture splits an application into small, independently deployable services, each owning one business capability and its data. A monolith ships as a single unit, so any change redeploys everything. Microservices allow independent scaling and team autonomy, but add network latency, distributed data consistency problems, and operational overhead. Judge the split by business boundaries, not technical layers.",
+            "answer": "Microservices split an app into small, independently deployable services. Each service owns one business capability and its data. A monolith ships as one unit, so every change redeploys everything. The gain is independent scaling and team autonomy. The cost is network latency, distributed data consistency, and operational overhead. I split on business boundaries, not technical layers.",
             "keyTakeaway": "Trade deployment simplicity for independent scaling and team autonomy.",
             "diagram": "request-flow"
         },
         {
             "id": "microservices-q2",
             "difficulty": "basic",
-            "tags": ["trade-offs", "when-not-to-use", "fundamentals"],
+            "tags": [
+                "trade-offs",
+                "when-not-to-use",
+                "fundamentals"
+            ],
             "question": "When would you advise against microservices for a new product?",
-            "answer": "Advise against them when the domain is still unstable, the team is small, or traffic does not justify independent scaling. Early-stage products usually need fast iteration on an unclear domain, and service boundaries drawn too early become expensive to move. A well-modularized monolith with clear internal modules can split later using the strangler fig approach. The operational cost of microservices, monitoring, deployment, and network failure handling, only pays off with multiple teams or divergent scaling needs.",
-            "keyTakeaway": "Start with a modular monolith; split on stable boundaries, not on hype."
+            "answer": "I say no when the domain is unstable, the team is small, or nothing needs independent scaling. Early products need fast iteration on an unclear domain, and boundaries drawn too early are expensive to move. A well-modularized monolith can split later via the strangler fig. Monitoring, deployment, and network failure handling only pay off with several teams or genuinely divergent scaling needs.",
+            "keyTakeaway": "Start with a modular monolith; split on stable boundaries, not on hype.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Split or stay modular",
+                "condition": "Domain stable, several teams?",
+                "yesLabel": "stable, many teams",
+                "noLabel": "unstable or small team",
+                "yes": {
+                    "label": "Split into services",
+                    "note": "on stable boundaries"
+                },
+                "no": {
+                    "label": "Modular monolith",
+                    "note": "split later, strangler fig"
+                }
+            }
         },
         {
             "id": "microservices-q3",
             "difficulty": "intermediate",
-            "tags": ["communication", "grpc", "rest", "messaging"],
+            "tags": [
+                "communication",
+                "grpc",
+                "rest",
+                "messaging"
+            ],
             "question": "How do microservices communicate, and how do you choose between synchronous and asynchronous communication?",
-            "answer": "Synchronous calls, typically REST or gRPC, suit request-response flows where the caller needs an immediate answer, such as validating a payment. Asynchronous messaging through a broker suits state changes that other services react to, such as order-placed, because it decouples producers from consumers and absorbs traffic spikes. Prefer asynchronous for anything that can tolerate eventual consistency, since retries and backpressure are easier with a broker. Synchronous chains compound latency and outages, so keep them shallow.",
-            "keyTakeaway": "Request-response over RPC; state changes over the broker."
+            "answer": "Sync calls, REST or gRPC, fit request-response where the caller needs the answer now, like payment validation. An async broker fits state changes that others react to, like order-placed: the producer ignores the listeners, and the buffer absorbs spikes. I prefer async when eventual consistency is acceptable, since retries and backpressure come free with a broker. I keep sync chains shallow, because latency and outages compound per hop.",
+            "keyTakeaway": "Request-response over RPC; state changes over the broker.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Choosing the channel",
+                "columns": [
+                    "Sync RPC",
+                    "Async messaging"
+                ],
+                "rows": [
+                    {
+                        "label": "caller needs",
+                        "values": [
+                            "an immediate answer",
+                            "to react to change"
+                        ]
+                    },
+                    {
+                        "label": "failure mode",
+                        "values": [
+                            "error propagates now",
+                            "broker buffers spike"
+                        ]
+                    },
+                    {
+                        "label": "coupling",
+                        "values": [
+                            "both up together",
+                            "producer unaware"
+                        ]
+                    },
+                    {
+                        "label": "rule of thumb",
+                        "values": [
+                            "queries and validation",
+                            "state-change events"
+                        ]
+                    }
+                ]
+            }
         },
         {
             "id": "microservices-q4",
             "difficulty": "intermediate",
-            "tags": ["data", "database-per-service", "consistency"],
+            "tags": [
+                "data",
+                "database-per-service",
+                "consistency"
+            ],
             "question": "What does database-per-service mean, and how do you keep data consistent without cross-service joins?",
-            "answer": "Each service owns its schema and is the only writer to it, so no other service queries another service's tables directly. Cross-service reads are served by APIs or by events that keep a local read model, a copy of the data another service needs. Cross-service writes give up immediate consistency: services publish events and accept eventual consistency, coordinated with sagas when a multi-step flow must complete together. Denormalize deliberately: the read model trades duplication for autonomy.",
-            "keyTakeaway": "Own your data, share state through events, accept eventual consistency."
+            "answer": "Each service owns its schema and is the only writer to it. No cross-service table reads. Cross-service reads go through APIs or event-fed local copies. For cross-service writes we accept eventual consistency: publish events, and coordinate multi-step flows with a saga. I denormalize on purpose, because duplication buys autonomy.",
+            "keyTakeaway": "Own your data, share state through events, accept eventual consistency.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Cross-service consistency",
+                "condition": "Does the write span more than one service?",
+                "yesLabel": "coordinate",
+                "noLabel": "commit locally",
+                "yes": {
+                    "label": "Saga plus events",
+                    "note": "accept eventual consistency"
+                },
+                "no": {
+                    "label": "Local transaction",
+                    "note": "strong consistency, one store"
+                }
+            }
         },
         {
             "id": "microservices-q5",
             "difficulty": "intermediate",
-            "tags": ["api-gateway", "edge", "routing"],
+            "tags": [
+                "api-gateway",
+                "edge",
+                "routing"
+            ],
             "question": "What role does an API gateway play in a microservices system?",
-            "answer": "The gateway is the single entry point that routes external requests to internal services, terminating TLS and authentication before traffic reaches them. It centralizes cross-cutting concerns: rate limiting, request logging, response shaping, and routing rules live in one place instead of every service. It also hides internal topology, so clients stay stable while services split or move. Avoid turning it into an integration layer; business logic stays in services.",
-            "keyTakeaway": "The gateway centralizes edge concerns; it must not accumulate business logic."
+            "answer": "The gateway is the single entry point. It routes external traffic and terminates TLS and auth before requests hit the services. Cross-cutting concerns live there once: rate limiting, logging, response shaping. It hides internal topology, so clients stay stable while services move. I keep business logic out, because an integrating gateway becomes a bottleneck.",
+            "keyTakeaway": "The gateway centralizes edge concerns; it must not accumulate business logic.",
+            "diagram": {
+                "kind": "flow",
+                "title": "API gateway at the edge",
+                "steps": [
+                    {
+                        "label": "Client",
+                        "note": "external traffic"
+                    },
+                    {
+                        "label": "API gateway",
+                        "note": "TLS, auth, rate limits"
+                    },
+                    {
+                        "label": "Internal services",
+                        "note": "business logic lives here"
+                    }
+                ]
+            }
         },
         {
             "id": "microservices-q6",
             "difficulty": "intermediate",
-            "tags": ["resilience", "circuit-breaker", "retries", "typescript"],
+            "tags": [
+                "resilience",
+                "circuit-breaker",
+                "retries",
+                "typescript"
+            ],
             "question": "How do you prevent one failing service from cascading failures through the system?",
-            "answer": "Combine timeouts, bounded retries with exponential backoff and jitter, and circuit breakers. A circuit breaker stops calling a failing dependency after a threshold, fails fast, and probes periodically before restoring traffic. Add fallbacks where a degraded answer is better than an error, and load-shed or queue at the edge when demand exceeds capacity. Test these paths with chaos exercises, because an untested timeout is a latent outage.",
+            "answer": "I layer timeouts, bounded retries with exponential backoff plus jitter, and circuit breakers. A breaker stops calling a failing dependency, fails fast, and probes before restoring traffic. I add fallbacks where a degraded answer beats an error, and shed load at the edge when demand outruns capacity. I test with chaos exercises, because an untested timeout is a latent outage.",
             "keyTakeaway": "Fail fast with timeouts, backoff, and breakers; degrade instead of cascading.",
             "code": {
                 "language": "typescript",
                 "snippet": "async function callWithBreaker<T>(fn: () => Promise<T>, breaker: Breaker): Promise<T> {\n  if (breaker.isOpen()) throw new Error('circuit open: failing fast');\n  try {\n    const result = await withTimeout(fn(), 500);\n    breaker.recordSuccess();\n    return result;\n  } catch (err) {\n    breaker.recordFailure(); // opens after N failures within window\n    throw err;\n  }\n}"
+            },
+            "diagram": {
+                "kind": "flow",
+                "title": "Circuit breaker lifecycle",
+                "steps": [
+                    {
+                        "label": "Closed, calls flow",
+                        "note": "failures counted per window"
+                    },
+                    {
+                        "label": "Threshold crossed",
+                        "note": "dependency looks unhealthy"
+                    },
+                    {
+                        "label": "Open, fail fast",
+                        "note": "fallbacks serve the caller"
+                    },
+                    {
+                        "label": "Half-open probe",
+                        "note": "one trial request"
+                    },
+                    {
+                        "label": "Close on success",
+                        "note": "restore normal traffic"
+                    }
+                ]
             }
         },
         {
             "id": "microservices-q7",
             "difficulty": "advanced",
-            "tags": ["migration", "strangler-fig", "monolith"],
+            "tags": [
+                "migration",
+                "strangler-fig",
+                "monolith"
+            ],
             "question": "How would you incrementally migrate a monolith to microservices without a big-bang rewrite?",
-            "answer": "Apply the strangler fig pattern: put a routing facade in front of the monolith, then move one bounded context at a time to a new service and reroute traffic. Start with a low-risk, high-value boundary that has few entanglements, and split shared data by giving the new service its own store fed from events or a sync job. Keep both paths working behind the facade, measure at each step, and roll back a route when errors rise. The monolith shrinks gradually until the remaining core is small enough to retire or keep.",
-            "keyTakeaway": "Strangle the monolith one boundary at a time behind a routing facade."
+            "answer": "I'd use the strangler fig. Put a routing facade in front of the monolith, move one bounded context at a time, and reroute. I start with low-risk, high-value pieces. Each extracted service gets its own store, fed by events or a sync job. I keep both paths working, measure each step, and roll the route back when errors climb. I repeat until the monolith is small enough to retire or keep.",
+            "keyTakeaway": "Strangle the monolith one boundary at a time behind a routing facade.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Strangler fig loop",
+                "steps": [
+                    {
+                        "label": "Facade routes all",
+                        "note": "monolith still owns traffic"
+                    },
+                    {
+                        "label": "Pick one boundary",
+                        "note": "low risk, real value"
+                    },
+                    {
+                        "label": "Extract with data",
+                        "note": "new store behind events"
+                    },
+                    {
+                        "label": "Reroute gradually",
+                        "note": "rollback stays one switch"
+                    },
+                    {
+                        "label": "Shrink the monolith",
+                        "note": "repeat until retired"
+                    }
+                ]
+            }
         },
         {
             "id": "microservices-q8",
             "difficulty": "advanced",
-            "tags": ["observability", "distributed-tracing", "debugging"],
+            "tags": [
+                "observability",
+                "distributed-tracing",
+                "debugging"
+            ],
             "question": "A user request spans five services and fails intermittently. How do you find the cause?",
-            "answer": "Require distributed tracing: each entry request carries a trace id that flows through every hop via propagation headers, so one trace shows the full path with per-span latency. Correlate traces with structured logs and metrics tagged with the same ids, and alert on RED metrics, rate, errors, duration, per service. The trace pinpoints where time goes and which hop drops the request, replacing guesswork across teams. Without correlation ids, intermittent cross-service failures are nearly undebuggable, so tracing is a day-one requirement, not an afterthought.",
-            "keyTakeaway": "Trace ids across every hop turn a five-service mystery into one timeline."
+            "answer": "Distributed tracing is non-negotiable, a day-one requirement. One trace id rides propagation headers through every hop, so a single trace shows the full path and per-span latency. I tie structured logs and metrics to the same id, and alert on RED metrics (rate, errors, duration) per service. The trace shows where time goes and which hop drops the request, which replaces guesswork across teams. Without correlation ids, intermittent cross-service failures are nearly undebuggable.",
+            "keyTakeaway": "Trace ids across every hop turn a five-service mystery into one timeline.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "One trace across hops",
+                "actors": [
+                    "Client",
+                    "Gateway",
+                    "Orders",
+                    "Billing"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "checkout, trace starts"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "trace id forwarded"
+                    },
+                    {
+                        "from": 2,
+                        "to": 3,
+                        "label": "same trace id"
+                    },
+                    {
+                        "from": 3,
+                        "to": 2,
+                        "label": "billing fails"
+                    },
+                    {
+                        "from": 2,
+                        "to": 0,
+                        "label": "error carries trace id"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "microservices-q9",
+            "difficulty": "intermediate",
+            "tags": [
+                "decomposition",
+                "bounded-context",
+                "domain-driven-design"
+            ],
+            "question": "How do you decide where to draw the boundaries when decomposing a system into services?",
+            "answer": "I decompose around business capabilities, not technical layers. I look for bounded contexts: a concept with its own language, rules, and lifecycle. Orders, pricing, and inventory are candidates, since each changes for its own reasons. I test a boundary by asking if it can release independently and if the data belongs to it alone. If two services always ship together, they're one service. I start coarse, since splitting later is cheap and merging isn't, then refine where releases collide.",
+            "keyTakeaway": "Draw boundaries around business capabilities that can own their data and release independently.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Testing a candidate boundary",
+                "condition": "Can this capability ship and scale on its own?",
+                "yesLabel": "split it out",
+                "noLabel": "keep as module",
+                "yes": {
+                    "label": "Extract service",
+                    "note": "give it its own store"
+                },
+                "no": {
+                    "label": "Modular monolith",
+                    "note": "share code, not data"
+                }
+            }
+        },
+        {
+            "id": "microservices-q10",
+            "difficulty": "intermediate",
+            "tags": [
+                "sagas",
+                "distributed-transactions",
+                "consistency"
+            ],
+            "question": "What is the saga pattern and when does a system need one?",
+            "answer": "A saga runs a multi-service workflow as a sequence of local transactions, each committing in its own service. Compensating actions undo earlier steps when a later step fails. You need one when a flow spans services, like reserve stock, charge card, create shipment. I don't use two-phase commit, because it holds locks and one slow participant stalls everything. Intermediate states are visible by design. Compensation is a business action, like a refund, not a rollback. I model failure paths the same as the happy path.",
+            "keyTakeaway": "Run multi-service workflows as local transactions plus compensating actions, never two-phase commit.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Order saga with compensation",
+                "actors": [
+                    "Saga",
+                    "Payments",
+                    "Inventory"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "charge card"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "payment confirmed"
+                    },
+                    {
+                        "from": 0,
+                        "to": 2,
+                        "label": "reserve stock"
+                    },
+                    {
+                        "from": 2,
+                        "to": 0,
+                        "label": "out of stock"
+                    },
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "refund payment"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "microservices-q11",
+            "difficulty": "intermediate",
+            "tags": [
+                "sagas",
+                "orchestration",
+                "choreography"
+            ],
+            "question": "In a saga, how do you choose between orchestration and choreography?",
+            "answer": "In choreography, every service reacts to events and there's no coordinator. Coupling is low, which is good for short flows. But the workflow exists only implicitly across consumers, so nobody knows where an order is without logs. An orchestrator owns the flow: it issues commands, tracks state, and fires compensations. That makes long sagas observable and testable, at the cost of one more component to keep lean. My rule is to choreograph local, immediate reactions and orchestrate sequential dependencies, timeouts, and compensation. Real systems mix both.",
+            "keyTakeaway": "Choreograph simple event reactions; orchestrate long flows that need visible state and compensation.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Coordinating a saga",
+                "columns": [
+                    "Orchestration",
+                    "Choreography"
+                ],
+                "rows": [
+                    {
+                        "label": "who drives",
+                        "values": [
+                            "central orchestrator",
+                            "each service reacts"
+                        ]
+                    },
+                    {
+                        "label": "visibility",
+                        "values": [
+                            "state in one place",
+                            "scattered across logs"
+                        ]
+                    },
+                    {
+                        "label": "coupling",
+                        "values": [
+                            "orchestrator knows all",
+                            "only event contracts"
+                        ]
+                    },
+                    {
+                        "label": "best fit",
+                        "values": [
+                            "long money flows",
+                            "short local reactions"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "microservices-q12",
+            "difficulty": "intermediate",
+            "tags": [
+                "cqrs",
+                "api-composition",
+                "read-models",
+                "typescript"
+            ],
+            "question": "How would you implement a screen that needs data from five different services?",
+            "answer": "Two options. API composition calls each service in parallel and merges in memory. It adds no new state, but the screen couples to the uptime of every source, and it breaks when the merge needs joins or filtering over big sets. A CQRS read model is a store fed by the owning services' events, shaped for one screen. I use it when joining across services, with tight latency budgets, or when availability matters more than freshness. It's denormalized by design, so I accept seconds of lag and version the projection so it can be rebuilt.",
+            "keyTakeaway": "Compose small queries in parallel; build event-fed read models when you must join across services.",
+            "code": {
+                "language": "typescript",
+                "snippet": "async function getOrderView(orderId: string): Promise<OrderView> {\n  const order = await ordersApi.get(orderId);\n  const [customer, payments] = await Promise.all([\n    customersApi.get(order.customerId),\n    paymentsApi.listByOrder(orderId),\n  ]);\n  return { ...order, customer, payments };\n}"
+            },
+            "diagram": {
+                "kind": "flow",
+                "title": "Event-fed CQRS read model",
+                "steps": [
+                    {
+                        "label": "Services publish events",
+                        "note": "each owns its data"
+                    },
+                    {
+                        "label": "Projector consumes stream",
+                        "note": "transforms into view rows"
+                    },
+                    {
+                        "label": "Read model stores rows",
+                        "note": "shaped for one screen"
+                    },
+                    {
+                        "label": "Screen queries read model",
+                        "note": "one fast query"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "microservices-q13",
+            "difficulty": "intermediate",
+            "tags": [
+                "contract-testing",
+                "testing",
+                "consumer-driven"
+            ],
+            "question": "How do you keep a provider service from breaking its consumers when it ships a change?",
+            "answer": "Consumer-driven contract testing. Each consumer publishes a contract: the exact requests it makes and the fields it depends on. The provider pipeline verifies the real implementation against all contracts before merge. That moves integration confidence from a shared staging environment into each team's CI, and the provider learns about breakage in minutes, not in production. Contracts also show which fields are load-bearing, so the rest are safe to delete. I use it for sync APIs between teams. A schema registry plus can-i-deploy extends the idea to events.",
+            "keyTakeaway": "Consumers publish contracts and every provider build verifies them, catching breaks before merge.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Consumer-driven contract flow",
+                "actors": [
+                    "Consumer CI",
+                    "Pact broker",
+                    "Provider CI"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "publish consumer contract"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "fetch all contracts"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "post verification results"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "can-i-deploy check"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "microservices-q14",
+            "difficulty": "intermediate",
+            "tags": [
+                "retries",
+                "retry-storms",
+                "jitter",
+                "typescript"
+            ],
+            "question": "How can retries make an outage worse, and how do you design them so they do not?",
+            "answer": "When a dependency slows down, every caller retries and the load multiplies on the struggling service. If upstream callers retry too, a brownout becomes a full outage. The fix is to cap retries at the lowest layer that can act, never at every hop. I retry only idempotent operations, with exponential backoff and full jitter so retries spread out instead of arriving in synchronized waves. I keep a retry budget as a percent of normal traffic. Breakers stop retries under sustained failure. I also propagate cancellation, so abandoned requests stop burning work.",
+            "keyTakeaway": "Bound retries with jitter and budgets, or synchronized retries will amplify the outage they fight.",
+            "code": {
+                "language": "typescript",
+                "snippet": "async function retryIdempotent<T>(fn: () => Promise<T>, tries = 4): Promise<T> {\n  for (let attempt = 0; ; attempt++) {\n    try { return await fn(); } catch (err) {\n      if (attempt >= tries - 1) throw err;\n      await sleep(Math.random() * Math.min(100 * 2 ** attempt, 5000)); // full jitter\n    }\n  }\n}"
+            },
+            "diagram": {
+                "kind": "compare",
+                "title": "Naive versus bounded retries",
+                "columns": [
+                    "Naive retries",
+                    "Bounded retries"
+                ],
+                "rows": [
+                    {
+                        "label": "Where",
+                        "values": [
+                            "every hop",
+                            "lowest layer that can act"
+                        ]
+                    },
+                    {
+                        "label": "Timing",
+                        "values": [
+                            "synchronized waves",
+                            "backoff with full jitter"
+                        ]
+                    },
+                    {
+                        "label": "Volume",
+                        "values": [
+                            "load multiplies",
+                            "budget, percent of traffic"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "microservices-q15",
+            "difficulty": "intermediate",
+            "tags": [
+                "versioning",
+                "contracts",
+                "backward-compatibility"
+            ],
+            "question": "How do you evolve a service's API or events without breaking the services that depend on it?",
+            "answer": "My default is a backward-compatible change. I add optional fields, never rename, and never repurpose a field's meaning. Every published field is load-bearing, and an unseen consumer probably reads it. For REST, I make additive changes on the same path, version only on a real break, and run old and new side by side. For events, I register the schema with a compatibility rule, so an incompatible producer change is rejected at publish time. I put telemetry on the deprecated path and delete it when traffic hits zero.",
+            "keyTakeaway": "Make only backward-compatible changes by default; deprecate with telemetry, delete at zero traffic.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Evolving a published contract",
+                "condition": "Is the change backward compatible?",
+                "yesLabel": "ship it",
+                "noLabel": "phase it",
+                "yes": {
+                    "label": "Additive change",
+                    "note": "new optional field, same path"
+                },
+                "no": {
+                    "label": "Version and dual-run",
+                    "note": "deprecate old once traffic hits zero"
+                }
+            }
+        },
+        {
+            "id": "microservices-q16",
+            "difficulty": "intermediate",
+            "tags": [
+                "health-checks",
+                "readiness",
+                "kubernetes"
+            ],
+            "question": "How do you diagnose a service that passes its health checks but still serves errors to users?",
+            "answer": "I separate the probes first. Liveness asks whether the process should restart. It checks the process only, otherwise a DB blip becomes a restart storm. Readiness asks whether the instance can take traffic. It may fail when a dependency is down, and the instance drains instead of being killed. The classic lie is a health endpoint that returns 200 unconditionally, so users get routed to a dead connection pool. Readiness must reflect real serving needs, and I verify with synthetic requests on the real path.",
+            "keyTakeaway": "Liveness restarts the process, readiness gates traffic; a lying 200 routes users to a dead instance.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Two probes, two jobs",
+                "columns": [
+                    "Liveness",
+                    "Readiness"
+                ],
+                "rows": [
+                    {
+                        "label": "question asked",
+                        "values": [
+                            "restart the process?",
+                            "route traffic here?"
+                        ]
+                    },
+                    {
+                        "label": "on failure",
+                        "values": [
+                            "container restarted",
+                            "pulled from pool"
+                        ]
+                    },
+                    {
+                        "label": "checks",
+                        "values": [
+                            "process only",
+                            "critical dependencies"
+                        ]
+                    },
+                    {
+                        "label": "misuse risk",
+                        "values": [
+                            "dependency blip kills pods",
+                            "permanent outage if stuck"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "microservices-q17",
+            "difficulty": "intermediate",
+            "tags": [
+                "idempotency",
+                "messaging",
+                "consumers",
+                "typescript"
+            ],
+            "question": "When a broker redelivers messages after a consumer crash, how do you stop duplicates from corrupting state?",
+            "answer": "I assume at-least-once delivery, since the broker can't tell a crashed consumer from one that processed the message but didn't ack. So every consumer is idempotent. The standard tool is a processed-messages table keyed by event id, checked and written in the same transaction as the state change. The same-transaction rule is the trick, because separate transactions leave exactly the gap where duplicates slip through. For counters and statuses, I use replay-tolerant writes: set the value, don't increment it.",
+            "keyTakeaway": "Store processed message ids in the same transaction as the state change they drive.",
+            "code": {
+                "language": "typescript",
+                "snippet": "async function handle(event: Event) {\n  await db.transaction(async (tx) => {\n    if (await tx.processed.exists(event.id)) return; // duplicate redelivery\n    await applyBusinessChange(tx, event);\n    await tx.processed.insert({ id: event.id });\n  });\n}"
+            },
+            "diagram": {
+                "kind": "sequence",
+                "title": "Duplicate-safe consumer",
+                "actors": [
+                    "Broker",
+                    "Consumer",
+                    "Database"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "deliver event 7"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "one tx: apply + record id"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "ack"
+                    },
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "redeliver event 7 after crash"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "id seen: skip"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "microservices-q18",
+            "difficulty": "advanced",
+            "tags": [
+                "boundaries",
+                "coupling",
+                "decomposition"
+            ],
+            "question": "What signals tell you a service boundary is wrong, and how do you correct boundary drift?",
+            "answer": "The loudest signal is lockstep releases. If two services always deploy together, they're one service in two costumes. Others are chatty calls, shared domain libraries on both sides, and schema changes landing in two databases at the same time. The boundary cuts through a concept instead of around it. The fix is consolidation. If it's genuinely one capability, merge it back. Otherwise I redraw along data ownership, move the shared concept into one service, and have the other consume events. Boundaries are hypotheses, and drift is the result.",
+            "keyTakeaway": "Lockstep releases mean the boundary is wrong; redraw along data ownership, and merging back is allowed.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Fixing a wrong boundary",
+                "condition": "Lockstep releases between services",
+                "yesLabel": "one capability",
+                "noLabel": "separate concepts",
+                "yes": {
+                    "label": "Merge back",
+                    "note": "consolidate into one service"
+                },
+                "no": {
+                    "label": "Redraw the boundary",
+                    "note": "along data ownership"
+                }
+            }
+        },
+        {
+            "id": "microservices-q19",
+            "difficulty": "advanced",
+            "tags": [
+                "sagas",
+                "compensation",
+                "consistency"
+            ],
+            "question": "How do you design saga compensations for steps that cannot be undone, like shipping a package or sending an email?",
+            "answer": "I classify every step as compensatable, pivot, or retriable. The pivot is the point of no return. I push the pivot late and stack risky work before it, where compensation is still cheap. Past the pivot, I stop compensating and start retrying. Shipping can't be uncancelled, so a retry queue plus ops tooling gets the parcel out or the refund out. Where reversal is impossible, I prevent instead. Semantic locks mark stock as reserved rather than decrementing it, and I pre-authorize the card before fulfillment. I review sagas like a failure-mode analysis.",
+            "keyTakeaway": "Put the point of no return last: compensate before the pivot, retry relentlessly after it.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Saga step classes",
+                "steps": [
+                    {
+                        "label": "Compensatable steps",
+                        "note": "risky work, cheap to undo"
+                    },
+                    {
+                        "label": "Pivot",
+                        "note": "point of no return"
+                    },
+                    {
+                        "label": "Retriable steps",
+                        "note": "retry, never compensate"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "microservices-q20",
+            "difficulty": "advanced",
+            "tags": [
+                "resilience",
+                "timeouts",
+                "bulkhead"
+            ],
+            "question": "How do you set timeouts and resource limits so one slow dependency cannot take down a whole request path?",
+            "answer": "I work from a budget. I decide the end-to-end allowance and hand out fractions down the chain. Every inner timeout is strictly smaller than its caller's, because a bigger inner timeout guarantees abandoned work. I leave room for one fast retry. Bulkheads cap concurrency per dependency with a bounded pool each, so a hung inventory service exhausts its own allocation, not the payments threads. I set limits from measured percentiles and prove them in load tests by hanging one dependency on purpose.",
+            "keyTakeaway": "Give each hop a slice of one end-to-end budget, and give each dependency its own bulkhead.",
+            "diagram": {
+                "kind": "layers",
+                "title": "One timeout budget, nested",
+                "rows": [
+                    {
+                        "label": "Client request",
+                        "note": "1s total budget"
+                    },
+                    {
+                        "label": "API gateway",
+                        "note": "capped at 900ms"
+                    },
+                    {
+                        "label": "Order service",
+                        "note": "capped at 500ms"
+                    },
+                    {
+                        "label": "Payments call",
+                        "note": "300ms plus one retry"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "microservices-q21",
+            "difficulty": "advanced",
+            "tags": [
+                "service-mesh",
+                "infrastructure",
+                "mtls"
+            ],
+            "question": "Is a service mesh worth adopting, and at what point does the math tip in its favor?",
+            "answer": "A mesh moves retries, timeouts, mTLS, and telemetry out of the codebases and into centrally controlled sidecars. It's valuable once dozens of polyglot services need uniform security and observability. The costs are an extra network hop, sidecar CPU and memory per pod, upgrades that become a platform operation, and one more layer to debug. My threshold is ten-plus services across several teams, or compliance that requires mTLS. Below that, a client library plus platform ingress is cheaper. I adopt it for the problem I have, not one I expect.",
+            "keyTakeaway": "A mesh pays off with many polyglot services and a uniform mTLS need; below that, libraries are cheaper.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Service mesh planes",
+                "rows": [
+                    {
+                        "label": "Control plane",
+                        "note": "policy and certificates"
+                    },
+                    {
+                        "label": "Sidecar proxies",
+                        "note": "one beside every pod"
+                    },
+                    {
+                        "label": "Services",
+                        "note": "business logic only"
+                    },
+                    {
+                        "label": "Network",
+                        "note": "all traffic now mTLS"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "microservices-q22",
+            "difficulty": "advanced",
+            "tags": [
+                "configuration",
+                "secrets",
+                "kubernetes",
+                "yaml"
+            ],
+            "question": "How do you manage configuration and secrets when you have forty services across several environments?",
+            "answer": "I layer config with precedence: defaults baked into the image, environment values injected at deploy from a versioned store, and secrets pulled at runtime from Vault or a cloud key manager. I never commit secrets and never use plain env files. The source of truth is in git, so every change is reviewable, and the service fails fast at startup on missing config. For secrets I use short-lived tokens or workload identity, so leaks expire on their own, rotate on a schedule, and audit reads. No hand-edited config maps.",
+            "keyTakeaway": "Defaults in the image, environment values in git, secrets short-lived in a vault; nothing hand-edited.",
+            "code": {
+                "language": "yaml",
+                "snippet": "env:\n  - name: DB_HOST\n    valueFrom:\n      configMapKeyRef: { name: orders-config, key: host }\n  - name: DB_PASSWORD\n    valueFrom:\n      secretKeyRef: { name: orders-db, key: password }"
+            },
+            "diagram": {
+                "kind": "layers",
+                "title": "Config layers",
+                "rows": [
+                    {
+                        "label": "Defaults",
+                        "note": "baked into the image"
+                    },
+                    {
+                        "label": "Environment values",
+                        "note": "versioned in git, injected at deploy"
+                    },
+                    {
+                        "label": "Secrets",
+                        "note": "pulled at runtime from a vault"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "microservices-q23",
+            "difficulty": "advanced",
+            "tags": [
+                "deployment",
+                "canary",
+                "blue-green"
+            ],
+            "question": "How do you choose between canary and blue-green deployments when you operate dozens of services?",
+            "answer": "Blue-green flips all traffic between two identical environments. You get instant rollback and a clean cutover, but you pay double capacity during the switch and nothing is tested gradually. Canary sends one to five percent of real traffic to the new version and ramps while error rate, latency, and business metrics stay healthy. The blast radius is tiny. At scale, canary wins by default because it quantifies risk per release. I use blue-green for stateful or batch consumers, where partial traffic is meaningless. Both need backward-compatible contracts.",
+            "keyTakeaway": "Canary by default at scale for measured risk; blue-green where partial traffic is meaningless.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Blue-green versus canary",
+                "columns": [
+                    "Blue-green",
+                    "Canary"
+                ],
+                "rows": [
+                    {
+                        "label": "Traffic",
+                        "values": [
+                            "flips all at once",
+                            "1 to 5 percent, then ramps"
+                        ]
+                    },
+                    {
+                        "label": "Cost",
+                        "values": [
+                            "double capacity during switch",
+                            "tiny blast radius"
+                        ]
+                    },
+                    {
+                        "label": "Use when",
+                        "values": [
+                            "stateful or batch consumers",
+                            "default at scale"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "microservices-q24",
+            "difficulty": "advanced",
+            "tags": [
+                "team-topologies",
+                "conways-law",
+                "organization"
+            ],
+            "question": "How should team structure influence how you split services?",
+            "answer": "Conway's law says service boundaries mirror communication structure. So I start with stream-aligned teams, each owning related services end to end, from code to on-call, and service boundaries follow ownership. A team should be able to build, deploy, and operate without meetings. If every change needs a cross-team meeting, the boundary is wrong or a platform is missing. Platform and enabling teams cut cognitive load with paved-road tooling. I align both to the same domain map.",
+            "keyTakeaway": "Split services so each team owns its services end to end with minimal cross-team coordination.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Team structure drives splits",
+                "steps": [
+                    {
+                        "label": "Stream-aligned team",
+                        "note": "code to on-call"
+                    },
+                    {
+                        "label": "Owns related services",
+                        "note": "end to end"
+                    },
+                    {
+                        "label": "Boundaries follow ownership"
+                    },
+                    {
+                        "label": "Ships without meetings",
+                        "note": "no cross-team sync"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "microservices-q25",
+            "difficulty": "advanced",
+            "tags": [
+                "data",
+                "replication",
+                "cdc"
+            ],
+            "question": "What are your options for getting another service's data into yours, and how do you pick?",
+            "answer": "There are four options: fetch on demand, fetch plus cache, an event-fed local read model, and CDC tailing the owner's DB log. Fetch is simplest and always fresh, but it couples uptime, so it's for low-volume reads only. Event replication gives a local, always-queryable copy and independence from source uptime, and it costs lag plus projection code. I use CDC for strangling a shared DB or feeding analytics without app changes. It leaks the source schema, so I wrap it in a contract. With all options, I support snapshot plus replay, because consumers eventually need a rebuild.",
+            "keyTakeaway": "Pick per use case: fetch for freshness, event replication for independence, CDC for legacy databases.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Getting another service's data",
+                "columns": [
+                    "Fetch on demand",
+                    "Event read model",
+                    "CDC"
+                ],
+                "rows": [
+                    {
+                        "label": "Strength",
+                        "values": [
+                            "simplest, always fresh",
+                            "local copy, survives outages",
+                            "no app changes to source"
+                        ]
+                    },
+                    {
+                        "label": "Cost",
+                        "values": [
+                            "couples uptime",
+                            "lag plus projection code",
+                            "leaks source schema"
+                        ]
+                    },
+                    {
+                        "label": "Use for",
+                        "values": [
+                            "low-volume reads",
+                            "independence from source",
+                            "legacy DB, analytics"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "microservices-q26",
+            "difficulty": "advanced",
+            "tags": [
+                "durable-execution",
+                "workflow-engines",
+                "orchestration"
+            ],
+            "question": "When would you reach for a durable execution engine like Temporal instead of hand-rolling orchestration code?",
+            "answer": "With hand-rolled orchestration, you own state persistence, retries, timers, and crash recovery, and every workflow becomes bespoke middleware. A durable engine inverts that. The workflow is plain code, the engine records each step durably, and after a crash it replays history and resumes where it stopped. I use one when workflows run long or touch money: multi-day fulfillment, payments that must not double-execute, onboarding with human waits. The costs are a runtime to operate, deterministic-code constraints, and versioning discipline for in-flight workflows. For request-scoped logic, no. For multi-day money sagas, yes.",
+            "keyTakeaway": "Let a durable engine own workflow state, retries, and resume; hand-roll only the simplest flows.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Durable execution, crash to resume",
+                "steps": [
+                    {
+                        "label": "Workflow starts",
+                        "note": "each step recorded durably"
+                    },
+                    {
+                        "label": "Step fails or crash",
+                        "note": "history survives the failure"
+                    },
+                    {
+                        "label": "Engine replays history",
+                        "note": "completed steps not rerun"
+                    },
+                    {
+                        "label": "Resume at failure",
+                        "note": "retry policy kicks in"
+                    },
+                    {
+                        "label": "Workflow completes",
+                        "note": "no lost or double work"
+                    }
+                ]
+            }
         }
     ]
 }

@@ -92,7 +92,7 @@ function QuestionCard({
                             <CodeSnippet {...question.code} />
                         </>
                     )}
-                    {question.diagram && <Diagram id={question.diagram} />}
+                    {question.diagram && <Diagram diagram={question.diagram} />}
                     <p className='key-takeaway'>
                         <span className='label'>Key takeaway</span>
                         <span>{question.keyTakeaway}</span>

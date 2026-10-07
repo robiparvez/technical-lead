@@ -1,55 +1,784 @@
 {
-  "slug": "stakeholders",
-  "title": "Stakeholder Collaboration",
-  "requirement": "Collaborate with product managers, business analysts, UI/UX designers on technical architecture.",
-  "questions": [
-    {
-      "id": "stakeholders-q1",
-      "difficulty": "basic",
-      "tags": ["product", "scope", "behavioral"],
-      "question": "How do you work with a product manager on scope and schedule?",
-      "answer": "Bring options with costs, not verdicts: this scope is two weeks, dropping offline mode makes it one, this alternative buys the same user outcome for half the work. Agree on what a story must achieve, the user outcome, rather than only how it should be built, so trade-offs stay open. Give schedule truth early and repeatedly, bad news ages badly, and re-forecast when discovery changes the estimate. The PM owns value and priority, I own cost and technical risk, and the overlap, what we cut, is a joint decision with visible consequences.",
-      "keyTakeaway": "Trade scope with priced options, keep outcomes fixed, deliver schedule truth early."
-    },
-    {
-      "id": "stakeholders-q2",
-      "difficulty": "basic",
-      "tags": ["communication", "behavioral"],
-      "question": "How do you explain a technical constraint to a non-technical stakeholder?",
-      "answer": "Translate it into their currency, time, money, risk, or user experience, and drop the mechanism unless asked. For example, this data model cannot answer that report instantly, so the choice is a slower dashboard now or two weeks of work for a fast one. Use one concrete example with real numbers instead of abstractions, and show the smallest diagram that carries the point, boxes and arrows beat words. Check the understanding by asking what they would tell their own stakeholder, which surfaces the misread copy before it travels upward.",
-      "keyTakeaway": "Speak in time, money, risk, and user impact; verify with one concrete example."
-    },
-    {
-      "id": "stakeholders-q3",
-      "difficulty": "intermediate",
-      "tags": ["deadline", "pushback", "behavioral"],
-      "question": "The business demands a feature in a timeframe you believe is unsafe. What do you do?",
-      "answer": "Quantify unsafe: which quality attribute breaks, the probability, and the cost when it does, an outage window, a data-migration risk, an unreachable performance target. Offer the alternatives honestly, cut scope to fit the date, add people where it genuinely helps, a phased risky-first release, or accept the named risk in writing. Escalate the decision to whoever owns the risk, with my recommendation, because sometimes the business accepts a real risk for a real reason, and that is their call. What I do not do is silently agree to the impossible or fight the date as a matter of pride.",
-      "keyTakeaway": "Name the risk and its cost, offer cuts or phasing, and let the risk owner decide in writing."
-    },
-    {
-      "id": "stakeholders-q4",
-      "difficulty": "intermediate",
-      "tags": ["ux", "design", "collaboration", "behavioral"],
-      "question": "How do you involve UX designers so their work survives contact with implementation?",
-      "answer": "Bring designers in when the problem is framed, not after the spec is frozen, so constraints, data availability, latency budgets, platform limits, shape the design instead of rejecting it. Walk through the flows together against the real API surface early, because the expensive fights are designs that assume data or interactions the back end cannot serve. When something cannot be built as drawn, go back with what is possible and the cost of each option, not a bare no, so the design intent survives the compromise. Shared artifacts, a component library and a living style guide, keep the two disciplines honest between projects.",
-      "keyTakeaway": "Designers at problem framing, flows checked against real APIs, options instead of refusals."
-    },
-    {
-      "id": "stakeholders-q5",
-      "difficulty": "advanced",
-      "tags": ["conflict", "priorities", "quality", "behavioral"],
-      "question": "Business pressure pushes to ship a feature that skips engineering quality work you consider mandatory. What happens?",
-      "answer": "Separate negotiable from non-negotiable explicitly: test coverage on the money path, security review on auth flows, and data-migration reversibility are gates I will escalate on; internal refactoring and tooling are usually negotiable with a repayment date. Show the delayed cost of skipping, incidents, rework, speed loss on the next feature, in business units, because technical debt arguments land as budgets. If the decision goes against the gate, get the risk accepted in writing with a remediation date, and make the debt visible in the tracker. Escalation is the tool for the gates, and a visible, dated compromise is the tool for everything else.",
-      "keyTakeaway": "Escalate the true gates, price the debt, and record any accepted risk with a remediation date."
-    },
-    {
-      "id": "stakeholders-q6",
-      "difficulty": "advanced",
-      "tags": ["incident", "communication", "writing", "behavioral"],
-      "question": "A release causes an outage. How do you communicate with stakeholders during and after?",
-      "answer": "During the incident, short updates on a fixed cadence, what is broken, which users are affected, what we are doing, and when the next update comes, with one channel and one owner for the words. Do not speculate on cause before evidence, and never mix remediation messaging with blame. Afterwards, a written post-mortem in business-readable language, timeline, impact in numbers, root cause, and the fixes with owners and dates, plus what changed so it cannot repeat. Stakeholders remember the communication discipline longer than the outage itself; silence or jargon does more damage than downtime.",
-      "keyTakeaway": "Cadenced updates with one owner during, honest numbered post-mortem after, no speculation, no blame."
-    }
-  ]
+    "slug": "stakeholders",
+    "title": "Stakeholder Collaboration",
+    "requirement": "Collaborate with product managers, business analysts, UI/UX designers on technical architecture.",
+    "questions": [
+        {
+            "id": "stakeholders-q1",
+            "difficulty": "basic",
+            "tags": [
+                "product",
+                "scope",
+                "behavioral"
+            ],
+            "question": "How do you work with a product manager on scope and schedule?",
+            "answer": "I bring options with costs, not verdicts. This scope is two weeks, dropping offline mode makes it one, and this alternative gives the same user outcome for half the work. We agree on what a story must achieve for the user, not only how it's built, so trade-offs stay open. I give schedule truth early and repeatedly, because bad news ages badly, and I re-forecast when discovery changes the estimate. The PM owns value and priority, I own cost and technical risk, and what we cut is a joint decision with visible consequences.",
+            "keyTakeaway": "Trade scope with priced options, keep outcomes fixed, deliver schedule truth early.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Scope trade in one meeting",
+                "steps": [
+                    {
+                        "label": "List outcome, not features",
+                        "note": "Agree what must be true"
+                    },
+                    {
+                        "label": "Price two or three options",
+                        "note": "Weeks per option"
+                    },
+                    {
+                        "label": "Pick the cut together",
+                        "note": "PM owns value, I own cost"
+                    },
+                    {
+                        "label": "Re-forecast and confirm",
+                        "note": "Date truth, written down"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stakeholders-q2",
+            "difficulty": "basic",
+            "tags": [
+                "communication",
+                "behavioral"
+            ],
+            "question": "How do you explain a technical constraint to a non-technical stakeholder?",
+            "answer": "I translate into their currency: time, money, risk, or user experience. I drop the mechanism unless they ask. For example, this data model can't answer that report instantly, so we choose a slower dashboard now or two weeks of work for a fast one. I use one concrete example with real numbers, and the smallest diagram that carries the point, since boxes and arrows beat words. Then I ask what they would tell their own stakeholder, which catches a misread before it travels upward.",
+            "keyTakeaway": "Speak in time, money, risk, and user impact; verify with one concrete example.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Explaining a constraint",
+                "condition": "Do they ask how it works?",
+                "yesLabel": "Brief mechanism",
+                "noLabel": "Impact only",
+                "yes": {
+                    "label": "One diagram, briefly",
+                    "note": "Boxes and arrows win"
+                },
+                "no": {
+                    "label": "Lead with impact",
+                    "note": "Time, money, risk, users"
+                }
+            }
+        },
+        {
+            "id": "stakeholders-q3",
+            "difficulty": "intermediate",
+            "tags": [
+                "deadline",
+                "pushback",
+                "behavioral"
+            ],
+            "question": "The business demands a feature in a timeframe you believe is unsafe. What do you do?",
+            "answer": "I quantify unsafe: which quality attribute breaks, the probability, and the cost, like an outage window or migration risk. Then I offer alternatives: cut scope, add people where it helps, a phased risky-first release, or accept a named risk in writing. I escalate to whoever owns the risk, with my recommendation. I don't silently agree to the impossible, and I don't fight the date out of pride.",
+            "keyTakeaway": "Name the risk and its cost, offer cuts or phasing, and let the risk owner decide in writing.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Unsafe deadline decision",
+                "condition": "Is the risk quantified and owned?",
+                "yesLabel": "Proceed with record",
+                "noLabel": "Escalate with options",
+                "yes": {
+                    "label": "Accept in writing",
+                    "note": "Named risk, dated sign-off"
+                },
+                "no": {
+                    "label": "Escalate with options",
+                    "note": "Cut, phase, or accept"
+                }
+            }
+        },
+        {
+            "id": "stakeholders-q4",
+            "difficulty": "intermediate",
+            "tags": [
+                "ux",
+                "design",
+                "collaboration",
+                "behavioral"
+            ],
+            "question": "How do you involve UX designers so their work survives contact with implementation?",
+            "answer": "I involve designers when the problem is framed, not after the spec freezes, so constraints like data availability, latency budgets, and platform limits shape the design instead of rejecting it. I walk flows against the real API surface early, because the expensive fights are designs that assume data or interactions the back end can't serve. When something can't be built as drawn, I bring what is possible and the cost of each option, not a bare no, so the design intent survives the compromise. Shared artifacts like a component library and a living style guide keep both disciplines honest between projects.",
+            "keyTakeaway": "Designers at problem framing, flows checked against real APIs, options instead of refusals."
+        },
+        {
+            "id": "stakeholders-q5",
+            "difficulty": "advanced",
+            "tags": [
+                "conflict",
+                "priorities",
+                "quality",
+                "behavioral"
+            ],
+            "question": "Business pressure pushes to ship a feature that skips engineering quality work you consider mandatory. What happens?",
+            "answer": "I separate negotiable from non-negotiable. The gates I escalate are test coverage on the money path, security review on auth flows, and data-migration reversibility. Refactoring and tooling are negotiable with a repayment date. I show the cost of skipping, in incidents, rework, and slower features, in business units. If a gate loses, I get the risk accepted in writing with a remediation date.",
+            "keyTakeaway": "Escalate the true gates, price the debt, and record any accepted risk with a remediation date.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Negotiable vs gates",
+                "rows": [
+                    {
+                        "label": "Hard gates",
+                        "note": "Escalate, never trade"
+                    },
+                    {
+                        "label": "Priced debt",
+                        "note": "Skip with repayment date"
+                    },
+                    {
+                        "label": "Negotiable quality",
+                        "note": "Internal refactoring, tooling"
+                    },
+                    {
+                        "label": "Accepted risk",
+                        "note": "Written, dated, tracked"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stakeholders-q6",
+            "difficulty": "advanced",
+            "tags": [
+                "incident",
+                "communication",
+                "writing",
+                "behavioral"
+            ],
+            "question": "A release causes an outage. How do you communicate with stakeholders during and after?",
+            "answer": "During an incident I send short updates on a fixed cadence. Each one says what's broken, who's affected, what we're doing, and when the next update comes. One channel, one owner for the words. No speculation on cause before there's evidence, and I never mix remediation with blame. Afterwards I write a business-readable post-mortem with the timeline, impact in numbers, root cause, fixes with owners and dates, and what changed so it can't repeat. Stakeholders remember the communication discipline longer than the outage, and silence or jargon does more damage than downtime.",
+            "keyTakeaway": "Cadenced updates with one owner during, honest numbered post-mortem after, no speculation, no blame.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Incident communication arc",
+                "actors": [
+                    "Response team",
+                    "Comms owner",
+                    "Stakeholders"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Facts, no speculation"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "First update, one owner"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Cadence until resolved"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Resolution and impact"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Written post-mortem"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stakeholders-q7",
+            "difficulty": "intermediate",
+            "tags": [
+                "tech-debt",
+                "communication",
+                "business",
+                "behavioral"
+            ],
+            "question": "How do you make technical debt land with stakeholders who only care about the roadmap?",
+            "answer": "I talk velocity and risk, not debt. Not \"refactor the billing module\" but this: every billing feature takes three weeks, two of them rework, and the refactor makes the next three land in one week each. I attach the debt to a roadmap item the stakeholder wants. I ask for a slice, not a mandate: one sprint of cleanup, with a before-and-after number we agree to check.",
+            "keyTakeaway": "Translate debt into roadmap velocity and risk, then trade a small cleanup slice with a measurable before-and-after."
+        },
+        {
+            "id": "stakeholders-q8",
+            "difficulty": "intermediate",
+            "tags": [
+                "client",
+                "escalation",
+                "trust",
+                "behavioral"
+            ],
+            "question": "How do you handle a client who escalates every small issue straight to your leadership?",
+            "answer": "I assume the escalation is data: the client doesn't trust that small issues get fixed. I fix the issue fast and visibly, then name the pattern in a calm one-to-one. I offer a channel contract. Urgent goes to one named contact with a response-time promise, and everything else goes to a backlog we triage weekly together. I brief my leadership before the client does, and I make the normal path faster than escalation.",
+            "keyTakeaway": "Fix fast, offer a named channel with a response promise, and outrun escalations by briefing leadership first.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Resetting a serial escalator",
+                "actors": [
+                    "Client",
+                    "Eng lead",
+                    "My exec"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 2,
+                        "label": "Escalates small issue"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "Asks for facts and plan"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "Commits fix with date"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "Invited to weekly triage"
+                    },
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Sees predictable fixes"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stakeholders-q9",
+            "difficulty": "intermediate",
+            "tags": [
+                "negotiation",
+                "boundaries",
+                "communication",
+                "behavioral"
+            ],
+            "question": "How do you say no to a stakeholder request without killing the relationship?",
+            "answer": "I never deliver a bare no. I deliver the no inside a package of what yes takes. Auto-importing three legacy feeds is a quarter of work, so I offer one feed with manual upload in two weeks, plus the decision that would justify the full build. They see the price and choose the slice. A no with an alternative is a proposal.",
+            "keyTakeaway": "Package every no with the price of yes and a partial alternative, turning refusal into purchasing.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Saying no with a package",
+                "steps": [
+                    {
+                        "label": "Show the price",
+                        "note": "of the full request"
+                    },
+                    {
+                        "label": "Offer a smaller slice",
+                        "note": "sooner"
+                    },
+                    {
+                        "label": "Name the deciding fact",
+                        "note": "that justifies the full build"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stakeholders-q10",
+            "difficulty": "intermediate",
+            "tags": [
+                "demos",
+                "expectations",
+                "communication",
+                "behavioral"
+            ],
+            "question": "How do you demo work that is only half finished without misleading stakeholders?",
+            "answer": "I frame it before clicking: this flow is real end to end, this screen is wired to a stub, this part is click-through design. I script a path that walks only real ground and label fake data. Stakeholders forgive unfinished far more than surprise. I close with what ships next and what I need from them.",
+            "keyTakeaway": "Label real, stubbed, and click-through states out loud, and end demos as decision points.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Demo only on real ground",
+                "steps": [
+                    {
+                        "label": "Announce what is real",
+                        "note": "Before any clicking"
+                    },
+                    {
+                        "label": "Script the happy path",
+                        "note": "Walk only on real ground"
+                    },
+                    {
+                        "label": "Mark stubbed screens",
+                        "note": "Fake data says fake"
+                    },
+                    {
+                        "label": "Close with next steps",
+                        "note": "Decisions and asks, stated"
+                    },
+                    {
+                        "label": "Send framing recap",
+                        "note": "The summary is what travels"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stakeholders-q11",
+            "difficulty": "intermediate",
+            "tags": [
+                "reporting",
+                "status",
+                "communication",
+                "behavioral"
+            ],
+            "question": "What does status reporting look like when your goal is zero surprises?",
+            "answer": "Status updates keep a fixed shape on a fixed day, even when nothing changed. Ship, at risk, blocked, next, asks, one line each. The risk line carries a number and a date, not adjectives. I report bad news the day I know it, not after I have a solution, because stakeholders forgive problems, not ambush. Executives get one paragraph, and the team gets the tracker.",
+            "keyTakeaway": "Report in a fixed shape on a fixed day, carry risks as numbers and dates, and deliver bad news the day you learn it.",
+            "diagram": {
+                "kind": "layers",
+                "title": "One-line status bands",
+                "rows": [
+                    {
+                        "label": "Shipped",
+                        "note": "Done and verified"
+                    },
+                    {
+                        "label": "At risk",
+                        "note": "Named risk, date, number"
+                    },
+                    {
+                        "label": "Blocked",
+                        "note": "Owner needed, since when"
+                    },
+                    {
+                        "label": "Next",
+                        "note": "Committed for coming week"
+                    },
+                    {
+                        "label": "Asks",
+                        "note": "Decisions needed from stakeholders"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stakeholders-q12",
+            "difficulty": "intermediate",
+            "tags": [
+                "scope",
+                "change",
+                "commitment",
+                "behavioral"
+            ],
+            "question": "What do you do when a stakeholder changes requirements after the team committed to a date?",
+            "answer": "I treat it as a trade: new scope enters, equal size leaves, or the date moves by a priced amount. First I ask what outcome changed, since a smaller change often satisfies it. I price it within a day, say two days of analysis, three of rework, regression risk, and options like swap, add time, or phase. The commitment stays unless its owner renegotiates. I never absorb a change silently while pretending the date holds.",
+            "keyTakeaway": "Every late scope change is a priced trade, swap, add time, or phase; commitments move only with their owner.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Requirements change after commitment",
+                "steps": [
+                    {
+                        "label": "Ask what outcome changed",
+                        "note": "smaller change may do"
+                    },
+                    {
+                        "label": "Price it within a day"
+                    },
+                    {
+                        "label": "Offer options",
+                        "note": "swap, add time, phase"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stakeholders-q13",
+            "difficulty": "intermediate",
+            "tags": [
+                "trust",
+                "relationship",
+                "onboarding",
+                "behavioral"
+            ],
+            "question": "How do you build trust with a product partner you have never worked with before?",
+            "answer": "Early and small. In the first weeks I deliver one of their requests fast, well, and visibly, because a partner who saw you ship argues with estimates less. I learn how they consume information, docs or a walkthrough, and mirror it. I surface small mistakes early and ask about their boss's metrics. Trust compounds on kept micro-predictions: say Tuesday, deliver Tuesday.",
+            "keyTakeaway": "Deliver one small thing fast, surface a small mistake yourself, and compound trust on kept micro-predictions."
+        },
+        {
+            "id": "stakeholders-q14",
+            "difficulty": "intermediate",
+            "tags": [
+                "executives",
+                "prioritization",
+                "pushback",
+                "behavioral"
+            ],
+            "question": "What is your move when an executive drops a big request two days before a release?",
+            "answer": "I treat the request as legitimate and the timing as the problem, and I make the trade visible within the hour. What does it displace, and is there a slice that meets the actual need? Often the real deadline is the next board meeting, not this release. If it can't wait, the release decision moves to whoever owns the commitment, with both options priced. I never absorb it silently, because that teaches executives deadlines are soft.",
+            "keyTakeaway": "Surface what a late executive request displaces, find the real deadline, and let the commitment owner re-trade.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Last-minute executive request",
+                "condition": "Does it displace committed work?",
+                "yesLabel": "Re-trade now",
+                "noLabel": "Queue it",
+                "yes": {
+                    "label": "Re-trade with owner",
+                    "note": "Priced slip or slice"
+                },
+                "no": {
+                    "label": "Queue for next cycle",
+                    "note": "Acknowledge and schedule"
+                }
+            }
+        },
+        {
+            "id": "stakeholders-q15",
+            "difficulty": "intermediate",
+            "tags": [
+                "estimates",
+                "expectations",
+                "communication",
+                "behavioral"
+            ],
+            "question": "How do you set stakeholder expectations around estimates without lowballing or padding?",
+            "answer": "I give a range with confidence: dates plus what would change them, not a single number that gets heard as a promise. An early range is wide, and I say why. I narrow it at named milestones, like after design freeze or after an API spike. When reality diverges, I re-forecast at the first signal, not at the deadline, and show the delta against the original range.",
+            "keyTakeaway": "Quote ranges with named narrowing milestones and re-forecast at the first signal, not at the deadline.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Single date vs range",
+                "columns": [
+                    "Single date",
+                    "Range plus confidence"
+                ],
+                "rows": [
+                    {
+                        "label": "How it lands",
+                        "values": [
+                            "Heard as a promise",
+                            "Heard as a forecast"
+                        ]
+                    },
+                    {
+                        "label": "When discovery moves",
+                        "values": [
+                            "Silent overrun",
+                            "Planned re-forecast"
+                        ]
+                    },
+                    {
+                        "label": "Negotiation",
+                        "values": [
+                            "Hidden in padding",
+                            "Open trade-offs"
+                        ]
+                    },
+                    {
+                        "label": "Trust when wrong",
+                        "values": [
+                            "Damaged",
+                            "Process holds"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stakeholders-q16",
+            "difficulty": "advanced",
+            "tags": [
+                "decisions",
+                "transparency",
+                "architecture",
+                "behavioral"
+            ],
+            "question": "When do you pull stakeholders into a technical decision instead of deciding alone?",
+            "answer": "My test is consequence, not category. If a decision changes cost, dates, user-visible behavior, or future options, stakeholders get a say. Database flavor is mine. A database that locks us into licensing fees, or a rewrite that eats a quarter of the roadmap, is theirs to ratify with my recommendation. I bring two or three priced options and a clear ask. I decide alone when it's reversible and invisible, and I write it down.",
+            "keyTakeaway": "Stakeholders ratify any decision touching cost, dates, user behavior, or future options; reversible, invisible ones are yours.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Who decides a technical choice",
+                "condition": "Does it change cost, dates, user-visible behavior, or future options?",
+                "yesLabel": "Yes",
+                "noLabel": "No",
+                "yes": {
+                    "label": "Stakeholders ratify",
+                    "note": "I bring priced options and a recommendation"
+                },
+                "no": {
+                    "label": "I decide",
+                    "note": "Such as database flavor"
+                }
+            }
+        },
+        {
+            "id": "stakeholders-q17",
+            "difficulty": "advanced",
+            "tags": [
+                "analytics",
+                "data",
+                "collaboration",
+                "behavioral"
+            ],
+            "question": "How do you work with analytics teams so their reporting survives implementation?",
+            "answer": "I treat the analyst as a stakeholder with their own deadline, involved at design, not after launch. Before building, we agree on a data contract: event names, properties, and volume, since retrofitting analytics means re-running the quarter. We agree on the decision each metric serves, because a number nobody acts on is decoration. I validate in staging with real-shaped data and settle conflicting definitions once, in writing.",
+            "keyTakeaway": "Agree a data contract at design time, validate against real-shaped staging data, and share one metric dictionary.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Analytics built in, not bolted on",
+                "actors": [
+                    "PM",
+                    "Eng",
+                    "Analyst"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 2,
+                        "label": "Names the decision metric"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "Drafts event contract"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Reviews feasibility and volume"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Validates in staging"
+                    },
+                    {
+                        "from": 2,
+                        "to": 0,
+                        "label": "Signs off dashboard"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stakeholders-q18",
+            "difficulty": "advanced",
+            "tags": [
+                "migration",
+                "communication",
+                "cadence",
+                "behavioral"
+            ],
+            "question": "How do you keep stakeholders engaged during a six-month migration nobody can see?",
+            "answer": "A migration is invisible, since nothing gets shinier. So I manufacture visible milestones and proof of health. I report strangler progress as a percentage of traffic or entities moved, with a rehearsed rollback. Every phase ends with a demo of something real on the new path. I state the end state in their terms once, like a feature that becomes cheap or an incident class that disappears, and then I repeat it.",
+            "keyTakeaway": "Show migration progress as moved traffic with rehearsed rollbacks, and demo the new path at every phase.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Keeping a hidden migration visible",
+                "steps": [
+                    {
+                        "label": "State the end state",
+                        "note": "in their terms, repeat it"
+                    },
+                    {
+                        "label": "Report progress",
+                        "note": "percent moved, rollback ready"
+                    },
+                    {
+                        "label": "Demo each phase",
+                        "note": "something real on the new path"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stakeholders-q19",
+            "difficulty": "advanced",
+            "tags": [
+                "alignment",
+                "conflict",
+                "priorities",
+                "behavioral"
+            ],
+            "question": "How do you align two stakeholders who want opposite things from the same release?",
+            "answer": "I write both goals in outcome language, since half of these conflicts dissolve there. Faster onboarding and fewer tickets usually want the same simpler flow. If the goals truly collide, I don't arbitrate, because priority isn't mine to invent. I take both cases with their costs to the roadmap owner and push for an explicit ranking. Then I tell both sides what each lost.",
+            "keyTakeaway": "Translate conflicting asks into outcomes, refuse to arbitrate priority, and force one explicit ranking from the roadmap owner.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Two stakeholders, opposite goals",
+                "steps": [
+                    {
+                        "label": "Restate as outcomes",
+                        "note": "many conflicts dissolve"
+                    },
+                    {
+                        "label": "If still colliding",
+                        "note": "take both cases with costs"
+                    },
+                    {
+                        "label": "Roadmap owner ranks",
+                        "note": "explicit priority"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stakeholders-q20",
+            "difficulty": "advanced",
+            "tags": [
+                "negotiation",
+                "data",
+                "trade-offs",
+                "behavioral"
+            ],
+            "question": "How do you settle a trade-off argument with data instead of dueling opinions?",
+            "answer": "I move the argument from adjectives to a cheap, fast experiment or a measured number. \"Is an extra caching layer worth it\" becomes \"what does p95 latency cost us in conversion today\", and a one-day measurement ends a week of debate. Where it's unmeasurable, I use a decision matrix with weights the stakeholders set. Whoever brings the first real number usually owns the decision, so I make it me.",
+            "keyTakeaway": "Replace adjectives with a cheap measurement or stakeholder-weighted matrix, and be the one who brings the first number.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Settling a trade-off argument",
+                "condition": "Can it be measured cheaply and quickly?",
+                "yesLabel": "Yes",
+                "noLabel": "No",
+                "yes": {
+                    "label": "Run the experiment",
+                    "note": "One-day measurement beats a week of debate"
+                },
+                "no": {
+                    "label": "Decision matrix",
+                    "note": "Weights set by the stakeholders"
+                }
+            }
+        },
+        {
+            "id": "stakeholders-q21",
+            "difficulty": "advanced",
+            "tags": [
+                "de-scoping",
+                "scope",
+                "communication",
+                "behavioral"
+            ],
+            "question": "How do you de-scope a release without it feeling like a failure to stakeholders?",
+            "answer": "De-scoping reads as failure only when it's late and unexplained. I do it early and frame it as protecting the date and outcome. I show the ranking: these three features carry ninety percent of the value, the fourth is half the remaining effort, so it moves to the next release with a date attached. I say deferred, not dropped, and the kept scope gets a full test pass.",
+            "keyTakeaway": "Cut early, rank by value, defer with a dated home, and name what the cut buys.",
+            "diagram": {
+                "kind": "flow",
+                "title": "De-scope as a protected trade",
+                "steps": [
+                    {
+                        "label": "Rank features by value",
+                        "note": "Value per remaining effort"
+                    },
+                    {
+                        "label": "Cut lowest slice early",
+                        "note": "Before it becomes retreat"
+                    },
+                    {
+                        "label": "Date the deferred slice",
+                        "note": "Deferred, never dropped"
+                    },
+                    {
+                        "label": "Name what cut buys",
+                        "note": "Date holds, tests full"
+                    },
+                    {
+                        "label": "Ship the follow-up",
+                        "note": "Closes the loop publicly"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stakeholders-q22",
+            "difficulty": "advanced",
+            "tags": [
+                "process",
+                "politics",
+                "boundaries",
+                "behavioral"
+            ],
+            "question": "What do you do when a senior stakeholder routes requests directly to your engineers, bypassing you?",
+            "answer": "Direct requests to engineers destroy the plan, so I fix it without a turf war. I talk to the stakeholder first, one level below their boss. Sideways requests are invisible to trade-offs, so the urgent thing competes with nothing. I make the front door faster than the side door: a single intake with a two-day answer. Engineers accept context, not commitments. I brief my manager only if the pattern survives two direct conversations.",
+            "keyTakeaway": "Explain why side channels break trade-offs, make intake faster than the bypass, and escalate only after direct talks fail.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Requests bypassing the lead",
+                "steps": [
+                    {
+                        "label": "Talk to the stakeholder",
+                        "note": "one level below the boss"
+                    },
+                    {
+                        "label": "Single intake",
+                        "note": "two-day answer"
+                    },
+                    {
+                        "label": "Engineers accept context",
+                        "note": "not commitments"
+                    },
+                    {
+                        "label": "Brief my manager",
+                        "note": "if pattern persists"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stakeholders-q23",
+            "difficulty": "advanced",
+            "tags": [
+                "commitments",
+                "credibility",
+                "communication",
+                "behavioral"
+            ],
+            "question": "How do you recover when a capability you promised stakeholders turns out not to exist?",
+            "answer": "I correct the record fast, in the same channel as the promise: what I said, what's true, and what happens to anyone who planned around the old answer. I bring priced recovery options, a workaround now and the real fix in a named release, and I own it in one sentence. Stakeholders rarely punish a wrong early estimate. They permanently punish bad news that was sat on.",
+            "keyTakeaway": "Correct a broken promise in its original channel with priced recovery options; correction speed is the currency.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Recovering from a false promise",
+                "steps": [
+                    {
+                        "label": "Correct the record",
+                        "note": "same channel, fast"
+                    },
+                    {
+                        "label": "Priced options",
+                        "note": "workaround plus real fix"
+                    },
+                    {
+                        "label": "Own it",
+                        "note": "in one sentence"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stakeholders-q24",
+            "difficulty": "advanced",
+            "tags": [
+                "executives",
+                "evidence",
+                "influence",
+                "behavioral"
+            ],
+            "question": "How do you handle an executive whose opinion contradicts your evidence on a product decision?",
+            "answer": "First I check whether the executive knows something I don't, by asking one genuine question. If the disagreement survives, I separate reversible from irreversible. If it's reversible, we ship behind a flag and let the number settle it within two weeks. If it's irreversible, I deliver a written recommendation with evidence and risk, privately, before any meeting. I argue once, hard, with data. After the decision, I disagree quietly, commit loudly, and keep the memo.",
+            "keyTakeaway": "Mine the executive opinion for hidden data, test reversible calls cheaply, and put irreversible disagreement in a private memo.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Executive contradicts the evidence",
+                "condition": "Is the decision reversible?",
+                "yesLabel": "Yes",
+                "noLabel": "No",
+                "yes": {
+                    "label": "Ship behind a flag",
+                    "note": "Number settles it in two weeks"
+                },
+                "no": {
+                    "label": "Written recommendation",
+                    "note": "Evidence and risk"
+                }
+            }
+        }
+    ]
 }

@@ -29,11 +29,11 @@ export interface QuizItem {
 
 /**
  * Under half the topic, so two attempts in a row never share a question and
- * at least one question is left over. Exactly half would make each attempt
- * the complement of the last, alternating between the same two sets.
+ * at least one question is left over — capped at 10, because a 60-question
+ * topic would otherwise serve a 29-question sitting.
  */
 export function attemptSize(poolSize: number): number {
-    return Math.max(1, Math.floor((poolSize - 1) / 2));
+    return Math.min(10, Math.max(1, Math.floor((poolSize - 1) / 2)));
 }
 
 /**

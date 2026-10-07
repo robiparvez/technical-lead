@@ -1,5 +1,5 @@
 import { AbsoluteFill, useCurrentFrame, useVideoConfig } from 'remotion';
-import { C, chevron, seg } from './shared';
+import { C, Dot, chevron, seg } from './shared';
 
 /**
  * Animated request flow: client -> API gateway -> orders service -> its
@@ -24,32 +24,18 @@ export default function RequestFlow() {
     const s1 = seg(frame, 0, 40); // client -> gateway
     const s2 = seg(frame, 40, 85); // gateway -> orders
     const s3 = seg(frame, 85, 115); // orders -> db
-    const s4 = seg(frame, 115, 175); // response: db -> gateway -> client
+    // response: db -> orders, orders -> gateway, gateway -> client, one third each
+    const r1 = seg(frame, 115, 135);
+    const r2 = seg(frame, 135, 155);
+    const r3 = seg(frame, 155, 175);
     const active = (from: number, to: number) => frame >= from && frame < to;
     const nearLoop = frame > durationInFrames - 20;
 
     const gx = 215;
-    const dotOn = (x1: number, y1: number, x2: number, y2: number, p: number) => ({
-        cx: x1 + (x2 - x1) * p,
-        cy: y1 + (y2 - y1) * p,
-    });
-
-    const d1 = dotOn(CLIENT.x + 20, 180, gx, 180, s1);
-    const d2 = dotOn(280, 180, 400, 65, s2);
-    const d3 = dotOn(540, 65, DB.x1, 70, s3);
-    const respP = s4;
-    const d4a = respP < 0.5 ? dotOn(DB.x1, 70, 540, 65, respP * 2) : { cx: -100, cy: -100 };
-    const d4b = respP >= 0.5 ? dotOn(400, 65, 280, 180, (respP - 0.5) * 2) : { cx: -100, cy: -100 };
-    const d4c = respP >= 1 ? dotOn(gx, 180, CLIENT.x + 20, 180, 0) : { cx: -100, cy: -100 };
-
-    const dot = (d: { cx: number; cy: number }) =>
-        d.cx < 0 ? null : (
-            <circle cx={d.cx} cy={d.cy} r='6' fill='none' stroke={C.accent} strokeWidth='3' />
-        );
 
     return (
         <AbsoluteFill>
-            <svg viewBox='0 0 720 360' width='100%' height='100%'>
+            <svg viewBox='0 0 720 400' width='100%' height='100%'>
                 {/* client */}
                 <circle
                     cx={CLIENT.x}
@@ -174,23 +160,24 @@ export default function RequestFlow() {
 
                 {/* response marker */}
                 {frame >= 115 && frame < 200 && (
-                    <text x='360' y='330' textAnchor='middle' fontSize='11' fill={C.secondary}>
+                    <text x='360' y='368' textAnchor='middle' fontSize='11' fill={C.secondary}>
                         response returns to the client over the same path
                     </text>
                 )}
                 {nearLoop && (
-                    <text x='360' y='330' textAnchor='middle' fontSize='11' fill={C.secondary}>
+                    <text x='360' y='368' textAnchor='middle' fontSize='11' fill={C.secondary}>
                         each service owns its data; calls stay shallow
                     </text>
                 )}
 
-                {/* moving request dots (position motion) */}
-                {dot(d1)}
-                {dot(d2)}
-                {dot(d3)}
-                {dot(d4a)}
-                {dot(d4b)}
-                {d4c.cx < 0 ? null : dot(d4c)}
+                {/* moving request dots (position motion); each shows only while its leg runs */}
+                <Dot points={[[CLIENT.x + 20, 180], [gx, 180]]} p={s1} />
+                <Dot points={[[280, 180], [400, 65]]} p={s2} />
+                <Dot points={[[540, 65], [DB.x1, 70]]} p={s3} />
+                <Dot points={[[DB.x1, 70], [540, 65]]} p={r1} />
+                <Dot points={[[400, 65], [280, 180]]} p={r2} />
+                <Dot points={[[GATEWAY.x1, 180], [CLIENT.x + 22, 180]]} p={r3} />
+
             </svg>
         </AbsoluteFill>
     );

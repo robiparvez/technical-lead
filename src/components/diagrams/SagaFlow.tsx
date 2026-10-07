@@ -91,7 +91,7 @@ export default function SagaFlow() {
                                     y={Y + 48}
                                     textAnchor='middle'
                                     fontSize='14'
-                                    fill={C.accent}
+                                    fill={C.secondary}
                                 >
                                     ✓
                                 </text>
@@ -118,7 +118,7 @@ export default function SagaFlow() {
                         y={Y + 48}
                         textAnchor='middle'
                         fontSize='14'
-                        fill={C.accent}
+                        fill={C.secondary}
                     >
                         ✗
                     </text>
@@ -126,7 +126,7 @@ export default function SagaFlow() {
                 {failed && (
                     <text
                         x={XS[3] + W / 2}
-                        y={Y + H + 22}
+                        y={Y + H + 46}
                         textAnchor='middle'
                         fontSize='11'
                         fill={C.secondary}
@@ -155,7 +155,7 @@ export default function SagaFlow() {
                             {chevron(x2, Y + H / 2, 0, hot ? C.accent : C.secondary)}
                             <text
                                 x={(x1 + x2) / 2}
-                                y={Y + H / 2 - 10}
+                                y={Y - 12}
                                 textAnchor='middle'
                                 fontSize='10'
                                 fill={C.secondary}
@@ -183,15 +183,15 @@ export default function SagaFlow() {
                                         stroke={C.accent}
                                         strokeWidth='2'
                                     />
-                                    {chevron(x2, Y + H / 2 + 26, 0, C.accent)}
+                                    {chevron(x2, Y + H / 2 + 26, 180, C.accent)}
                                     <text
                                         x={(x1 + x2) / 2}
-                                        y={Y + H / 2 + 48}
+                                        y={Y + H + 20}
                                         textAnchor='middle'
                                         fontSize='10'
                                         fill={C.secondary}
                                     >
-                                        {['cancel order', 'refund payment', 'release stock'][2 - i]}
+                                        {['cancel order', 'refund payment', 'release stock'][i]}
                                     </text>
                                 </>
                             )}

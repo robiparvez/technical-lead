@@ -6,91 +6,1067 @@
         {
             "id": "databases-q1",
             "difficulty": "basic",
-            "tags": ["sql", "nosql", "decision", "fundamentals"],
+            "tags": [
+                "sql",
+                "nosql",
+                "decision",
+                "fundamentals"
+            ],
             "question": "How do you decide between a relational and a non-relational database for a service?",
-            "answer": "Start from access patterns and consistency needs, not from the technology. Relational databases enforce schema, constraints, and ACID transactions, so they fit complex relationships, ad-hoc queries, and financial correctness. Document, key-value, or wide-column stores fit huge write volumes, flexible or aggregated shapes, and horizontal scale, usually with eventual consistency. Match the model to queries: if the dominant shape is joins across normalized entities, stay relational; if it is key lookups or append-heavy feeds, NoSQL wins.",
-            "keyTakeaway": "Let access patterns and consistency needs pick the engine, not the trend."
+            "answer": "I start from access patterns and consistency needs. Relational fits when I need schema, constraints, ACID, complex relationships, ad-hoc queries, or financial correctness. Document, key-value, and wide-column stores fit huge write volume, flexible shapes, and horizontal scale, usually with eventual consistency. If I'm joining across normalized entities, I stay relational. For key lookups or append-heavy feeds, I go NoSQL.",
+            "keyTakeaway": "Let access patterns and consistency needs pick the engine, not the trend.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Relational or non-relational",
+                "condition": "Joins across normalized entities, or strict consistency needed?",
+                "yesLabel": "Yes",
+                "noLabel": "No",
+                "yes": {
+                    "label": "Relational",
+                    "note": "Schema, ACID, ad-hoc queries"
+                },
+                "no": {
+                    "label": "NoSQL",
+                    "note": "Key lookups, append-heavy feeds"
+                }
+            }
         },
         {
             "id": "databases-q2",
             "difficulty": "basic",
-            "tags": ["schema-design", "normalization"],
+            "tags": [
+                "schema-design",
+                "normalization"
+            ],
             "question": "When do you normalize and when do you denormalize a schema?",
-            "answer": "Normalize to remove redundancy and protect integrity: one fact stored once, updated once, which keeps writes consistent and suits operational systems. Denormalize deliberately for reads: duplicate or precompute data to match a hot query and eliminate joins, which is standard in analytics, read-heavy paths, and most NoSQL modeling. Every denormalized copy needs a refresh strategy, event-driven updates, scheduled sync, or acceptable staleness. Decide per query, not per database.",
-            "keyTakeaway": "Normalize for write integrity; denormalize per hot read, with a refresh plan."
+            "answer": "I normalize to protect integrity, so each fact is stored once. I denormalize deliberately for reads: precompute or duplicate data to match a hot query and remove joins. Every copy needs a refresh strategy, whether that's event-driven updates, a scheduled sync, or accepted staleness. I decide per query, not per database.",
+            "keyTakeaway": "Normalize for write integrity; denormalize per hot read, with a refresh plan.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Normalize versus denormalize",
+                "columns": [
+                    "Normalize",
+                    "Denormalize"
+                ],
+                "rows": [
+                    {
+                        "label": "Goal",
+                        "values": [
+                            "Protect integrity",
+                            "Fast hot reads"
+                        ]
+                    },
+                    {
+                        "label": "Data",
+                        "values": [
+                            "Each fact stored once",
+                            "Duplicated to avoid joins"
+                        ]
+                    },
+                    {
+                        "label": "Cost",
+                        "values": [
+                            "More joins",
+                            "Needs a refresh strategy"
+                        ]
+                    }
+                ]
+            }
         },
         {
             "id": "databases-q3",
             "difficulty": "intermediate",
-            "tags": ["indexing", "b-tree", "performance"],
+            "tags": [
+                "indexing",
+                "b-tree",
+                "performance"
+            ],
             "question": "How does a B-tree index speed up queries, and what does it cost?",
-            "answer": "A B-tree keeps indexed keys sorted in a balanced tree, so a lookup descends a few pages instead of scanning the whole table, turning O(n) reads into O(log n), and range queries walk adjacent leaves. The cost is on every write: each insert, update, or delete must maintain every index on the table, and each index consumes storage and cache. Index the columns your queries filter, join, and sort on, and drop indexes that no query uses. A diagram of the tree makes the descent obvious.",
+            "answer": "A B-tree keeps keys sorted in a balanced tree. A lookup descends a few pages instead of scanning, so O(n) becomes O(log n), and range queries walk adjacent leaves. The catch is that every write maintains every index, and each index costs storage and cache. I index the columns queries filter, join, and sort on, and I drop unused indexes.",
             "keyTakeaway": "Indexes buy log-time lookups and range scans; they tax every write.",
             "diagram": "b-tree-index"
         },
         {
             "id": "databases-q4",
             "difficulty": "intermediate",
-            "tags": ["indexing", "compound-index", "sql"],
+            "tags": [
+                "indexing",
+                "compound-index",
+                "sql"
+            ],
             "question": "Why does column order matter in a compound index?",
-            "answer": "A compound index on (a, b) sorts by a first, then b within equal a, so it serves queries filtering on a, or on a and b, but not queries filtering on b alone, which cannot seek. Follow the equality-first rule: columns compared with equality lead, then the first range column, since nothing after a range can seek. The order also decides which sorts and covered queries the index supports. Verify with the query plan, not intuition.",
+            "answer": "A compound index on (a, b) sorts by a, then by b within equal a. It serves queries on a, or on a and b, but not on b alone, which can't seek. Equality columns go first, then the first range column, since nothing after a range can seek. I verify with the query plan.",
             "keyTakeaway": "Equality columns first, range last; the plan confirms the index is used.",
             "code": {
                 "language": "sql",
                 "snippet": "-- serves: WHERE tenant_id = ? AND created_at > ? ORDER BY created_at\nCREATE INDEX idx_orders_tenant_created ON orders (tenant_id, created_at);\nEXPLAIN ANALYZE SELECT * FROM orders\nWHERE tenant_id = 42 AND created_at > now() - interval '7 days';\n-- want: Index Scan using idx_orders_tenant_created, not Seq Scan on orders"
+            },
+            "diagram": {
+                "kind": "flow",
+                "title": "Compound index seek",
+                "steps": [
+                    {
+                        "label": "Match leading column",
+                        "note": "Equality seeks tenant_id"
+                    },
+                    {
+                        "label": "Narrow by range",
+                        "note": "created_at scanned within bounds"
+                    },
+                    {
+                        "label": "Sort comes free",
+                        "note": "Index order satisfies ORDER BY"
+                    },
+                    {
+                        "label": "Trailing columns ignored",
+                        "note": "b-only queries cannot seek"
+                    }
+                ]
             }
         },
         {
             "id": "databases-q5",
             "difficulty": "intermediate",
-            "tags": ["query-optimization", "performance", "process"],
+            "tags": [
+                "query-optimization",
+                "performance",
+                "process"
+            ],
             "question": "A query got slow in production. Walk through your optimization process.",
-            "answer": "Start with the execution plan and measure where time goes: scans, joins, sorts, or waits. Check the obvious first, missing or unused index, a function wrapped around an indexed column that defeats it, stale statistics, or a row explosion from a bad join. Fix the shape before tuning knobs: select only needed columns, paginate, push filters down, and split one monster query into staged steps when plans misbehave. Re-measure after each change, and keep a before/after so the win is provable, not felt.",
-            "keyTakeaway": "Read the plan, fix the shape, add indexes deliberately, re-measure."
+            "answer": "I read the execution plan and ask where the time goes: scans, joins, sorts, or waits. Then I check for a missing or unused index, a function wrapped around an indexed column, stale statistics, or a bad join exploding rows. I fix the query shape before touching knobs: select only the needed columns, paginate, push filters down. And I re-measure after each change.",
+            "keyTakeaway": "Read the plan, fix the shape, add indexes deliberately, re-measure.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Slow query workflow",
+                "steps": [
+                    {
+                        "label": "Read plan",
+                        "note": "scans, joins, sorts"
+                    },
+                    {
+                        "label": "Find cause",
+                        "note": "index, stats, joins"
+                    },
+                    {
+                        "label": "Fix query shape",
+                        "note": "columns, paging, filters"
+                    },
+                    {
+                        "label": "Re-measure",
+                        "note": "after each change"
+                    }
+                ]
+            }
         },
         {
             "id": "databases-q6",
             "difficulty": "intermediate",
-            "tags": ["transactions", "acid", "isolation"],
+            "tags": [
+                "transactions",
+                "acid",
+                "isolation"
+            ],
             "question": "Explain ACID and what isolation levels trade away.",
-            "answer": "Atomicity makes a transaction all-or-nothing, consistency keeps constraints valid, isolation hides concurrent transactions from each other, and durability survives a crash after commit. Full isolation, serializable, behaves correctly but costs throughput through locking or conflicts. Weaker levels buy concurrency and allow anomalies: read committed permits non-repeatable reads, snapshot or repeatable read removes those but allows write skew, and serializable removes all anomalies. Pick the weakest level whose anomalies your logic tolerates, and handle serialization failures with retries.",
-            "keyTakeaway": "Isolation level is a throughput-versus-anomalies dial; retry on conflict."
+            "answer": "Atomicity is all-or-nothing. Consistency means constraints hold. Isolation keeps concurrent transactions hidden from each other. Durability means commits survive a crash. Serializable is correct but costs throughput. Weaker levels buy concurrency with anomalies: read committed permits non-repeatable reads, and snapshot or repeatable read allows write skew. I pick the weakest level my logic tolerates, and I retry serialization failures.",
+            "keyTakeaway": "Isolation level is a throughput-versus-anomalies dial; retry on conflict.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Isolation level ladder",
+                "rows": [
+                    {
+                        "label": "Serializable",
+                        "note": "No anomalies, lowest throughput"
+                    },
+                    {
+                        "label": "Repeatable read",
+                        "note": "Write skew possible"
+                    },
+                    {
+                        "label": "Read committed",
+                        "note": "Non-repeatable reads allowed"
+                    },
+                    {
+                        "label": "Read uncommitted",
+                        "note": "Dirty reads, rarely used"
+                    }
+                ]
+            }
         },
         {
             "id": "databases-q7",
             "difficulty": "advanced",
-            "tags": ["sharding", "replication", "scale"],
+            "tags": [
+                "sharding",
+                "replication",
+                "scale"
+            ],
             "question": "How do replication and sharding differ, and when do you need each?",
-            "answer": "Replication copies the same data across nodes: it improves read throughput and availability, but every replica holds the full dataset, so write volume and storage still scale on one primary, or a small quorum. Sharding partitions data by a key, such as user id or region, so each node holds a slice, scaling writes and storage horizontally at the cost of cross-shard queries, rebalancing, and resharding pain. Replicate first, it is operationally simpler, and shard when data or write volume outgrows one machine. Choose the shard key for even distribution and query locality, because changing it later is a migration.",
-            "keyTakeaway": "Replication scales reads; sharding scales writes and storage at high operational cost."
+            "answer": "Replication copies data across nodes. You get more read throughput and availability, but writes and storage still scale on one primary. Sharding partitions data by a key such as user id or region, which scales writes and storage, at the cost of cross-shard queries and resharding pain. I replicate first and shard when data or writes outgrow one machine. The shard key should give even distribution and query locality, and changing it later is a migration.",
+            "keyTakeaway": "Replication scales reads; sharding scales writes and storage at high operational cost.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Replication vs sharding",
+                "columns": [
+                    "Replication",
+                    "Sharding"
+                ],
+                "rows": [
+                    {
+                        "label": "Data per node",
+                        "values": [
+                            "Full copy",
+                            "One slice"
+                        ]
+                    },
+                    {
+                        "label": "Scales",
+                        "values": [
+                            "Reads, availability",
+                            "Writes, storage"
+                        ]
+                    },
+                    {
+                        "label": "Operational cost",
+                        "values": [
+                            "Moderate",
+                            "High, resharding"
+                        ]
+                    }
+                ]
+            }
         },
         {
             "id": "databases-q8",
             "difficulty": "advanced",
-            "tags": ["caching", "consistency", "invalidation"],
+            "tags": [
+                "caching",
+                "consistency",
+                "invalidation"
+            ],
             "question": "You add a cache in front of the database. How do you keep it from serving stale data?",
-            "answer": "Decide per data type how stale is acceptable, then pick the strategy: cache-aside with a TTL is the default, and explicit invalidation on write narrows the staleness window for hot entities. Invalidate or update the cache in the same flow as the write, and accept a small race window rather than distributed locks, which cost more than they save. Guard the database behind the cache with request coalescing so one expired key triggers one reload, not a stampede. Monitor staleness and hit rate, because an unmeasured cache is a correctness risk.",
-            "keyTakeaway": "TTL for safety, write-through invalidation for freshness, coalescing against stampedes."
+            "answer": "I decide how stale each data type may be. Cache-aside with a TTL is the default, and I invalidate on write for hot entities. I accept a small race window over distributed locks, which cost more than they save. I use request coalescing so one expired key causes one reload, not a stampede. And I monitor staleness and hit rate.",
+            "keyTakeaway": "TTL for safety, write-through invalidation for freshness, coalescing against stampedes.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Cache-aside read path",
+                "steps": [
+                    {
+                        "label": "Check cache",
+                        "note": "Key lookup, usually hot"
+                    },
+                    {
+                        "label": "On hit, return",
+                        "note": "Database never touched"
+                    },
+                    {
+                        "label": "On miss, load",
+                        "note": "One query, coalesced"
+                    },
+                    {
+                        "label": "Fill cache",
+                        "note": "Set with TTL"
+                    },
+                    {
+                        "label": "Return to caller",
+                        "note": "Next reads are hits"
+                    }
+                ]
+            }
         },
         {
             "id": "databases-q9",
             "difficulty": "intermediate",
-            "tags": ["concurrency", "locking", "idempotency"],
+            "tags": [
+                "concurrency",
+                "locking",
+                "idempotency"
+            ],
             "question": "Two users reserve the last available room at the same time. How do you prevent a double booking?",
-            "answer": "A check-then-update sequence is a race: under weak isolation both transactions read the same inventory, both pass the check, and both commit. For the same user double-clicking, make the request idempotent, a client-generated reservation id with a unique constraint, so the second insert fails instead of duplicating. For genuinely concurrent users, optimistic locking adds a version column and rejects updates built on stale data with an application retry, which scales well when contention is low. When contention on a hot row is heavy, pessimistic locking with SELECT FOR UPDATE serializes access at the cost of blocking and deadlock risk. The cheapest correct option is often a conditional update that re-checks the invariant inside the statement itself, so the database, not the application, enforces the limit.",
+            "answer": "Check-then-update is a race: under weak isolation, both transactions read the same inventory and commit. For one user double-clicking, I make the request idempotent with a client-generated reservation id and a unique constraint. For concurrent users, I use optimistic locking with a version column: reject stale updates and retry. That works well at low contention. For heavy contention on a hot row, pessimistic SELECT FOR UPDATE works, at the cost of blocking and deadlock risk. Often the cheapest option is a conditional update that re-checks the invariant in the statement.",
             "keyTakeaway": "Push the invariant into the update; idempotency keys stop double clicks.",
             "code": {
                 "language": "sql",
                 "snippet": "-- atomic: updates 0 rows when the cap is exceeded, no read-then-write race\nUPDATE room_type_inventory\nSET total_reserved = total_reserved + $rooms\nWHERE hotel_id = $hotel AND room_type_id = $type\n  AND date BETWEEN $start AND $end\n  AND total_reserved + $rooms <= total_inventory * 1.1; -- 10% overbooking allowed\n-- rows_updated < nights requested means the reservation must be rejected"
+            },
+            "diagram": {
+                "kind": "branch",
+                "title": "Atomic reservation check",
+                "condition": "Did the UPDATE change any rows?",
+                "yes": {
+                    "label": "Reservation confirmed",
+                    "note": "Invariant held inside UPDATE"
+                },
+                "no": {
+                    "label": "Reject, offer alternatives",
+                    "note": "Cap reached, no race"
+                }
             }
         },
         {
             "id": "databases-q10",
             "difficulty": "advanced",
-            "tags": ["key-value", "quorum", "replication", "cap"],
+            "tags": [
+                "key-value",
+                "quorum",
+                "replication",
+                "cap"
+            ],
             "question": "How would you design a distributed key-value store that stays available and scales horizontally?",
-            "answer": "Partition with consistent hashing and virtual nodes so adding a node moves only nearby keys, and give nodes capacity-proportional virtual node counts for heterogeneous hardware. Replicate each key to N nodes walking the ring, spread across data centers, and tune consistency with quorums: a write acknowledges from W replicas, a read waits for R, and W plus R greater than N guarantees overlap, with N=3, W=R=2 the common middle. Concurrent updates to different replicas create sibling versions; versioning with vector clocks detects which versions conflict, and the application or client reconciles the siblings. Detect failure through gossip, heartbeats exchanged between random nodes, and ride out temporary failures with a sloppy quorum and hinted handoff that forwards writes to healthy nodes and backfills later. The result is an AP store with tunable consistency, the Dynamo model.",
-            "keyTakeaway": "Consistent-hash partitions, N replicas, quorum W+R>N, vector clocks for conflicts."
+            "answer": "I partition with consistent hashing and virtual nodes, so a new node moves only nearby keys. Each key is replicated to N nodes around the ring, across data centers. Quorums tune consistency: W write acks, R read replicas, and W plus R greater than N guarantees overlap. N=3, W=R=2 is common. Vector clocks detect conflicting sibling versions, and the application or client reconciles them. Gossip heartbeats detect failure, and sloppy quorum with hinted handoff rides out temporary failures. The result is an AP store with tunable consistency, the Dynamo model.",
+            "keyTakeaway": "Consistent-hash partitions, N replicas, quorum W+R>N, vector clocks for conflicts.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Dynamo-style key-value store",
+                "rows": [
+                    {
+                        "label": "Partitioning",
+                        "note": "Consistent hashing with virtual nodes"
+                    },
+                    {
+                        "label": "Replication",
+                        "note": "N copies around the ring"
+                    },
+                    {
+                        "label": "Consistency",
+                        "note": "W plus R greater than N"
+                    },
+                    {
+                        "label": "Conflicts",
+                        "note": "Vector clocks, client reconciles"
+                    },
+                    {
+                        "label": "Failure handling",
+                        "note": "Gossip, hinted handoff"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "databases-q11",
+            "difficulty": "intermediate",
+            "tags": [
+                "partitioning",
+                "performance",
+                "schema-design"
+            ],
+            "question": "When would you partition a large table, and how do you choose the strategy?",
+            "answer": "I partition when a table outgrows maintenance: vacuum and index builds take hours, old data is rarely touched, and most queries filter on date or tenant. Range by time is my default for event and order tables, because retention becomes dropping a partition instead of a giant DELETE. Hash spreads keys evenly when there's no natural range. List fits categories like region. The payoff needs pruning, so the partition key has to be in the WHERE. I partition before sharding, because one node keeps transactions and joins.",
+            "keyTakeaway": "Partition on the axis your queries filter, or the planner will scan every partition.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Partition pruning",
+                "condition": "Does the plan filter on the partition key?",
+                "yes": {
+                    "label": "Pruned to matching partitions",
+                    "note": "Planner skips the rest"
+                },
+                "no": {
+                    "label": "Every partition scanned",
+                    "note": "No benefit, fix the query"
+                }
+            }
+        },
+        {
+            "id": "databases-q12",
+            "difficulty": "intermediate",
+            "tags": [
+                "sql",
+                "window-functions",
+                "analytics"
+            ],
+            "question": "How do window functions differ from GROUP BY, and when do you reach for them?",
+            "answer": "GROUP BY collapses rows to one per group, which destroys detail. Window functions compute over a partition but keep every row: a running total beside each order, a rank within a region, a deviation from a moving average. PARTITION BY restarts per group, ORDER BY makes aggregates cumulative, and ROWS BETWEEN sets moving windows. They replace self-joins and correlated subqueries. Windows evaluate after aggregation and before ORDER BY, so you filter on them through a subquery or CTE.",
+            "keyTakeaway": "Window functions aggregate over rows while keeping them, no self-join required.",
+            "code": {
+                "language": "sql",
+                "snippet": "-- rank sellers in region, running total per seller; rows are kept, not collapsed\nSELECT region, seller, month, amount,\n       RANK() OVER (PARTITION BY region ORDER BY amount DESC) AS region_rank,\n       SUM(amount) OVER (PARTITION BY seller ORDER BY month) AS running_total\nFROM monthly_sales\nWHERE month >= DATE '2026-01-01';\n-- need to filter on region_rank? wrap the query in a CTE first"
+            },
+            "diagram": {
+                "kind": "compare",
+                "title": "Collapsing vs keeping rows",
+                "columns": [
+                    "GROUP BY",
+                    "Window function"
+                ],
+                "rows": [
+                    {
+                        "label": "Output rows",
+                        "values": [
+                            "One per group",
+                            "Every row kept"
+                        ]
+                    },
+                    {
+                        "label": "Typical use",
+                        "values": [
+                            "Totals per group",
+                            "Ranks, running totals"
+                        ]
+                    },
+                    {
+                        "label": "Filtering",
+                        "values": [
+                            "HAVING on aggregates",
+                            "Wrap in a CTE"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "databases-q13",
+            "difficulty": "intermediate",
+            "tags": [
+                "indexing",
+                "performance",
+                "sql"
+            ],
+            "question": "What is a covering index, and when is it worth the extra write cost?",
+            "answer": "A covering index holds every column a query touches, so the engine answers from the index without visiting the table heap. That's an index-only scan. I use it on hot read paths with few extra columns, like lookup lists, dashboards, and existence checks. INCLUDE in Postgres and SQL Server adds payload columns outside the key. The costs are fewer entries per page, more cache pressure, and more write amplification. So I cover the top queries, not all of them, and verify with the plan's index-only marker.",
+            "keyTakeaway": "A covering index answers without touching the table, verified by an index-only scan.",
+            "code": {
+                "language": "sql",
+                "snippet": "-- hot path: dashboard totals answered entirely from the index\nCREATE INDEX idx_orders_cover\n  ON orders (tenant_id, status) INCLUDE (total_cents);\nSELECT status, count(*), sum(total_cents)\nFROM orders WHERE tenant_id = 42 GROUP BY status;\n-- plan shows: Index Only Scan (heap fetches only while pages are not all-visible)"
+            },
+            "diagram": {
+                "kind": "flow",
+                "title": "Index-only scan",
+                "steps": [
+                    {
+                        "label": "Seek index key",
+                        "note": "Prefix match, no heap"
+                    },
+                    {
+                        "label": "Read payload",
+                        "note": "INCLUDE columns live here"
+                    },
+                    {
+                        "label": "Check visibility",
+                        "note": "Vacuum keeps pages all-visible"
+                    },
+                    {
+                        "label": "Return rows",
+                        "note": "Heap never touched"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "databases-q14",
+            "difficulty": "intermediate",
+            "tags": [
+                "connection-pool",
+                "performance",
+                "operations"
+            ],
+            "question": "How do you size a database connection pool for a busy service?",
+            "answer": "Each connection is a backend process with its own memory, so a Postgres box saturates far before a thousand connections. That's why we use poolers like PgBouncer. I start from the server: roughly (cores times 2) plus spindles per instance, then divide across service replicas. Too small and requests queue. Too large and the database thrashes. I tune with pool wait time and acquisition timeouts on the app side, and CPU and run queue on the server side. I set acquisition timeouts so saturation fails fast.",
+            "keyTakeaway": "Pool size comes from the server's core budget, split across replicas, tuned with wait metrics.",
+            "code": {
+                "language": "javascript",
+                "snippet": "// pool budget: (db_cores * 2) divided across replicas\nconst pool = new Pool({\n  max: 10,\n  idleTimeoutMillis: 30000,\n  connectionTimeoutMillis: 2000, // fail fast when saturated\n});"
+            },
+            "diagram": {
+                "kind": "branch",
+                "title": "Pool tuning signal",
+                "condition": "Is connection acquisition waiting?",
+                "yes": {
+                    "label": "Raise pool max",
+                    "note": "Up to server core budget"
+                },
+                "no": {
+                    "label": "Hold or shrink",
+                    "note": "Watch database CPU instead"
+                }
+            }
+        },
+        {
+            "id": "databases-q15",
+            "difficulty": "advanced",
+            "tags": [
+                "query-planner",
+                "performance",
+                "operations"
+            ],
+            "question": "A query plan flipped overnight with no code change — what happened and how do you respond?",
+            "answer": "The inputs changed: stale or skewed statistics after a bulk load, autovacuum marking pages all-visible, a parameter crossing the selectivity cliff (parameter sniffing), or a plan cache invalidated by an upgrade. I compare old and new plans and the row estimates against reality, since most regressions are bad estimates. Then I fix in order: refresh statistics, fix the query shape so one plan fits all parameters, add a compound index, and only then use hints (pg_hint_plan, SQL Server hints, Oracle baselines), which rot as data and schema evolve.",
+            "keyTakeaway": "Fix statistics and query shape before reaching for hints; hints are a splint that rots.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Responding to a plan flip",
+                "steps": [
+                    {
+                        "label": "Compare plans",
+                        "note": "estimates vs reality"
+                    },
+                    {
+                        "label": "Refresh statistics"
+                    },
+                    {
+                        "label": "Fix query shape",
+                        "note": "one plan for all values"
+                    },
+                    {
+                        "label": "Add compound index"
+                    },
+                    {
+                        "label": "Hints",
+                        "note": "last resort"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "databases-q16",
+            "difficulty": "advanced",
+            "tags": [
+                "change-data-capture",
+                "replication",
+                "events"
+            ],
+            "question": "What is change data capture, and when would you introduce it?",
+            "answer": "Change data capture turns the commit log into an event stream. A connector tails the write-ahead log and emits every committed insert, update, and delete in order. Downstream stores, search indexes, caches, and analytics copies converge without dual-write bugs. Debezium on Kafka is the default stack, and snapshots bootstrap existing tables. The costs: log retention must outlive connector downtime, schemas need registry discipline, and consumers must be idempotent because delivery is at-least-once. I adopt it when several consumers need the same changes and dual writes drift.",
+            "keyTakeaway": "CDC streams the commit log once, in order, and kills dual-write drift.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Log-based CDC",
+                "actors": [
+                    "App",
+                    "WAL",
+                    "Connector",
+                    "Downstream"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Commit transaction"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Stream change record"
+                    },
+                    {
+                        "from": 2,
+                        "to": 3,
+                        "label": "Emit ordered event"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "Advance LSN checkpoint"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "databases-q17",
+            "difficulty": "intermediate",
+            "tags": [
+                "concurrency",
+                "locking",
+                "transactions"
+            ],
+            "question": "How do deadlocks happen and how do you design them out of a system?",
+            "answer": "A deadlock is two transactions holding locks the other wants, and the detector kills the cheaper victim. The cure is discipline. Touch rows in a consistent order everywhere, typically primary key ascending. Keep transactions short. Never hold a lock across a user think, an external API call, or a queue commit. Lock in one statement, UPDATE ... WHERE id IN (...), not in row-by-row loops. Ordering and brevity beat lowering isolation. And when a deadlock happens, retry.",
+            "keyTakeaway": "Lock rows in one consistent order and keep transactions short; retry deadlocks as routine.",
+            "code": {
+                "language": "sql",
+                "snippet": "-- every code path transfers in the same ID order, so no cycle forms\nUPDATE accounts SET balance = balance - $amt\nWHERE id = least($from, $to);\nUPDATE accounts SET balance = balance + $amt\nWHERE id = greatest($from, $to);\n-- wrap in one transaction; on deadlock (SQLSTATE 40P01) retry with backoff"
+            },
+            "diagram": {
+                "kind": "sequence",
+                "title": "Deadlock cycle",
+                "actors": [
+                    "Transaction 1",
+                    "Transaction 2",
+                    "Lock manager"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 2,
+                        "label": "Acquire lock on A"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Acquire lock on B"
+                    },
+                    {
+                        "from": 0,
+                        "to": 2,
+                        "label": "Request B, waits"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Request A, waits"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "Abort as victim"
+                    },
+                    {
+                        "from": 0,
+                        "to": 2,
+                        "label": "Proceeds to commit"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "databases-q18",
+            "difficulty": "intermediate",
+            "tags": [
+                "pagination",
+                "performance",
+                "sql"
+            ],
+            "question": "Why does OFFSET pagination fall over at scale, and what replaces it?",
+            "answer": "OFFSET 100000 still produces and discards the first hundred thousand rows. Deeper pages get slower, and shifting rows can duplicate or skip entries. Keyset pagination uses a cursor on the last seen sort value: WHERE (created_at, id) > ($last_ts, $last_id) ORDER BY created_at, id LIMIT 20. It seeks into the index at constant cost at any depth. The trade is that random page jumps and total counts need search indexes or denormalized counters.",
+            "keyTakeaway": "Keyset pagination seeks by last-seen sort value and stays fast at any depth.",
+            "diagram": {
+                "kind": "compare",
+                "title": "OFFSET versus keyset pagination",
+                "columns": [
+                    "OFFSET",
+                    "Keyset"
+                ],
+                "rows": [
+                    {
+                        "label": "Cost at depth",
+                        "values": [
+                            "Scans and discards rows",
+                            "Index seek, constant"
+                        ]
+                    },
+                    {
+                        "label": "Shifting rows",
+                        "values": [
+                            "Duplicates or skips",
+                            "Stable cursor"
+                        ]
+                    },
+                    {
+                        "label": "Random page jump",
+                        "values": [
+                            "Supported",
+                            "Needs search index"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "databases-q19",
+            "difficulty": "intermediate",
+            "tags": [
+                "materialized-views",
+                "performance",
+                "analytics"
+            ],
+            "question": "When do you use a materialized view, and how do you keep it fresh?",
+            "answer": "A materialized view stores the query result, so heavy aggregations, joins, and window logic drop from seconds to milliseconds. The cost is staleness and refresh, so it fits dashboards, reports, and API payloads that tolerate minutes of lag. I never use it on the write path or for data the user just changed. For refresh, a scheduled REFRESH on cron is simplest. Incremental maintenance (pg_ivm, change feeds) keeps large views affordable. The swap pattern, building a new table and then renaming, avoids half-built reads. I measure refresh duration and cost before promising freshness.",
+            "keyTakeaway": "A materialized view trades refresh cost for read speed; match cadence to staleness tolerance.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Materialized view refresh",
+                "steps": [
+                    {
+                        "label": "Source tables change",
+                        "note": "Writes continue normally"
+                    },
+                    {
+                        "label": "Refresh triggers",
+                        "note": "Cron, event, or demand"
+                    },
+                    {
+                        "label": "Recompute result",
+                        "note": "Full or incremental"
+                    },
+                    {
+                        "label": "Swap atomically",
+                        "note": "Rename replaces old view"
+                    },
+                    {
+                        "label": "Reads stay fast",
+                        "note": "Seconds become milliseconds"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "databases-q20",
+            "difficulty": "advanced",
+            "tags": [
+                "keys",
+                "uuid",
+                "schema-design"
+            ],
+            "question": "How do you choose between bigint, UUIDv4, and UUIDv7 primary keys?",
+            "answer": "Random UUIDv4 keys are a hidden tax: 16 bytes versus 8, and unordered. Each insert lands at a random B-tree position, which thrashes the cache and bloats indexes. Bigint identities are the fastest and smallest. Sequences suit one database, but they leak volume, need shard coordination, and complicate pre-generating ids for idempotent APIs. UUIDv7 needs no coordination, is safe to expose, and is time-ordered, so indexes stay compact. My rule is bigint inside one database, UUIDv7 for distributed generation and public ids, and migrating off UUIDv4 on write-heavy tables.",
+            "keyTakeaway": "Time-ordered keys, UUIDv7 or bigint, keep inserts sequential; random UUIDv4 fragments indexes.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Primary key choices",
+                "columns": [
+                    "bigint",
+                    "UUIDv4",
+                    "UUIDv7"
+                ],
+                "rows": [
+                    {
+                        "label": "Size",
+                        "values": [
+                            "8 bytes",
+                            "16 bytes",
+                            "16 bytes"
+                        ]
+                    },
+                    {
+                        "label": "Insert order",
+                        "values": [
+                            "Sequential",
+                            "Random",
+                            "Time-ordered"
+                        ]
+                    },
+                    {
+                        "label": "Coordination",
+                        "values": [
+                            "Needs sequence",
+                            "None",
+                            "None"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "databases-q21",
+            "difficulty": "advanced",
+            "tags": [
+                "replication",
+                "consistency",
+                "read-replicas"
+            ],
+            "question": "Users complain their changes vanish right after saving — how do you handle replication lag and read-your-writes?",
+            "answer": "Read-your-writes breaks: the write hits the primary, the next read routes to a lagging replica, and the data vanishes for milliseconds or seconds. First I reduce lag. Single-threaded appliers are the usual Postgres bottleneck, oversized transactions replay slowly, and hot rows serialize. I monitor lag. Then I route by consistency need. Session pinning sends a user to the primary briefly after they write. Monotonic version tokens hold reads until the replica passes the last write's position. Timestamp bounds work similarly.",
+            "keyTakeaway": "Pin a user's post-write reads to the primary, or hold at the replica with version tokens.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Read-your-writes routing",
+                "actors": [
+                    "Client",
+                    "Router",
+                    "Primary",
+                    "Replica"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 2,
+                        "label": "Write new post"
+                    },
+                    {
+                        "from": 2,
+                        "to": 0,
+                        "label": "Ack with LSN token"
+                    },
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Read own post"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Token not applied yet"
+                    },
+                    {
+                        "from": 1,
+                        "to": 3,
+                        "label": "Route once caught up"
+                    },
+                    {
+                        "from": 3,
+                        "to": 0,
+                        "label": "Return the post"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "databases-q22",
+            "difficulty": "intermediate",
+            "tags": [
+                "json",
+                "indexing",
+                "postgres"
+            ],
+            "question": "How do you index queries against JSON columns in Postgres?",
+            "answer": "Postgres gives me three tools. A GIN index on jsonb, CREATE INDEX USING gin, indexes every key and value and serves containment queries like data @> '{\"role\": \"admin\"}', but costs write overhead and space. Expression indexes target one path, CREATE INDEX ON events ((data->>'event_type')). They act like a b-tree for equality and range, and are far cheaper when queries touch a few known fields. Then I promote hot JSON fields to generated or stored columns with their own index and constraints. GIN is for the flexible long tail, and the structured head lives in columns.",
+            "keyTakeaway": "GIN for containment over whole documents, expression indexes for known paths, columns for hot fields.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Indexing JSON in Postgres",
+                "rows": [
+                    {
+                        "label": "GIN on jsonb",
+                        "note": "Flexible long tail, containment queries"
+                    },
+                    {
+                        "label": "Expression index",
+                        "note": "One known path, cheap"
+                    },
+                    {
+                        "label": "Generated column",
+                        "note": "Hot field with own index"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "databases-q23",
+            "difficulty": "intermediate",
+            "tags": [
+                "data-lifecycle",
+                "maintenance",
+                "performance"
+            ],
+            "question": "How do you keep an append-only table from growing forever?",
+            "answer": "I decide the lifecycle up front: hot, cold, deletable. For pure expiry, I drop old time partitions: instant, non-blocking, no vacuum storm. A DELETE loop over millions of rows causes bloat, WAL, and replication lag, so if you must delete, batch small and run off-peak. Rarely read data worth keeping gets archived to object storage or a warehouse in Parquet, then the rows are dropped. Queries across hot and cold need a federated read path or a scheduled merge. And I test restores, because archived data nobody can reload is gone.",
+            "keyTakeaway": "Expire by dropping partitions, archive before deleting, and always test the restore.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Append-only table lifecycle",
+                "steps": [
+                    {
+                        "label": "Hot",
+                        "note": "recent partitions"
+                    },
+                    {
+                        "label": "Archive",
+                        "note": "Parquet in object storage"
+                    },
+                    {
+                        "label": "Drop partition",
+                        "note": "instant, no vacuum"
+                    },
+                    {
+                        "label": "Test restore"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "databases-q24",
+            "difficulty": "advanced",
+            "tags": [
+                "multi-tenancy",
+                "security",
+                "architecture"
+            ],
+            "question": "How do you choose between row-level security, schema-per-tenant, and database-per-tenant?",
+            "answer": "Database-per-tenant gives the strongest isolation, independent backups and scaling, and clear compliance boundaries, at the highest operational cost. A thousand tenants means a thousand databases to migrate. Schema-per-tenant shares infrastructure, but migrations multiply and connection pools get complicated. Row-level security on shared tables scales to hundreds of thousands of tenants with one schema and one migration. A policy like tenant_id = current_setting('app.tenant_id') is enforced by the engine even if application code forgets the where clause. I start with RLS plus a tenant-scoped role and reserve the heavier models for contractual demands.",
+            "keyTakeaway": "Enforce tenancy in the engine with RLS; reserve schema- or db-per-tenant for contract demands.",
+            "code": {
+                "language": "sql",
+                "snippet": "-- tenancy enforced by the engine, not by every query\nALTER TABLE orders ENABLE ROW LEVEL SECURITY;\nCREATE POLICY tenant_isolation ON orders\n  USING (tenant_id = current_setting('app.tenant_id')::uuid);\nSET app.tenant_id = '0f1e2d3c-4b5a-6789-abcd-ef0123456789'; -- per request\nSELECT count(*) FROM orders; -- silently scoped to that tenant"
+            },
+            "diagram": {
+                "kind": "layers",
+                "title": "Tenant isolation models",
+                "rows": [
+                    {
+                        "label": "Database per tenant",
+                        "note": "Strongest, costliest to operate"
+                    },
+                    {
+                        "label": "Schema per tenant",
+                        "note": "Namespaced, migrations multiply"
+                    },
+                    {
+                        "label": "RLS on shared tables",
+                        "note": "Engine-enforced, scales farthest"
+                    },
+                    {
+                        "label": "App-side WHERE filter",
+                        "note": "Convenient, leaks on mistakes"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "databases-q25",
+            "difficulty": "advanced",
+            "tags": [
+                "concurrency",
+                "optimistic-locking",
+                "architecture"
+            ],
+            "question": "When do you choose optimistic versus pessimistic concurrency in the application layer?",
+            "answer": "With optimistic locking, I assume conflicts are rare, read a version, and update WHERE version = $seen. There's no waiting or held locks, but a conflict costs a retry, so heavy contention causes retry storms. Pessimistic means lock first, with SELECT FOR UPDATE. It's predictable on hot rows and holds consistent multi-row state, at the cost of blocking, throughput ceilings, and deadlock risk. I decide by contention and criticality. Cart edits and profile fields get optimistic with bounded retries. Inventory, balance transfers, and anything where overselling is unacceptable get a real lock or an atomic conditional update. I never hold pessimistic locks across remote calls.",
+            "keyTakeaway": "Optimistic for low contention with bounded retries; lock the rows money depends on.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Optimistic versus pessimistic locking",
+                "columns": [
+                    "Optimistic",
+                    "Pessimistic"
+                ],
+                "rows": [
+                    {
+                        "label": "Mechanism",
+                        "values": [
+                            "UPDATE WHERE version = seen",
+                            "SELECT FOR UPDATE"
+                        ]
+                    },
+                    {
+                        "label": "Under contention",
+                        "values": [
+                            "Retry storms",
+                            "Blocking, deadlock risk"
+                        ]
+                    },
+                    {
+                        "label": "Use for",
+                        "values": [
+                            "Carts, profiles",
+                            "Inventory, balances"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "databases-q26",
+            "difficulty": "advanced",
+            "tags": [
+                "sharding",
+                "hot-partitions",
+                "scale"
+            ],
+            "question": "How do you diagnose and fix a hot partition when one shard redlines while the rest idle?",
+            "answer": "A hot shard means the shard key correlates with traffic: monotonically increasing keys send every insert to the newest range partition, a celebrity user id concentrates a feed, or one big tenant dominates. I detect it with per-shard query rate, lock waits, and storage growth. To mitigate without a full reshard, I append a high-cardinality suffix or bucket to the key, isolate the noisy tenant on dedicated hardware, or cache or queue the hot reads and writes. I prevent it with compound keys: tenant plus entity, or hash plus range. Resharding is the last resort. It's a migration, and hotspots re-form if the key stays skewed.",
+            "keyTakeaway": "Defuse hot shards by salting the key or isolating the noisy tenant, not by resharding blindly.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Shard key choices",
+                "columns": [
+                    "Monotonic range",
+                    "Hashed key",
+                    "Compound salted"
+                ],
+                "rows": [
+                    {
+                        "label": "Write spread",
+                        "values": [
+                            "Newest shard only",
+                            "Even across shards",
+                            "Even, tunable locality"
+                        ]
+                    },
+                    {
+                        "label": "Range scans",
+                        "values": [
+                            "Fast, contiguous",
+                            "Scatter-gather",
+                            "Fast within group"
+                        ]
+                    },
+                    {
+                        "label": "Hotspot risk",
+                        "values": [
+                            "High on inserts",
+                            "High per celebrity",
+                            "Low"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "databases-q27",
+            "difficulty": "advanced",
+            "tags": [
+                "migrations",
+                "schema-design",
+                "operations"
+            ],
+            "question": "How do you change a schema on a large table without downtime?",
+            "answer": "Expand, migrate, contract. Never one DDL statement that rewrites a live table. Expand with nullable columns, new tables, and a batched backfill with no long transactions. Deploy code that writes both shapes and reads the new one. Flip reads after an idempotent backfill. Contract in a later release: drop old columns and constraints only after monitoring proves nothing reads them. In Postgres, a column with a volatile default rewrites the table, so I use nullable plus backfill. CREATE INDEX CONCURRENTLY avoids the write lock but cannot run in a transaction. I keep every step reversible behind a flag.",
+            "keyTakeaway": "Expand, backfill, flip, contract: never let one DDL rewrite a live table.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Expand, migrate, contract",
+                "steps": [
+                    {
+                        "label": "Expand",
+                        "note": "nullable columns"
+                    },
+                    {
+                        "label": "Backfill",
+                        "note": "batched, idempotent"
+                    },
+                    {
+                        "label": "Dual write",
+                        "note": "read the new shape"
+                    },
+                    {
+                        "label": "Contract",
+                        "note": "drop old, later"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "databases-q28",
+            "difficulty": "advanced",
+            "tags": [
+                "backup",
+                "recovery",
+                "operations"
+            ],
+            "question": "How does a backup strategy turn a bad delete from an hour ago into a boring recovery?",
+            "answer": "Full nightly backups alone lose every change since midnight, and a restore means downtime plus manual reconstruction. I use continuous archiving: a base backup plus write-ahead log streamed to object storage. Point-in-time recovery to any second turns a bad commit into a replay to just before it, a side-by-side instance, and a surgical copy of the lost rows. I run restore drills and check RPO, how much data you may lose, and RTO, how long recovery takes, against what the business needs. I add logical dumps for granular restores, keep backups in a separate account with restricted delete, and monitor archive lag.",
+            "keyTakeaway": "Base backup plus WAL archiving buys point-in-time recovery; rehearse restores or it is theater.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Point-in-time recovery",
+                "actors": [
+                    "Operator",
+                    "Base backup",
+                    "WAL archive",
+                    "Side instance"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Restore base backup"
+                    },
+                    {
+                        "from": 0,
+                        "to": 2,
+                        "label": "Replay WAL to before the delete"
+                    },
+                    {
+                        "from": 2,
+                        "to": 3,
+                        "label": "Recovered state"
+                    },
+                    {
+                        "from": 0,
+                        "to": 3,
+                        "label": "Copy lost rows back"
+                    }
+                ]
+            }
         }
     ]
 }

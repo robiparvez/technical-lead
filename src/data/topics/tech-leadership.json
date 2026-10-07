@@ -1,63 +1,695 @@
 {
-  "slug": "tech-leadership",
-  "title": "Technical Leadership & Communication",
-  "requirement": "Strong technical leadership, structured problem-solving, written communication skills.",
-  "questions": [
-    {
-      "id": "tech-leadership-q1",
-      "difficulty": "basic",
-      "tags": ["role", "fundamentals", "behavioral"],
-      "question": "How is a technical lead role different from a senior engineer role?",
-      "answer": "A senior engineer's success is measured by the systems they build; a technical lead's by what the whole team ships and how it evolves without them. The lead still writes code, but the highest-leverage work becomes unblocking others, making and explaining technical decisions, and keeping architecture coherent as many hands change it. Influence replaces control: you align people who do not report to you, and you spend your credibility carefully. When I moved into it, the hardest shift was reviewing less code line by line and reviewing more designs and trade-offs.",
-      "keyTakeaway": "Lead success is team output and system coherence, not personal throughput."
-    },
-    {
-      "id": "tech-leadership-q2",
-      "difficulty": "basic",
-      "tags": ["direction", "frontend", "backend"],
-      "question": "How do you set technical direction across both front-end and back-end teams?",
-      "answer": "Start from shared product goals and derive the technical priorities each team must align on, such as API contracts, observability, and release discipline, rather than dictating stacks. Publish a short set of directions as decisions with context, what we chose, why, what we rejected, so teams implement the intent, not just the letter. Create interface contracts between front end and back end early, schema, error semantics, performance budgets, because most cross-team friction lives there. Review adherence through design reviews and the exception process, not by policing pull requests.",
-      "keyTakeaway": "Few published decisions with context, hard contracts at the seams, exceptions through review."
-    },
-    {
-      "id": "tech-leadership-q3",
-      "difficulty": "intermediate",
-      "tags": ["problem-solving", "process", "behavioral"],
-      "question": "Describe your structured approach when handed an ambiguous technical problem.",
-      "answer": "First write the problem statement in one paragraph and get it corrected, because half of ambiguity is people solving different problems. Break it into knowns, unknowns, and constraints, then attack the unknowns with cheap experiments or a spike rather than debate. Generate at least two options with explicit trade-offs, cost, risk, reversibility, and get the people who will live with the result to poke holes. Decide, record the decision and its trigger conditions, and set a checkpoint to revisit it. In my experience the discipline people skip is writing the problem down, and it is the one that saves the most time.",
-      "keyTakeaway": "Written problem statement, experiments over debate, options with trade-offs, decision with a checkpoint."
-    },
-    {
-      "id": "tech-leadership-q4",
-      "difficulty": "intermediate",
-      "tags": ["writing", "documentation", "rfc"],
-      "question": "Why does the posting emphasize written communication, and how do you practice it?",
-      "answer": "Distributed technical decisions live or die in writing: an RFC or design doc forces vagueness into the open and gives every timezone the same input, which meetings never do. I practice it with short RFCs for any decision that outlives the meeting, problem, options, recommendation, risks, under two pages, plus decision logs with the trigger conditions for revisiting. Writing also scales the lead, since one clear document unblocks many people at once while repeating yourself in chats does not. The test I use: a new engineer should be able to act on the document without asking me a question.",
-      "keyTakeaway": "RFCs make decisions reviewable and permanent; a doc that still needs you is not done."
-    },
-    {
-      "id": "tech-leadership-q5",
-      "difficulty": "intermediate",
-      "tags": ["conflict", "decision", "behavioral"],
-      "question": "A senior engineer disagrees with your architectural decision openly. What do you do?",
-      "answer": "Take it seriously and publicly, because the team is watching how disagreement gets handled. Ask them to steelman the alternative in a design session with concrete criteria, performance, cost, delivery risk, operability, and let the data decide where it can. If their case is stronger, change the decision visibly and thank them; consistency beats ego, and reversing well is a credibility builder, not a loss. If the decision stands, explain the reasoning and explicitly record their dissent, then expect commitment to the chosen path. What I never do is win by role, because that teaches the team to stop raising risks.",
-      "keyTakeaway": "Disagree with criteria in the open, reverse yourself when wrong, never win by title."
-    },
-    {
-      "id": "tech-leadership-q6",
-      "difficulty": "advanced",
-      "tags": ["time", "hands-on", "priorities", "behavioral"],
-      "question": "How do you balance hands-on coding with leadership responsibilities?",
-      "answer": "Keep coding, but choose the work deliberately: small, non-critical-path stories, tooling, and reviews that teach, rather than owning the core of a feature the release depends on. Leadership duties are unpredictable, interrupts, incidents, people issues, so holding the critical path makes both the schedule and your attention fragile. I timebox deep-code blocks, batch reviews and 1:1s, and hand leadership of some tracks to seniors explicitly, which grows them and frees me. The balance I aim for is being technical enough that my judgment is trusted, while the team does not wait on me to ship.",
-      "keyTakeaway": "Code for judgment and teaching, not for the critical path; grow seniors to hold tracks."
-    },
-    {
-      "id": "tech-leadership-q7",
-      "difficulty": "advanced",
-      "tags": ["change", "standards", "adoption", "behavioral"],
-      "question": "How do you drive adoption of a new standard or technology the team does not want?",
-      "answer": "First check the objection, because teams resisting a change are often protecting delivery or carrying scar tissue from a previous mandate. Make the case with evidence, a spike, a benchmark, or the cost of the status quo, and pilot with a volunteer pair rather than announcing a rollout. Reduce the change's price: templates, migration tooling, a paved path that makes the new way the easy way. Set a sunset for the old approach with the team's input, then hold it. If after honest piloting the team is still right that it does not fit, dropping it publicly is also leading.",
-      "keyTakeaway": "Listen, prove with a pilot, make the new path easy, then hold the sunset date."
-    }
-  ]
+    "slug": "tech-leadership",
+    "title": "Technical Leadership & Communication",
+    "requirement": "Strong technical leadership, structured problem-solving, written communication skills.",
+    "questions": [
+        {
+            "id": "tech-leadership-q1",
+            "difficulty": "basic",
+            "tags": [
+                "role",
+                "fundamentals",
+                "behavioral"
+            ],
+            "question": "How is a technical lead role different from a senior engineer role?",
+            "answer": "A senior engineer's success is the systems they build. A lead's success is what the whole team ships and how it evolves without them. I still write code, but my highest-leverage work is unblocking others, making and explaining technical decisions, and keeping the architecture coherent. Influence replaces control, so I have to align people who don't report to me. The hardest shift is reviewing designs and trade-offs more and code line by line less.",
+            "keyTakeaway": "Lead success is team output and system coherence, not personal throughput.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Senior engineer versus technical lead",
+                "columns": [
+                    "Senior engineer",
+                    "Technical lead"
+                ],
+                "rows": [
+                    {
+                        "label": "Measured by",
+                        "values": [
+                            "Systems built",
+                            "Team output, coherence"
+                        ]
+                    },
+                    {
+                        "label": "Core work",
+                        "values": [
+                            "Deep design and code",
+                            "Decisions, unblocking, teaching"
+                        ]
+                    },
+                    {
+                        "label": "Influence",
+                        "values": [
+                            "Own component scope",
+                            "Across teams, by credibility"
+                        ]
+                    },
+                    {
+                        "label": "Review focus",
+                        "values": [
+                            "Code line by line",
+                            "Designs and trade-offs"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "tech-leadership-q2",
+            "difficulty": "basic",
+            "tags": [
+                "direction",
+                "frontend",
+                "backend"
+            ],
+            "question": "How do you set technical direction across both front-end and back-end teams?",
+            "answer": "I start from shared product goals and derive technical priorities every team aligns on (API contracts, observability, release discipline), rather than dictating stacks. I publish short directions as decisions with context: what we chose, why, and what we rejected. Front end and back end interface contracts get set early (schema, error semantics, performance budgets), since most cross-team friction lives there. I check adherence through design reviews and an exception process, not by policing pull requests.",
+            "keyTakeaway": "Few published decisions with context, hard contracts at the seams, exceptions through review.",
+            "diagram": {
+                "kind": "layers",
+                "title": "How technical direction lands",
+                "rows": [
+                    {
+                        "label": "Shared product goals",
+                        "note": "source of all priorities"
+                    },
+                    {
+                        "label": "Published decisions",
+                        "note": "context, choice, rejected options"
+                    },
+                    {
+                        "label": "Interface contracts",
+                        "note": "schemas, error semantics, budgets"
+                    },
+                    {
+                        "label": "Exception process",
+                        "note": "design review, not policing"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "tech-leadership-q3",
+            "difficulty": "intermediate",
+            "tags": [
+                "problem-solving",
+                "process",
+                "behavioral"
+            ],
+            "question": "Describe your structured approach when handed an ambiguous technical problem.",
+            "answer": "I write the problem statement in one paragraph and get it corrected, because half of ambiguity is people solving different problems. Then I split it into knowns, unknowns and constraints. I attack the unknowns with cheap experiments or a spike, not debate. I generate at least two options with explicit trade-offs (cost, risk, reversibility) and have the people who'll live with the result poke holes. Then I decide, and I record the decision, the trigger conditions and a checkpoint to revisit.",
+            "keyTakeaway": "Written problem statement, experiments over debate, options with trade-offs, decision with a checkpoint.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Structured problem-solving loop",
+                "steps": [
+                    {
+                        "label": "Write the problem",
+                        "note": "one paragraph, corrected together"
+                    },
+                    {
+                        "label": "Split knowns, unknowns",
+                        "note": "constraints listed explicitly"
+                    },
+                    {
+                        "label": "Spike the unknowns",
+                        "note": "cheap experiments beat debate"
+                    },
+                    {
+                        "label": "Compare options",
+                        "note": "cost, risk, reversibility"
+                    },
+                    {
+                        "label": "Decide with checkpoint",
+                        "note": "record trigger conditions"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "tech-leadership-q4",
+            "difficulty": "intermediate",
+            "tags": [
+                "writing",
+                "documentation",
+                "rfc"
+            ],
+            "question": "Why does the posting emphasize written communication, and how do you practice it?",
+            "answer": "Distributed decisions live or die in writing. An RFC or design doc forces vagueness into the open and gives every timezone the same input. I use short RFCs (problem, options, recommendation, risks, under two pages) for any decision that outlives a meeting, plus decision logs with trigger conditions for revisiting. One clear document unblocks many people. My test is whether a new engineer can act on it without asking me.",
+            "keyTakeaway": "RFCs make decisions reviewable and permanent; a doc that still needs you is not done."
+        },
+        {
+            "id": "tech-leadership-q5",
+            "difficulty": "intermediate",
+            "tags": [
+                "conflict",
+                "decision",
+                "behavioral"
+            ],
+            "question": "A senior engineer disagrees with your architectural decision openly. What do you do?",
+            "answer": "I take it seriously and publicly, because the team watches how disagreement gets handled. I ask them to steelman the alternative with concrete criteria (performance, cost, delivery risk, operability), and I let data decide where it can. If their case is stronger, I change the decision visibly and thank them. If the decision stands, I explain my reasoning, record the dissent and expect commitment. I never win by role, because that teaches the team to stop raising risks.",
+            "keyTakeaway": "Disagree with criteria in the open, reverse yourself when wrong, never win by title.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Handling open disagreement",
+                "condition": "Does their case win on criteria?",
+                "yesLabel": "Reverse",
+                "noLabel": "Hold",
+                "yes": {
+                    "label": "Change it visibly",
+                    "note": "thank them, update the record"
+                },
+                "no": {
+                    "label": "Commit with recorded dissent",
+                    "note": "explain reasoning, expect alignment"
+                }
+            }
+        },
+        {
+            "id": "tech-leadership-q6",
+            "difficulty": "advanced",
+            "tags": [
+                "time",
+                "hands-on",
+                "priorities",
+                "behavioral"
+            ],
+            "question": "How do you balance hands-on coding with leadership responsibilities?",
+            "answer": "I keep coding, but I choose the work deliberately: small non-critical-path stories, tooling, and reviews that teach. I don't own the core of a feature the release depends on, since leadership duties are unpredictable. I timebox deep-code blocks, batch reviews and 1:1s, and hand some tracks to seniors, which grows them and frees me. The aim is for the team to trust my judgment without waiting on me to ship.",
+            "keyTakeaway": "Code for judgment and teaching, not for the critical path; grow seniors to hold tracks."
+        },
+        {
+            "id": "tech-leadership-q7",
+            "difficulty": "advanced",
+            "tags": [
+                "change",
+                "standards",
+                "adoption",
+                "behavioral"
+            ],
+            "question": "How do you drive adoption of a new standard or technology the team does not want?",
+            "answer": "I check the objection first, because teams resisting change are often protecting delivery. Then I make the case with evidence (a spike, a benchmark, the cost of the status quo) and pilot with a volunteer pair instead of announcing a rollout. I lower the price of change with templates, migration tooling and a paved path. I set a sunset for the old approach with the team's input, then hold it. If the pilot shows the team is right, dropping it publicly is also leading.",
+            "keyTakeaway": "Listen, prove with a pilot, make the new path easy, then hold the sunset date.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Adoption of an unpopular standard",
+                "steps": [
+                    {
+                        "label": "Hear the objection",
+                        "note": "find the scar tissue"
+                    },
+                    {
+                        "label": "Prove with evidence",
+                        "note": "spike, benchmark, status-quo cost"
+                    },
+                    {
+                        "label": "Pilot with volunteers",
+                        "note": "no announced rollout"
+                    },
+                    {
+                        "label": "Build the paved path",
+                        "note": "templates, tooling, easy defaults"
+                    },
+                    {
+                        "label": "Hold the sunset",
+                        "note": "or drop it publicly"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "tech-leadership-q8",
+            "difficulty": "intermediate",
+            "tags": [
+                "team",
+                "turnaround",
+                "behavioral"
+            ],
+            "question": "You inherit a struggling team, morale is low and delivery is slipping, so what do your first 90 days look like?",
+            "answer": "In month one I listen. I hold one-on-ones with every engineer, skip-levels with stakeholders, and read the delivery history, incidents and architecture. I change nothing visible. I write down two or three constraints causing pain and play the diagnosis back to the team for correction, because a shared honest picture rebuilds trust faster than optimism. In month two I deliver one visible quick win that removes real friction, like fixing a flaky pipeline, and credit the people who helped. In month three I set a few measurable commitments with product, with a review cadence. Diagnosis before change, credibility before direction.",
+            "keyTakeaway": "Diagnose before changing anything, spend credibility on one visible win, then commit to few measurable goals.",
+            "diagram": {
+                "kind": "flow",
+                "title": "First 90 days of a turnaround",
+                "steps": [
+                    {
+                        "label": "Listen in 1:1s",
+                        "note": "engineers, stakeholders, delivery history"
+                    },
+                    {
+                        "label": "Write the diagnosis",
+                        "note": "name the real constraints"
+                    },
+                    {
+                        "label": "Play it back",
+                        "note": "let the team correct it"
+                    },
+                    {
+                        "label": "Ship a quick win",
+                        "note": "visible friction, credited publicly"
+                    },
+                    {
+                        "label": "Commit to few goals",
+                        "note": "measurable, reviewed with product"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "tech-leadership-q9",
+            "difficulty": "intermediate",
+            "tags": [
+                "delegation",
+                "priorities",
+                "behavioral"
+            ],
+            "question": "How do you decide what to delegate and what to keep on your own plate?",
+            "answer": "I keep only what's mine: decisions whose blast radius crosses teams, people situations with career consequences, and representation upward or outward. For everything else I ask whether it's reversible and whether it would grow someone. If both are yes, I delegate with context and a check-in point, not a checklist. I never hand off setting the quality bar or explaining why the work matters, because those blur with two owners. If something keeps coming back, that signals I under-briefed or under-trusted.",
+            "keyTakeaway": "Delegate reversible work that grows people; keep cross-team decisions, career conversations, and the quality bar.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Delegate or keep",
+                "condition": "Reversible and grows someone?",
+                "yesLabel": "Delegate",
+                "noLabel": "Keep",
+                "yes": {
+                    "label": "Hand over with context",
+                    "note": "intent, check-in point, credit"
+                },
+                "no": {
+                    "label": "Keep, or split it",
+                    "note": "keep judgment, hand the rest"
+                }
+            }
+        },
+        {
+            "id": "tech-leadership-q10",
+            "difficulty": "intermediate",
+            "tags": [
+                "stakeholders",
+                "negotiation",
+                "behavioral"
+            ],
+            "question": "Tell me about a time you said no to a senior stakeholder and still kept the relationship strong.",
+            "answer": "A VP wanted a large client feature mid-quarter, during a committed platform migration. Both would have landed late. I spent a day building the trade-off: what the feature displaces, the added delivery risk, and two cheaper alternatives covering most of the client's need. I presented the no as a choice, not a refusal: one page, costs laid out, met live. They picked the smaller alternative, and it shipped in two weeks. Refuse the request, accept the problem.",
+            "keyTakeaway": "Say no to the request, not the person: bring costs plus alternatives and let them choose."
+        },
+        {
+            "id": "tech-leadership-q11",
+            "difficulty": "intermediate",
+            "tags": [
+                "tech-debt",
+                "product",
+                "negotiation",
+                "behavioral"
+            ],
+            "question": "How do you negotiate a technical debt budget with a product manager who wants only features?",
+            "answer": "I argue delivery cost, not debt. Product owes engineering no cleanliness; it owes roadmap speed. So I measure friction: days the last three features burned on workarounds, incidents traced to a shaky module, and what a release costs today versus a year ago. I price debt work like features (one engineer per sprint, or a standing twenty percent of capacity) with a projected velocity payback. When a debt item has no delivery or incident story, I stop asking, and that keeps my credibility.",
+            "keyTakeaway": "Price debt in delivery cost, request a standing capacity rule, and only ask for items with a proven friction story."
+        },
+        {
+            "id": "tech-leadership-q12",
+            "difficulty": "intermediate",
+            "tags": [
+                "hiring",
+                "interviewing",
+                "behavioral"
+            ],
+            "question": "What signal do you look for when interviewing senior engineers, beyond coding ability?",
+            "answer": "The strongest signal is what they do at ambiguity and disagreement. Seniors are hired for judgment, not speed. I probe a real system they owned: what they'd tear down first and why, what broke after they left, and what they'd change now. I watch the scope of their care (operability, cost, maintainers), not just the happy path. I ask them to explain a hard decision to a non-engineer. Red flags are not being able to name a mistake, talking only in technologies, and describing teams they carried rather than multiplied.",
+            "keyTakeaway": "Hire for judgment under ambiguity, scope of care beyond code, and honest reflection on past systems."
+        },
+        {
+            "id": "tech-leadership-q13",
+            "difficulty": "intermediate",
+            "tags": [
+                "onboarding",
+                "hiring",
+                "behavioral"
+            ],
+            "question": "How do you get a senior hire productive and trusted within their first month?",
+            "answer": "Before they arrive, I assign a buddy who isn't me, fix a small real change for week one, and book stakeholder introductions. The first task is low-risk but end to end, touching the deploy path, on-call runbooks and review culture. I give them a written architecture map with the known soft spots. At week three I ask for a fresh-eyes memo: what confused them, what to fix first, and what we stopped questioning. Acting on one point publicly shows their voice lands.",
+            "keyTakeaway": "Real end-to-end work early, a written architecture map, and a fresh-eyes memo the team visibly acts on."
+        },
+        {
+            "id": "tech-leadership-q14",
+            "difficulty": "intermediate",
+            "tags": [
+                "architecture",
+                "reviews",
+                "process",
+                "behavioral"
+            ],
+            "question": "How do you run architecture reviews that keep quality up without becoming a gatekeeping bottleneck?",
+            "answer": "I keep review lightweight and rotating: a pre-read under two pages, thirty minutes mostly of questions, and the author as the named decision owner, not a committee. Reviewers find missed constraints and cheaper options, not relitigate taste. Objections need a concrete failure mode or cost. Heavy process is only for irreversible choices (data models, public contracts, cross-team seams). Reversible decisions get a decision-log note. When a review catches nothing, I shorten it, because gatekeeping that adds no information is a tax.",
+            "keyTakeaway": "Reserve scrutiny for irreversible decisions, require concrete objections, and shrink the review when it stops catching real problems.",
+            "diagram": {
+                "kind": "flow",
+                "title": "A lightweight architecture review",
+                "steps": [
+                    {
+                        "label": "Author writes pre-read",
+                        "note": "problem, options, recommendation"
+                    },
+                    {
+                        "label": "Reviewers read first",
+                        "note": "no cold starts in the room"
+                    },
+                    {
+                        "label": "Objections need evidence",
+                        "note": "name the failure mode"
+                    },
+                    {
+                        "label": "Author decides and logs",
+                        "note": "ownership stays with the author"
+                    },
+                    {
+                        "label": "Revisit at triggers",
+                        "note": "log lists what would change it"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "tech-leadership-q15",
+            "difficulty": "intermediate",
+            "tags": [
+                "metrics",
+                "engineering-health",
+                "process"
+            ],
+            "question": "How do you measure engineering health without falling into the velocity-metrics trap?",
+            "answer": "I ask three questions: can we deliver, can we operate, can we sustain the people. For delivery I use lead time and change-failure rate, not story points, which measure activity. For operability I look at incident frequency, time-to-recover per system and night pages. Sustainability stays mostly qualitative: survey signals on load and clarity, who is single-threaded, and whether the maintenance share drifts upward. I review numbers with the team, never as a leaderboard, and pair them with a narrative, so a dip starts a conversation about causes.",
+            "keyTakeaway": "Measure deliverability, operability, and sustainability as outcomes reviewed with the team, never as leaderboards.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Engineering health, three questions",
+                "rows": [
+                    {
+                        "label": "Can we deliver",
+                        "note": "lead time, change failure"
+                    },
+                    {
+                        "label": "Can we operate",
+                        "note": "incidents, recovery, night pages"
+                    },
+                    {
+                        "label": "Can we sustain",
+                        "note": "load, clarity, bus factor"
+                    },
+                    {
+                        "label": "Reviewed with narrative",
+                        "note": "conversation, never a leaderboard"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "tech-leadership-q16",
+            "difficulty": "intermediate",
+            "tags": [
+                "managing-up",
+                "communication",
+                "behavioral"
+            ],
+            "question": "How do you manage up and influence decisions your own boss makes?",
+            "answer": "My boss is a stakeholder with their own bosses and budget. I bring information in their language (business risk, cost, customer impact), not module names. I never surface a surprise late. If a date slips, I say so early with options, because leaders forgive problems they knew about. To change a decision, I bring a recommendation and trade-offs on one page and ask for a decision or a specific missing input. I also connect the technical work to what they care about.",
+            "keyTakeaway": "No late surprises, risks in business language, recommendations with trade-offs, and a record that keeps your boss informed effortlessly."
+        },
+        {
+            "id": "tech-leadership-q17",
+            "difficulty": "advanced",
+            "tags": [
+                "influence",
+                "collaboration",
+                "behavioral"
+            ],
+            "question": "How do you align technology choices across teams you have no authority over?",
+            "answer": "Without authority, my currency is evidence, drafted artifacts and reciprocity, in that order. I propose agreements at the seams where teams collide (API contracts, shared libraries, environments), not whole-stack convergence. I write a short proposal and shop it one-on-one with each team's lead before the group meeting, folding in their constraints, so the meeting ratifies rather than ambushes. Where a choice is contested, I run a small bake-off or pilot. And I invest first: contribute to their migration, review their RFCs, lend a person.",
+            "keyTakeaway": "Align at the seams with pre-negotiated proposals, evidence from pilots, and goodwill banked before it is spent.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Aligning teams you do not manage",
+                "steps": [
+                    {
+                        "label": "Pick a seam",
+                        "note": "API contract, shared library"
+                    },
+                    {
+                        "label": "Write a short proposal"
+                    },
+                    {
+                        "label": "Shop one-on-one",
+                        "note": "with each team lead"
+                    },
+                    {
+                        "label": "Then the group meeting"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "tech-leadership-q18",
+            "difficulty": "advanced",
+            "tags": [
+                "performance",
+                "people",
+                "behavioral"
+            ],
+            "question": "How do you handle it when a historically strong engineer's performance drops?",
+            "answer": "Strong people underperform for reasons: workload, unclear expectations, a stalled project, or something outside work. The first conversation is diagnostic, private and early. I name the specific gap against expectations: what outputs changed, over what period. We agree two or three concrete changes with a check-in rhythm, and I fix what's mine, usually overloaded scope or feedback that was too soft. If there's no improvement in a defined window, I escalate formally with HR, never as an ambush. I protect their dignity but stay unambiguous about the standard.",
+            "keyTakeaway": "Diagnose early and privately, name the gap concretely, agree on changes with a deadline, then escalate without ambush.",
+            "diagram": {
+                "kind": "flow",
+                "title": "A strong engineer's performance drops",
+                "steps": [
+                    {
+                        "label": "Private, early talk",
+                        "note": "diagnostic"
+                    },
+                    {
+                        "label": "Name the specific gap",
+                        "note": "outputs, period"
+                    },
+                    {
+                        "label": "Agree 2 or 3 changes",
+                        "note": "with a check-in rhythm"
+                    },
+                    {
+                        "label": "Escalate formally",
+                        "note": "no change, via HR"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "tech-leadership-q19",
+            "difficulty": "advanced",
+            "tags": [
+                "succession",
+                "growth",
+                "behavioral"
+            ],
+            "question": "What are you doing to make yourself replaceable as a technical lead?",
+            "answer": "Succession is a design problem: identify the load I carry, spread it, and document the judgment behind decisions. I list what only I do (external representation, final architecture calls, certain stakeholder relationships) and transfer one item per quarter to a named senior with real ownership, not a shadow role. Decision records let my successor inherit judgment, not just state. I also tell my boss this is the plan, because a lead seen as irreplaceable gets overlooked for promotion.",
+            "keyTakeaway": "Transfer one irreplaceable duty per quarter to a named senior and write down the judgment so it survives you.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Succession in motion",
+                "actors": [
+                    "Lead",
+                    "Successor",
+                    "Manager"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Transfer one duty per quarter"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "Owns it, raises gaps"
+                    },
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Decision logs carry judgment"
+                    },
+                    {
+                        "from": 0,
+                        "to": 2,
+                        "label": "Succession is the stated plan"
+                    },
+                    {
+                        "from": 2,
+                        "to": 0,
+                        "label": "Bigger scope becomes safe"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "tech-leadership-q20",
+            "difficulty": "advanced",
+            "tags": [
+                "learning",
+                "hands-on",
+                "behavioral"
+            ],
+            "question": "As a lead, how do you keep your technical skills sharp while your calendar fills with management work?",
+            "answer": "I won't out-code my seniors on their stacks. I aim for current judgment: what's changing, why it matters, and when to bet. My standing practices are prototyping one emerging technology per quarter against a real internal problem, not a tutorial; reading other teams' RFCs and postmortems; and sitting in on interviews for specialties I drift from. I also teach (an architecture session, a tech-radar review), because explaining exposes gaps. I never lead by nostalgia for a stack I last touched five years ago.",
+            "keyTakeaway": "Stay current through real prototypes, others' RFCs and postmortems, and teaching, aiming for current judgment not coding speed."
+        },
+        {
+            "id": "tech-leadership-q21",
+            "difficulty": "advanced",
+            "tags": [
+                "standards",
+                "priorities",
+                "change"
+            ],
+            "question": "When you cannot enforce every standard at once, how do you choose which battles to fight first?",
+            "answer": "I rank standards by blast radius and reversibility, not annoyance. Correctness and safety come first (security practices, data handling, contract discipline), because failures there are expensive and irreversible. Next come standards with compounding payoff (observability, testing seams). Style and structure preferences come last or get skipped, since linters and templates end that argument mechanically. I count enforcement cost too: a standard the team can't apply under delivery pressure gets dropped, so each one needs a paved path. And I announce the priority order publicly.",
+            "keyTakeaway": "Enforce by blast radius and reversibility: safety first, compounding standards next, style to linters not personal capital.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Choosing which standards to enforce",
+                "columns": [
+                    "Enforce now",
+                    "Automate or defer"
+                ],
+                "rows": [
+                    {
+                        "label": "Failure cost",
+                        "values": [
+                            "Irreversible, expensive",
+                            "Cosmetic, cheap"
+                        ]
+                    },
+                    {
+                        "label": "Examples",
+                        "values": [
+                            "Security, contracts",
+                            "Naming, file layout"
+                        ]
+                    },
+                    {
+                        "label": "Enforcement",
+                        "values": [
+                            "Review plus paved path",
+                            "Linter, template"
+                        ]
+                    },
+                    {
+                        "label": "Team friction",
+                        "values": [
+                            "Accepted as logic",
+                            "Minimal daily cost"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "tech-leadership-q22",
+            "difficulty": "advanced",
+            "tags": [
+                "incidents",
+                "culture",
+                "behavioral"
+            ],
+            "question": "How do you lead during a production incident while keeping the post-incident culture blameless?",
+            "answer": "During an incident my job is roles and rhythm, not fixes. I name an incident commander for the technical response and a communications owner for stakeholders. I set a short update cadence so engineers avoid status meetings. I keep rollback versus fix-forward explicit and time-boxed, optimizing for restoration, not root cause. I never ask who did it, only what we know and what we need to revert safely. Afterward comes a timeline built from artifacts, contributing factors instead of a culprit, and action items with owners, tracked like features.",
+            "keyTakeaway": "Separate incident command from communication, optimize for restoration, and prove blamelessness by how the review treats people.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Incident roles and rhythm",
+                "actors": [
+                    "Incident lead",
+                    "Responders",
+                    "Comms owner",
+                    "Stakeholders"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Restore service, time-boxed calls"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "Findings each cadence"
+                    },
+                    {
+                        "from": 0,
+                        "to": 2,
+                        "label": "Impact in plain language"
+                    },
+                    {
+                        "from": 2,
+                        "to": 3,
+                        "label": "Scheduled updates, no speculation"
+                    },
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Rollback versus fix-forward decided"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "tech-leadership-q23",
+            "difficulty": "advanced",
+            "tags": [
+                "communication",
+                "stakeholders",
+                "trade-offs"
+            ],
+            "question": "How do you present deeply technical trade-offs to an executive audience without losing the substance?",
+            "answer": "Executives need the shape of the decision, not the design. I frame trade-offs as options with consequences in their units: money, time, customer risk, strategic flexibility. Not monolith versus services, but: A ships in March and slows every later change, B ships in June and each change stays cheap. I name my recommendation and the condition under which I'd flip it. I keep depth in an appendix for engineers, answer follow-ups precisely, and never bluff.",
+            "keyTakeaway": "Translate trade-offs into money, time, and risk; recommend with a stated flip condition; never bluff past a question."
+        },
+        {
+            "id": "tech-leadership-q24",
+            "difficulty": "advanced",
+            "tags": [
+                "build-vs-buy",
+                "decision",
+                "architecture"
+            ],
+            "question": "Walk me through how you decide between building a capability and buying or adopting one.",
+            "answer": "I ask whether the capability differentiates us. Buy commodity, build what carries the product's identity. Authentication and payments almost always fall in the first bucket. I price the total cost of building: years of maintenance, on-call surface, security patches, and the team to keep it alive. On the buy side I weigh lock-in: exit costs and vendor roadmap fit. I run a time-boxed proof of concept on our real workload, not demos, and I write the exit plan before signing.",
+            "keyTakeaway": "Buy commodity, build differentiators, price total maintenance honestly, and write the exit plan before committing.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Build or buy",
+                "condition": "Core to our differentiation?",
+                "yesLabel": "Build",
+                "noLabel": "Buy",
+                "yes": {
+                    "label": "Build with a real owner",
+                    "note": "price years of maintenance"
+                },
+                "no": {
+                    "label": "Buy and keep an exit",
+                    "note": "prove it on our workload"
+                }
+            }
+        },
+        {
+            "id": "tech-leadership-q25",
+            "difficulty": "advanced",
+            "tags": [
+                "feedback",
+                "peer-leads",
+                "behavioral"
+            ],
+            "question": "How do you give difficult technical feedback to a peer lead you do not manage?",
+            "answer": "I lead with intent and specifics, quickly and in private, because feedback that waits for a formal setting reads as an ambush. I open with a shared goal (a migration we both need to land, a quality bar our orgs share). Then I describe observable behavior and its concrete cost: schema changes shipped without contract review caused two downstream breakages last month. I ask for their read first, since peers hold context I lack. I close with a specific agreement, follow up, and credit the change publicly. I never use feedback as a status move.",
+            "keyTakeaway": "Peer feedback works when it is private, specific, anchored to a shared goal, and never a status move."
+        }
+    ]
 }

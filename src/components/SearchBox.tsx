@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 /** Asks the shell to reveal a search input (sidebar or phone panel). */
 export const REVEAL_SEARCH_EVENT = 'tl-reveal-search';
@@ -21,12 +21,14 @@ export function clearSearch() {
 
 /**
  * Search input. Query lives in the URL (?q=); typing commits after a short
- * debounce so results stay live without per-keystroke navigation.
+ * debounce so results stay live without per-keystroke navigation. On the
+ * home page the query updates in place; elsewhere it navigates home.
  * The shell renders two instances (sidebar and phone panel), so ids come
  * from useId and only the visible instance takes focus.
  */
 export default function SearchBox() {
     const router = useRouter();
+    const pathname = usePathname();
     const inputRef = useRef<HTMLInputElement>(null);
     const [value, setValue] = useState('');
     const inputId = useId();
@@ -46,11 +48,18 @@ export default function SearchBox() {
         if (committed.current === null || committed.current === value) return;
         const timer = setTimeout(() => {
             committed.current = value;
-            const url = value ? `/?q=${encodeURIComponent(value)}` : '/';
-            router.replace(url, { scroll: false });
+            const query = value ? `?q=${encodeURIComponent(value)}` : '';
+            if (pathname === '/') {
+                // already on the results page: update ?q= in place. The static
+                // export has no per-query payload, so a router navigation here
+                // would fall back to a full page load on every keystroke.
+                window.history.replaceState(null, '', `${window.location.pathname}${query}`);
+            } else {
+                router.replace(`/${query}`, { scroll: false });
+            }
         }, 200);
         return () => clearTimeout(timer);
-    }, [value, router]);
+    }, [value, router, pathname]);
 
     useEffect(() => {
         const onFocus = () => {

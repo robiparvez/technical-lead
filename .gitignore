@@ -1,9 +1,11 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # local tooling
-.claude
-.playwright-mcp
-.firecrawl
+.claude/
+.playwright-mcp/
+.firecrawl/
+.zcode/
+CLAUDE.md
 
 # dependencies
 /node_modules

@@ -7,6 +7,12 @@ html {
     background: var(--color-canvas);
 }
 
+/* the sticky desktop header repeats the canvas so content scrolling under
+   it stays hidden; it is the page canvas, not a new surface color */
+.site-header {
+    background: var(--color-canvas);
+}
+
 button,
 input,
 select,

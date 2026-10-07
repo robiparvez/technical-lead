@@ -1,87 +1,1088 @@
 {
-  "slug": "system-design",
-  "title": "System Design & Scalability",
-  "requirement": "Architect, design, implement high-performance, scalable, secure full-stack apps.",
-  "questions": [
-    {
-      "id": "system-design-q1",
-      "difficulty": "basic",
-      "tags": ["process", "fundamentals", "interview"],
-      "question": "Walk me through how you approach designing a new system from scratch.",
-      "answer": "Start with requirements and numbers: who uses it, what operations dominate, expected reads and writes per second, data size, and latency targets, because every later trade-off hangs on those. Define the data model and the API surface next, since they are the hardest things to change. Then sketch a boring architecture, load balancer, stateless services, a database, and add complexity, caches, queues, shards, only where the numbers demand it. Close with failure modes, what breaks, how you detect it, and what you would build first to validate the riskiest assumption.",
-      "keyTakeaway": "Numbers first, data model second, boring architecture third, complexity only where proven."
-    },
-    {
-      "id": "system-design-q2",
-      "difficulty": "basic",
-      "tags": ["scaling", "vertical", "horizontal"],
-      "question": "What is the difference between vertical and horizontal scaling?",
-      "answer": "Vertical scaling makes one machine bigger, more CPU, RAM, or faster storage, and it is the simplest first move: no code changes, no new failure modes. It has a ceiling and a price cliff, and the system stays a single point of failure. Horizontal scaling adds machines, which removes that ceiling and survives node loss, but requires stateless services, shared data strategy, and load balancing to work. Most real systems scale up until it hurts, then out, and the interesting design work is everything horizontal scaling forces you to solve.",
-      "keyTakeaway": "Up is simple but capped; out is elastic but demands statelessness and shared-state design."
-    },
-    {
-      "id": "system-design-q3",
-      "difficulty": "intermediate",
-      "tags": ["load-balancer", "availability", "stateless"],
-      "question": "What role does a load balancer play, and what must services do to sit behind one?",
-      "answer": "A load balancer spreads traffic across instances by health and capacity, terminates TLS, and takes failed instances out of rotation using health checks. For that to work, services must be stateless, since any instance can receive any request, and they must expose honest health endpoints that reflect actual ability to serve. Health checks need tuning: too eager and a slow GC pause removes capacity and cascades, too lazy and users hit dead pods. In cloud systems the balancer is also the enforcement point for rate limits and routing rules between service versions.",
-      "keyTakeaway": "The balancer routes around failure; services owe it statelessness and honest health checks."
-    },
-    {
-      "id": "system-design-q4",
-      "difficulty": "intermediate",
-      "tags": ["caching", "latency", "performance"],
-      "question": "Where do caches fit in a scalable system, and what do you cache first?",
-      "answer": "Caches cut latency and load by serving hot data from memory, and they appear at several layers: browser and CDN at the edge, in-process caches inside services, and shared stores like Redis for cross-instance data. Cache the expensive and frequently read first: reference data, rendered fragments, session lookups, and the top queries by volume. Every cache needs a TTL as a safety net, explicit invalidation for correctness-sensitive entries, and protection against stampedes with request coalescing. Measure hit rate and staleness, because an unmonitored cache is both a performance mystery and a correctness risk.",
-      "keyTakeaway": "Cache hot, expensive reads; TTL for safety, invalidation for freshness, coalescing for stampedes."
-    },
-    {
-      "id": "system-design-q5",
-      "difficulty": "intermediate",
-      "tags": ["cap", "consistency", "trade-offs"],
-      "question": "Explain the CAP trade-off and how it shows up in practical decisions.",
-      "answer": "CAP says a distributed store, when a network partition happens, must choose either consistency, refusing or blocking writes, or availability, serving possibly stale data. Partitions are inevitable, so the real design question per feature is which side each data type takes when the network splits. Payments and inventory counts lean consistent, better unavailable than wrong; carts, feeds, and analytics lean available with eventual consistency. In interviews, name the choice per data type and the reconciliation job that cleans up after an available-but-stale window, which is what separates the answer from reciting the theorem.",
-      "keyTakeaway": "Choose C or A per data type under partition, and design the reconciliation path."
-    },
-    {
-      "id": "system-design-q6",
-      "difficulty": "advanced",
-      "tags": ["redundancy", "failure", "high-availability"],
-      "question": "How do you design a system to survive infrastructure failure?",
-      "answer": "Remove every single point of failure: multiple instances across availability zones, replicated data with automated failover, and load balancers or entry points that are themselves redundant. Assume components fail, so add timeouts, retries with backoff, circuit breakers, and graceful degradation so one dependency's death does not become an outage. Practice the failures with game days and restore drills, because an untested failover is a hypothesis, not a capability. Define availability targets per service and spend redundancy budget where the business actually feels downtime.",
-      "keyTakeaway": "Redundant everything, degrade gracefully, and rehearse failover before you need it."
-    },
-    {
-      "id": "system-design-q7",
-      "difficulty": "advanced",
-      "tags": ["performance", "bottlenecks", "process"],
-      "question": "The application got slow at peak load. How do you find the bottleneck?",
-      "answer": "Follow the request with tracing and metrics: latency percentiles per tier, saturation signals like CPU, memory, connection pools, thread pools, and queue depths, until the time concentrates somewhere. Common culprits are a database missing an index or exhausting connections, a lock or pool sized for average rather than peak, garbage collection pauses, and a downstream dependency that queues silently. Distinguish latency added by waiting from work added by computation, because the fixes are different, more capacity versus less work. Fix, verify at the same load, ideally with a load test, and record the capacity limit you found for release planning.",
-      "keyTakeaway": "Trace the request, read saturation signals, separate waiting from working, then re-test at peak."
-    },
-    {
-      "id": "system-design-q8",
-      "difficulty": "advanced",
-      "tags": ["estimation", "capacity", "interview"],
-      "question": "How do you do back-of-the-envelope capacity estimation for a new feature?",
-      "answer": "Start from users and usage patterns: daily active users, actions per user, read-to-write ratio, then derive per-second rates by spreading load over peak hours, typically assuming the peak hour carries a multiple of the average. Size storage from record size times growth rate, add indexes and replication overhead, and check memory fit for anything you intend to cache. Sanity-check each tier, requests per second, connections, storage, bandwidth, against realistic per-node capacity to see where the first wall appears. The numbers are coarse by design; they tell you which architecture is even plausible before you draw boxes.",
-      "keyTakeaway": "Users to per-second rates to per-tier capacity: find the first wall before designing around it."
-    },
-    {
-      "id": "system-design-q9",
-      "difficulty": "intermediate",
-      "tags": ["consistent-hashing", "partitioning", "scaling"],
-      "question": "How does consistent hashing distribute data across servers, and why is hash modulo N a problem?",
-      "answer": "Placing servers with hash(key) % N breaks the moment N changes: adding or removing one server remaps most keys, which storms a cache with misses or forces a mass data migration. Consistent hashing maps both servers and keys onto a ring over the hash space, typically 0 to 2^160 minus 1, and a key belongs to the first server found walking clockwise, so a membership change moves only the keys in that server's arc. The basic ring skews, with uneven partition sizes and hotspots, so each physical server is represented by many virtual nodes spread uniformly around the ring, and more virtual nodes mean a flatter distribution. This is the placement machinery inside Dynamo-style stores, Cassandra, and CDN and load-balancer routers.",
-      "keyTakeaway": "Ring placement plus virtual nodes: membership changes move only neighboring keys."
-    },
-    {
-      "id": "system-design-q10",
-      "difficulty": "advanced",
-      "tags": ["scaling", "evolution", "cdn", "replication"],
-      "question": "Describe how an architecture evolves from a single server to millions of users.",
-      "answer": "Start with one box serving the app and the database, then split the database onto its own machine so each tier scales and fails independently. Add a load balancer and make the web tier stateless to scale horizontally, and replicate the database, one primary taking writes and replicas serving reads, promoting a replica when the primary dies. Put a cache tier in front of hot reads and a CDN in front of static assets, both with expiry and invalidation rules. Take slow or spiky work, email, feeds, media processing, into a message queue so traffic surges buffer instead of tipping the system over. Each step is a response to a measured pain, and the order is not fashion: statelessness unlocks the balancer, replication precedes sharding, and multi-region comes only after the earlier steps stop hurting.",
-      "keyTakeaway": "Grow by measured pain: split tiers, balance stateless web, replicate, cache and CDN, queue the spikes."
-    }
-  ]
+    "slug": "system-design",
+    "title": "System Design & Scalability",
+    "requirement": "Architect, design, implement high-performance, scalable, secure full-stack apps.",
+    "questions": [
+        {
+            "id": "system-design-q1",
+            "difficulty": "basic",
+            "tags": [
+                "process",
+                "fundamentals",
+                "interview"
+            ],
+            "question": "Walk me through how you approach designing a new system from scratch.",
+            "answer": "I start with requirements and numbers: users, dominant operations, reads and writes per second, data size and latency targets. Next I define the data model and API, since those are the hardest to change. Then I start boring: a load balancer, stateless services and a database. I add caches, queues and shards only where the numbers demand them. I close with failure modes and the riskiest assumption.",
+            "keyTakeaway": "Numbers first, data model second, boring architecture third, complexity only where proven.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Design from scratch",
+                "steps": [
+                    {
+                        "label": "Numbers",
+                        "note": "users, QPS, size"
+                    },
+                    {
+                        "label": "Data model",
+                        "note": "entities, access paths"
+                    },
+                    {
+                        "label": "Boring architecture",
+                        "note": "proven parts"
+                    },
+                    {
+                        "label": "Prove the hot spot",
+                        "note": "measure first"
+                    },
+                    {
+                        "label": "Add complexity",
+                        "note": "only where proven"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-q2",
+            "difficulty": "basic",
+            "tags": [
+                "scaling",
+                "vertical",
+                "horizontal"
+            ],
+            "question": "What is the difference between vertical and horizontal scaling?",
+            "answer": "Vertical scaling makes one machine bigger. It's the simplest option because there are no code changes, but it has a ceiling and a price cliff, and it stays a single point of failure. Horizontal scaling adds machines. There's no ceiling and it survives node loss, but it needs stateless services, a shared data strategy and load balancing. I scale up until it hurts, then out.",
+            "keyTakeaway": "Up is simple but capped; out is elastic but demands statelessness and shared-state design.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Vertical versus horizontal",
+                "columns": [
+                    "Vertical",
+                    "Horizontal"
+                ],
+                "rows": [
+                    {
+                        "label": "Method",
+                        "values": [
+                            "bigger single box",
+                            "more machines"
+                        ]
+                    },
+                    {
+                        "label": "Ceiling",
+                        "values": [
+                            "hardware limit",
+                            "effectively none"
+                        ]
+                    },
+                    {
+                        "label": "Demands",
+                        "values": [
+                            "nothing new",
+                            "statelessness, balancing"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-q3",
+            "difficulty": "intermediate",
+            "tags": [
+                "load-balancer",
+                "availability",
+                "stateless"
+            ],
+            "question": "What role does a load balancer play, and what must services do to sit behind one?",
+            "answer": "A load balancer spreads traffic by health and capacity and removes failed instances via health checks. That means services must be stateless and expose honest health endpoints. Tuning the checks matters. Too eager, and a slow GC pause removes capacity and cascades. Too lazy, and users hit dead pods. The balancer also enforces rate limits and version routing.",
+            "keyTakeaway": "The balancer routes around failure; services owe it statelessness and honest health checks.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Life of a balanced request",
+                "actors": [
+                    "Client",
+                    "Balancer",
+                    "Instances"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "send request"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "pick healthy node"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "response"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "proxy response"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-q4",
+            "difficulty": "intermediate",
+            "tags": [
+                "caching",
+                "latency",
+                "performance"
+            ],
+            "question": "Where do caches fit in a scalable system, and what do you cache first?",
+            "answer": "Caches serve hot data from memory at several layers: browser and CDN at the edge, in-process caches, and shared stores like Redis. I cache expensive, frequently read data first, like reference data and top queries. Every cache needs a TTL as a safety net, explicit invalidation for correctness-sensitive entries, and request coalescing against stampedes. I measure hit rate and staleness.",
+            "keyTakeaway": "Cache hot, expensive reads; TTL for safety, invalidation for freshness, coalescing for stampedes.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Cache layers, edge inward",
+                "rows": [
+                    {
+                        "label": "Browser and CDN",
+                        "note": "static, at the edge"
+                    },
+                    {
+                        "label": "In-process cache",
+                        "note": "fastest, per instance"
+                    },
+                    {
+                        "label": "Shared Redis",
+                        "note": "cross-instance, consistent"
+                    },
+                    {
+                        "label": "Origin store",
+                        "note": "source of truth"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-q5",
+            "difficulty": "intermediate",
+            "tags": [
+                "cap",
+                "consistency",
+                "trade-offs"
+            ],
+            "question": "Explain the CAP trade-off and how it shows up in practical decisions.",
+            "answer": "CAP says that during a network partition, a distributed store must choose consistency (refuse or block writes) or availability (serve possibly stale data). Partitions are inevitable, so the real question is which side each data type takes when the network splits. Payments and inventory counts lean consistent, because it's better to be unavailable than wrong. Carts, feeds, and analytics lean available with eventual consistency. In an interview I name the choice per data type and the reconciliation job that cleans up after the stale window, which separates the answer from reciting the theorem.",
+            "keyTakeaway": "Choose C or A per data type under partition, and design the reconciliation path.",
+            "diagram": {
+                "kind": "branch",
+                "title": "CAP during a partition",
+                "condition": "Partition happens: keep C or A?",
+                "yesLabel": "money, inventory",
+                "noLabel": "feeds, carts",
+                "yes": {
+                    "label": "Consistency (CP)",
+                    "note": "block or reject writes"
+                },
+                "no": {
+                    "label": "Availability (AP)",
+                    "note": "serve stale, reconcile later"
+                }
+            }
+        },
+        {
+            "id": "system-design-q6",
+            "difficulty": "advanced",
+            "tags": [
+                "redundancy",
+                "failure",
+                "high-availability"
+            ],
+            "question": "How do you design a system to survive infrastructure failure?",
+            "answer": "I remove every single point of failure: multiple instances across availability zones, and replicated data with automated failover. Then I add timeouts, retries with backoff, circuit breakers and graceful degradation, so one dependency's death is not an outage. I test with game days and restore drills, because untested failover is a hypothesis.",
+            "keyTakeaway": "Redundant everything, degrade gracefully, and rehearse failover before you need it.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Failover under failure",
+                "steps": [
+                    {
+                        "label": "Failure detected",
+                        "note": "health checks flag node"
+                    },
+                    {
+                        "label": "Remove from rotation",
+                        "note": "balancer stops routing"
+                    },
+                    {
+                        "label": "Promote standby",
+                        "note": "replica becomes primary"
+                    },
+                    {
+                        "label": "Verify and re-balance",
+                        "note": "capacity restored"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-q7",
+            "difficulty": "advanced",
+            "tags": [
+                "performance",
+                "bottlenecks",
+                "process"
+            ],
+            "question": "The application got slow at peak load. How do you find the bottleneck?",
+            "answer": "I trace requests and watch latency percentiles per tier and saturation (CPU, memory, pools, queue depths) until the time concentrates somewhere. The usual culprits are a missing index, exhausted connections, a pool sized for average rather than peak, GC pauses, or a silently queueing dependency. I separate waiting from computation to decide between more capacity and less work, then verify the fix at the same load.",
+            "keyTakeaway": "Trace the request, read saturation signals, separate waiting from working, then re-test at peak.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Find the bottleneck",
+                "steps": [
+                    {
+                        "label": "Trace the request",
+                        "note": "where does time go"
+                    },
+                    {
+                        "label": "Read saturation",
+                        "note": "CPU, pool, queue"
+                    },
+                    {
+                        "label": "Waiting or working",
+                        "note": "separate the two"
+                    },
+                    {
+                        "label": "Fix biggest wait"
+                    },
+                    {
+                        "label": "Re-test at peak"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-q8",
+            "difficulty": "advanced",
+            "tags": [
+                "estimation",
+                "capacity",
+                "interview"
+            ],
+            "question": "How do you do back-of-the-envelope capacity estimation for a new feature?",
+            "answer": "I start from daily active users, actions per user, and the read-to-write ratio. From those I derive per-second rates by spreading load over peak hours, assuming the peak hour carries a multiple of the average. I size storage from record size times growth rate, add indexes and replication overhead, and check that anything I want to cache fits in memory. Then I check each tier (requests per second, connections, storage, bandwidth) against realistic per-node capacity to find the first wall. The numbers are coarse by design. They tell you which architecture is even plausible before you draw boxes.",
+            "keyTakeaway": "Users to per-second rates to per-tier capacity: find the first wall before designing around it.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Capacity estimation",
+                "steps": [
+                    {
+                        "label": "Daily users",
+                        "note": "active, not signed up"
+                    },
+                    {
+                        "label": "Requests per second",
+                        "note": "average, then peak"
+                    },
+                    {
+                        "label": "Load per tier",
+                        "note": "app, DB, cache"
+                    },
+                    {
+                        "label": "Find the first wall",
+                        "note": "lowest ceiling"
+                    },
+                    {
+                        "label": "Design around it"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-q9",
+            "difficulty": "intermediate",
+            "tags": [
+                "consistent-hashing",
+                "partitioning",
+                "scaling"
+            ],
+            "question": "How does consistent hashing distribute data across servers, and why is hash modulo N a problem?",
+            "answer": "hash(key) % N breaks when N changes: adding or removing one server remaps most keys and storms the cache with misses. Consistent hashing maps servers and keys onto a ring over the hash space, typically 0 to 2^160 minus 1, and a key belongs to the first server clockwise. A membership change moves only the keys in that arc. A basic ring skews, so each server gets many virtual nodes: more nodes, flatter distribution. Dynamo-style stores and Cassandra use it.",
+            "keyTakeaway": "Ring placement plus virtual nodes: membership changes move only neighboring keys.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Hash modulo N versus consistent hashing",
+                "columns": [
+                    "hash mod N",
+                    "Consistent hashing"
+                ],
+                "rows": [
+                    {
+                        "label": "Add a node",
+                        "values": [
+                            "most keys remap",
+                            "only neighbor keys move"
+                        ]
+                    },
+                    {
+                        "label": "Balance",
+                        "values": [
+                            "even while N is fixed",
+                            "virtual nodes smooth skew"
+                        ]
+                    },
+                    {
+                        "label": "Cache impact",
+                        "values": [
+                            "miss storm",
+                            "small miss bump"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-q10",
+            "difficulty": "advanced",
+            "tags": [
+                "scaling",
+                "evolution",
+                "cdn",
+                "replication"
+            ],
+            "question": "Describe how an architecture evolves from a single server to millions of users.",
+            "answer": "I start with one box serving the app and database. First I split the database out so the tiers scale and fail independently. Then I add a load balancer with a stateless web tier, so the web tier scales horizontally. Next I replicate the database: the primary takes writes, replicas serve reads, and I promote a replica when the primary dies. After that come a cache for hot reads and a CDN for static assets, both with expiry and invalidation rules, and a message queue for slow or spiky work like email, feeds, and media processing, so traffic surges buffer instead of tipping the system over. Each step answers a measured pain, and the order matters: statelessness unlocks the balancer, replication precedes sharding, and multi-region comes last.",
+            "keyTakeaway": "Grow by measured pain: split tiers, balance stateless web, replicate, cache and CDN, queue the spikes.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Evolution, edge to data",
+                "rows": [
+                    {
+                        "label": "Edge",
+                        "note": "DNS, CDN, static"
+                    },
+                    {
+                        "label": "Web tier",
+                        "note": "stateless, load balanced"
+                    },
+                    {
+                        "label": "Cache tier",
+                        "note": "hot reads, TTL"
+                    },
+                    {
+                        "label": "Data tier",
+                        "note": "primary, replicas, queue"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-q11",
+            "difficulty": "intermediate",
+            "tags": [
+                "retries",
+                "resilience",
+                "backoff",
+                "jitter"
+            ],
+            "question": "Why do retry policies need exponential backoff, and why is jitter essential?",
+            "answer": "An immediate retry hammers a struggling dependency at the same rate and deepens the outage. Exponential backoff spaces attempts out: 100 milliseconds, then 200, then 400. I cap the wait and the total attempts so a hopeless call doesn't hold resources. Jitter randomizes the waits, because without it, clients that failed together retry together and recreate the same spike. I pair all of this with timeouts and a circuit breaker so persistent failure trips fast.",
+            "keyTakeaway": "Exponential backoff spaces retries, but only jitter keeps a million clients from retrying as one spike.",
+            "code": {
+                "language": "yaml",
+                "snippet": "retry:\n  maxAttempts: 5\n  initialBackoffMs: 100\n  multiplier: 2.0\n  maxBackoffMs: 10000\n  jitter: full"
+            },
+            "diagram": {
+                "kind": "flow",
+                "title": "Retry with backoff and jitter",
+                "steps": [
+                    {
+                        "label": "Call fails",
+                        "note": "timeout or error"
+                    },
+                    {
+                        "label": "Wait and jitter",
+                        "note": "base delay plus randomness"
+                    },
+                    {
+                        "label": "Retry, grow delay",
+                        "note": "double up to a cap"
+                    },
+                    {
+                        "label": "Attempts exhausted",
+                        "note": "trip the circuit breaker"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-q12",
+            "difficulty": "intermediate",
+            "tags": [
+                "queues",
+                "load-leveling",
+                "decoupling",
+                "spikes"
+            ],
+            "question": "When would you put a message queue between a service and its workload?",
+            "answer": "I use a queue as a load leveler when demand spikes and the work needs no immediate answer: email, media processing, order fulfillment. You enqueue and acknowledge instantly, so a ten-x burst buffers instead of exhausting connection pools. I size workers for sustained capacity, not peak, and monitor depth, because a silent backlog is a delayed outage. Queues level load. They don't create capacity.",
+            "keyTakeaway": "A queue buffers spikes so workers run at sustained capacity, but it levels load and never creates it.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Queue between service and workload",
+                "actors": [
+                    "Client",
+                    "API",
+                    "Queue",
+                    "Worker"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "POST /job"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "enqueue"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "202 Accepted"
+                    },
+                    {
+                        "from": 3,
+                        "to": 2,
+                        "label": "pull at steady rate"
+                    },
+                    {
+                        "from": 2,
+                        "to": 3,
+                        "label": "job"
+                    },
+                    {
+                        "from": 3,
+                        "to": 2,
+                        "label": "ack or retry"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-q13",
+            "difficulty": "intermediate",
+            "tags": [
+                "storage",
+                "object-storage",
+                "trade-offs"
+            ],
+            "question": "How do you choose between object, block, and file storage for a workload?",
+            "answer": "Block storage is a raw disk on one machine: low latency and POSIX-friendly, so databases live there. It doesn't share or scale past a volume. File storage is a network tree (NFS) for shared configs and home directories, with locking and metadata cost at scale. Object storage is a flat HTTP namespace that's effectively infinite, cheap and versioned, which suits backups, media and data lakes. I choose by access pattern.",
+            "keyTakeaway": "Pick storage by access pattern: block for databases, file for shared trees, object for write-once petabytes.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Object versus block versus file",
+                "columns": [
+                    "Object",
+                    "Block",
+                    "File"
+                ],
+                "rows": [
+                    {
+                        "label": "Interface",
+                        "values": [
+                            "HTTP REST",
+                            "mounted disk",
+                            "network paths"
+                        ]
+                    },
+                    {
+                        "label": "Scales to",
+                        "values": [
+                            "petabytes plus",
+                            "one volume",
+                            "moderate shares"
+                        ]
+                    },
+                    {
+                        "label": "Fits",
+                        "values": [
+                            "media, backups",
+                            "databases",
+                            "team directories"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-q14",
+            "difficulty": "intermediate",
+            "tags": [
+                "pagination",
+                "databases",
+                "api-design"
+            ],
+            "question": "Why does offset pagination fall apart at scale, and what replaces it?",
+            "answer": "Offset pagination scans and discards every row before the page, so page 500 costs as much as reading 10,000 rows. Keyset pagination uses a cursor: where created_at and id are less than the last row's values, backed by an index on those columns. Every page is a constant-cost index seek. The cost is that you can't jump to page 37. The sort key must be unique and immutable, hence the id tiebreaker.",
+            "keyTakeaway": "Keyset cursors turn every page into an indexed seek, so page depth never changes the cost.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Offset versus keyset pagination",
+                "columns": [
+                    "Offset",
+                    "Keyset"
+                ],
+                "rows": [
+                    {
+                        "label": "Page 1000",
+                        "values": [
+                            "scans all prior",
+                            "index seek only"
+                        ]
+                    },
+                    {
+                        "label": "Rows inserted",
+                        "values": [
+                            "duplicates appear",
+                            "window stays stable"
+                        ]
+                    },
+                    {
+                        "label": "Random jump",
+                        "values": [
+                            "supported",
+                            "not supported"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-q15",
+            "difficulty": "intermediate",
+            "tags": [
+                "resilience",
+                "degradation",
+                "failover",
+                "availability"
+            ],
+            "question": "How do graceful degradation and failover differ, and when do you build each?",
+            "answer": "Failover swaps a broken component for a healthy replica. It's right when the component is the system, like the primary database or the auth service. Degradation keeps a reduced feature alive: recommendations collapse to a static default, or checkout works while reviews are off. Failover costs idle standby capacity, and degradation costs a worse experience. Users notice a slow page far less than an error page. I make degradation explicit per-feature switches, decided in advance.",
+            "keyTakeaway": "Failover replaces the broken replica, degradation ships a reduced feature, and both need prebuilt switches.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Dependency just failed",
+                "condition": "Is the component state-critical?",
+                "yesLabel": "Fail over",
+                "noLabel": "Degrade",
+                "yes": {
+                    "label": "Promote the replica",
+                    "note": "full features, minutes"
+                },
+                "no": {
+                    "label": "Serve reduced mode",
+                    "note": "defaults, cached data"
+                }
+            }
+        },
+        {
+            "id": "system-design-q16",
+            "difficulty": "intermediate",
+            "tags": [
+                "slo",
+                "error-budget",
+                "reliability",
+                "metrics"
+            ],
+            "question": "What are SLIs, SLOs, and error budgets, and how do they change design decisions?",
+            "answer": "An SLI is the measured signal, like the fraction of requests that are fast and correct. An SLO is the committed target: 99.9 percent of requests under 300 milliseconds. The error budget is the allowed failure, 0.1 percent, about forty-three bad minutes per month. When it's empty, feature work pauses for stability work. I set targets per service, not five nines everywhere, because an internal admin tool and checkout deserve different money and complexity.",
+            "keyTakeaway": "SLOs convert reliability into a spendable error budget that gates feature work when exhausted.",
+            "diagram": {
+                "kind": "layers",
+                "title": "From signal to budget",
+                "rows": [
+                    {
+                        "label": "SLI",
+                        "note": "measured good requests"
+                    },
+                    {
+                        "label": "SLO",
+                        "note": "committed target"
+                    },
+                    {
+                        "label": "Error budget",
+                        "note": "allowed failure share"
+                    },
+                    {
+                        "label": "Policy",
+                        "note": "what exhausted budget triggers"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-q17",
+            "difficulty": "intermediate",
+            "tags": [
+                "durability",
+                "wal",
+                "databases",
+                "storage"
+            ],
+            "question": "How does write-ahead logging make a database crash-safe?",
+            "answer": "The database appends each change to a log on stable storage before modifying data pages. That makes a commit one small sequential write, not many random page writes. After a crash, recovery replays the log: it redoes committed changes the pages never received and undoes uncommitted ones. Group commit batches fsyncs under load. WAL volume needs low write latency and capacity monitoring, because a full or slow log stops every write.",
+            "keyTakeaway": "Log the change before applying it: commit becomes one sequential fsync and crashes replay the log.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Write-ahead logging",
+                "steps": [
+                    {
+                        "label": "Change arrives",
+                        "note": "update, insert, delete"
+                    },
+                    {
+                        "label": "Append to WAL",
+                        "note": "fsync before anything else"
+                    },
+                    {
+                        "label": "Acknowledge commit",
+                        "note": "durable from this moment"
+                    },
+                    {
+                        "label": "Apply to pages",
+                        "note": "can lag, checkpointed"
+                    },
+                    {
+                        "label": "Crash recovery",
+                        "note": "replay redo, undo rollbacks"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-q18",
+            "difficulty": "intermediate",
+            "tags": [
+                "thundering-herd",
+                "coalescing",
+                "caching",
+                "resilience"
+            ],
+            "question": "What is a thundering herd, and how do you stop one at a popular cache key?",
+            "answer": "A thundering herd happens when one hot cache entry expires and hundreds of concurrent requests miss and all hit the origin with the same expensive query. Request coalescing fixes it: the first miss takes a lock and fetches, and the rest wait and receive the same result. I also soften the trigger with jittered TTLs, so equal creation times don't expire together, and stale-while-revalidate, so the old value serves while one worker refreshes.",
+            "keyTakeaway": "Park concurrent misses behind one lock so the herd collapses into a single origin fetch.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Coalescing a cache miss",
+                "actors": [
+                    "Clients",
+                    "Cache",
+                    "Origin DB"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "many miss same key"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "one coalesced fetch"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "fresh value"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "result fans to waiters"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-q19",
+            "difficulty": "intermediate",
+            "tags": [
+                "estimation",
+                "qps",
+                "math",
+                "interview"
+            ],
+            "question": "Walk me through the actual arithmetic you'd do to size QPS for a new feature.",
+            "answer": "Say fifty million daily active users, twenty views each, so one billion views per day. Divide by 86,400 seconds and the average is about twelve thousand QPS. Peak hour is maybe twice that, near twenty-four thousand. At a 100 to 1 read ratio and a ninety-five percent cache hit rate, origin reads drop to barely over a thousand QPS. Bytes per response times QPS gives bandwidth. The first number to exceed node capacity is your bottleneck.",
+            "keyTakeaway": "Divide daily volume by 86,400, double for peak hour, then let cache hit rate rewrite the origin number.",
+            "code": {
+                "language": "bash",
+                "snippet": "echo 'views/day: 50M users x 20 = 1B'\necho 'avg qps:' $(echo 'scale=0; 1000000000 / 86400' | bc)\necho 'peak qps (2x):' $(echo 'scale=0; 1000000000 * 2 / 86400' | bc)\necho 'origin qps at 95% hit:' $(echo 'scale=0; 23148 * 5 / 100' | bc)"
+            },
+            "diagram": {
+                "kind": "flow",
+                "title": "QPS sizing arithmetic",
+                "steps": [
+                    {
+                        "label": "Daily volume",
+                        "note": "e.g. 10M requests"
+                    },
+                    {
+                        "label": "Divide by 86,400",
+                        "note": "about 116 QPS"
+                    },
+                    {
+                        "label": "Double for peak hour",
+                        "note": "about 230 QPS"
+                    },
+                    {
+                        "label": "Apply cache hit rate",
+                        "note": "90% hit"
+                    },
+                    {
+                        "label": "Origin QPS",
+                        "note": "about 23 QPS"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-q20",
+            "difficulty": "advanced",
+            "tags": [
+                "hot-keys",
+                "skew",
+                "caching",
+                "partitioning"
+            ],
+            "question": "How do you handle a hot key that overwhelms one shard of your cache or database?",
+            "answer": "A hot key is one celebrity, product page or viral item sending every request to the same shard. That node saturates while the others idle, and scaling the cluster doesn't help. I detect it with per-key metrics, not node CPU. To spread it, I replicate the value onto read replicas and rotate reads. For writes, I salt the key with a random suffix and aggregate on read. I also keep a process-local copy in front of the shared cache.",
+            "keyTakeaway": "Hot keys defeat horizontal scaling, so replicate, salt, or locally pin the few keys everyone wants.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Defusing a hot key",
+                "steps": [
+                    {
+                        "label": "Detect the skew",
+                        "note": "per-key metrics"
+                    },
+                    {
+                        "label": "Replicate reads",
+                        "note": "rotate across copies"
+                    },
+                    {
+                        "label": "Salt the key",
+                        "note": "random suffix spreads writes"
+                    },
+                    {
+                        "label": "Pin in process",
+                        "note": "local cache for hottest"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-q21",
+            "difficulty": "advanced",
+            "tags": [
+                "fan-out",
+                "feeds",
+                "trade-offs",
+                "read-write"
+            ],
+            "question": "When would you fan out feed writes to followers instead of fanning in reads?",
+            "answer": "Fan-out on write pushes each post into every follower's precomputed timeline at publish time. Fan-out on read merges the followed accounts at request time. Real systems hybridize: push for normal users, and for a celebrity with a hundred million followers, pull their posts at read time and merge them into the precomputed feed. Pushing to a hundred million inboxes is a denial-of-service on yourself.",
+            "keyTakeaway": "Push writes to follower feeds for cheap reads, but pull celebrity posts at read time and merge.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Fan-out on write versus read",
+                "columns": [
+                    "On write",
+                    "On read"
+                ],
+                "rows": [
+                    {
+                        "label": "Publish cost",
+                        "values": [
+                            "high, per follower",
+                            "near zero"
+                        ]
+                    },
+                    {
+                        "label": "Read cost",
+                        "values": [
+                            "one fetch",
+                            "merge many sources"
+                        ]
+                    },
+                    {
+                        "label": "Failure mode",
+                        "values": [
+                            "slow publishes",
+                            "slow feeds"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-q22",
+            "difficulty": "advanced",
+            "tags": [
+                "multi-region",
+                "latency",
+                "geo-distribution"
+            ],
+            "question": "How do you budget latency when a system spans multiple regions?",
+            "answer": "A round trip from US East to US West is around sixty to seventy milliseconds, and Europe to Asia is over two hundred. I budget each request as a sum: client to edge, edge to region, service hops, database writes. I keep data read-local with replicas in every region and asynchronous cross-region writes. A globally consistent write either routes to a single leader and accepts its latency, or uses cross-region consensus and pays multiple round trips. Most reads stay local and only a few global operations pay.",
+            "keyTakeaway": "Inter-region physics is fixed, so serve reads locally and reserve cross-region consensus for the few writes that need it.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Multi-region request budget",
+                "rows": [
+                    {
+                        "label": "Edge",
+                        "note": "TLS, static, closest city"
+                    },
+                    {
+                        "label": "Regional services",
+                        "note": "stateless, deploy everywhere"
+                    },
+                    {
+                        "label": "Regional data",
+                        "note": "read-local replicas"
+                    },
+                    {
+                        "label": "Global layer",
+                        "note": "consensus or routed home"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-q23",
+            "difficulty": "advanced",
+            "tags": [
+                "spof",
+                "audit",
+                "failure-modes",
+                "availability"
+            ],
+            "question": "How do you systematically hunt for single points of failure in a running system?",
+            "answer": "I draw the real dependency graph: DNS, certificates, message brokers, feature flags, cron leaders, IAM roles. Then I kill each node on paper and ask what stops. The sneaky ones are rarely the web tier: a single shared Kafka cluster, one NAT gateway for the whole VPC, a database connection limiter, the config service, the control plane. I separate control plane from data plane failures, since serving during an orchestrator outage is survivable. For each real SPOF I fix it, spread it, or record the accepted risk with its blast radius.",
+            "keyTakeaway": "Hunt SPOFs by killing every node on paper, control plane included, then fix, spread, or accept with eyes open.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Hunting single points of failure",
+                "steps": [
+                    {
+                        "label": "List every component",
+                        "note": "include DNS, certs"
+                    },
+                    {
+                        "label": "Kill each on paper",
+                        "note": "what breaks"
+                    },
+                    {
+                        "label": "Include control plane",
+                        "note": "deploys, config"
+                    },
+                    {
+                        "label": "Fix, spread or accept",
+                        "note": "decide on purpose"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-q24",
+            "difficulty": "advanced",
+            "tags": [
+                "cache-churn",
+                "invalidation",
+                "workload",
+                "ttl"
+            ],
+            "question": "How does the rate at which data changes decide whether caching it is worth it?",
+            "answer": "Caching pays when data is read many times between changes, so I compute churn first: change frequency divided by read frequency. A live bid or inventory count that changes with every read gives such a short hit window that the cache serves stale data and adds invalidation complexity. For high churn I use short TTLs with staleness tolerance, or no cache and a fast source. Staleness tolerance sets the TTL, and if it's zero, I make the read path cheap.",
+            "keyTakeaway": "Compute churn first, changes per read, because it sets both the TTL and whether caching pays at all.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Churn decides caching",
+                "condition": "Changes per read",
+                "yesLabel": "below 1",
+                "noLabel": "1 or more",
+                "yes": {
+                    "label": "Low churn",
+                    "note": "cache with a longer TTL"
+                },
+                "no": {
+                    "label": "High churn",
+                    "note": "short TTL, or skip the cache"
+                }
+            }
+        },
+        {
+            "id": "system-design-q25",
+            "difficulty": "advanced",
+            "tags": [
+                "joins",
+                "data-locality",
+                "sharding",
+                "denormalization"
+            ],
+            "question": "How do you keep joins affordable once related data lives on different shards?",
+            "answer": "The cheapest distributed join never crosses the network. I pick the shard key so rows queried together land together: all data for a tenant or order on one shard. Otherwise I denormalize, duplicating needed fields into the parent row and accepting the write-time cost of keeping copies consistent. Referential integrity moves to the application: check ids at write time and repair by background reconciliation. I use scatter-gather only for analytics and offline jobs, never the request path.",
+            "keyTakeaway": "Co-locate rows by shard key or denormalize, because a join across the network is the expensive kind.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Joins across shards",
+                "columns": [
+                    "Co-locate by shard key",
+                    "Denormalize"
+                ],
+                "rows": [
+                    {
+                        "label": "Join cost",
+                        "values": [
+                            "local to one shard",
+                            "none, data is copied in"
+                        ]
+                    },
+                    {
+                        "label": "Write cost",
+                        "values": [
+                            "normal",
+                            "fan-out to copies"
+                        ]
+                    },
+                    {
+                        "label": "Best for",
+                        "values": [
+                            "queries share a key",
+                            "hot read paths"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-q26",
+            "difficulty": "advanced",
+            "tags": [
+                "load-balancing",
+                "geo-routing",
+                "traffic",
+                "global"
+            ],
+            "question": "What is the difference between global and local load balancing, and why do you need both?",
+            "answer": "Local balancing spreads traffic across instances in one region, health-checking pods and routing around dead ones. Global balancing decides which region receives each user, using DNS, anycast or a global traffic manager fed by health and latency signals, and it absorbs whole-region failures. Global decisions are coarse, since DNS answers cache for minutes. I use latency-based routing with a capacity floor per region, so steering can't send a region more than it can drain.",
+            "keyTakeaway": "Global balancing picks the region with coarse, slow signals; local balancing fixes instances fast, and both are required.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Global then local balancing",
+                "rows": [
+                    {
+                        "label": "Global: pick a region",
+                        "note": "DNS or anycast, slow signals"
+                    },
+                    {
+                        "label": "Local: pick an instance",
+                        "note": "L4 or L7, fast health checks"
+                    },
+                    {
+                        "label": "Instance serves it"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-q27",
+            "difficulty": "advanced",
+            "tags": [
+                "bulkhead",
+                "isolation",
+                "cell-based",
+                "blast-radius"
+            ],
+            "question": "Explain bulkheads and cell-based architecture, and what each contains.",
+            "answer": "A bulkhead gives each downstream its own connection pool and thread budget, so a hung recommendations service exhausts only its own. Cell-based architecture applies that to the whole stack: independent cells, each with its own app instances and data store for a slice of tenants, behind a thin global router. A bad deploy or corrupt migration destroys one cell only, and recovery is tenant migration, not global rollback. Cells duplicate operations, so I'd adopt them only after shared fate has bitten you.",
+            "keyTakeaway": "Bulkheads wall off per-dependency resources, cells wall off whole tenant slices, and both cap blast radius.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Bulkhead versus cell",
+                "columns": [
+                    "Bulkhead",
+                    "Cell"
+                ],
+                "rows": [
+                    {
+                        "label": "Walls off",
+                        "values": [
+                            "per-dependency resources",
+                            "a whole tenant slice"
+                        ]
+                    },
+                    {
+                        "label": "Contains",
+                        "values": [
+                            "one slow dependency",
+                            "bad deploy or noisy tenant"
+                        ]
+                    },
+                    {
+                        "label": "Example",
+                        "values": [
+                            "thread pool per API",
+                            "cell 3 serves users A-F"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-q28",
+            "difficulty": "advanced",
+            "tags": [
+                "idempotency",
+                "retries",
+                "queues",
+                "consistency"
+            ],
+            "question": "Why does idempotency become non-negotiable once you add retries and queues?",
+            "answer": "Retried payments and redelivered queue messages mean the same operation runs twice by design, which causes double charges and duplicate shipments. The fix is an idempotency key: a client-generated identifier stored with the operation's outcome, so a repeat returns the stored result. The key needs a TTL and a unique constraint so concurrent duplicates race safely. Consumers treat delivery as at-least-once and tolerate redelivery, since exactly-once delivery doesn't exist. Exactly-once effects do, by deduplicating on a stable key.",
+            "keyTakeaway": "Retries and redelivery are certain, so dedupe on idempotency keys for exactly-once effects, not delivery.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Idempotent payment flow",
+                "actors": [
+                    "Client",
+                    "Payment API",
+                    "Key store"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "charge, key attached"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "lookup key outcome"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "stored result or miss"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "execute once, replay after"
+                    }
+                ]
+            }
+        }
+    ]
 }

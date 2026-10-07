@@ -6,79 +6,1039 @@
         {
             "id": "api-design-q1",
             "difficulty": "basic",
-            "tags": ["rest", "fundamentals", "http"],
+            "tags": [
+                "rest",
+                "fundamentals",
+                "http"
+            ],
             "question": "What are the core constraints that make an API RESTful?",
-            "answer": "REST is an architectural style built on uniform resource identification, standard HTTP verbs with their semantics, and representations, usually JSON, transferred between client and server. It is stateless: every request carries all context the server needs, which makes scaling horizontal. Cacheability through HTTP cache headers, a layered system, and, in the strict form, hypermedia controls complete the constraints. In interviews, emphasize resource modeling and correct verb and status-code usage over purism.",
-            "keyTakeaway": "Model resources, not actions; let HTTP verbs and status codes carry meaning."
+            "answer": "REST is an architectural style: uniform resource identification, standard HTTP verbs with their semantics, and representations, usually JSON. It's stateless, so each request carries all its context and scaling is horizontal. It's also cacheable, layered, and, in the strict form, hypermedia. In practice I emphasize resource modeling and correct verb and status-code usage over purism.",
+            "keyTakeaway": "Model resources, not actions; let HTTP verbs and status codes carry meaning.",
+            "diagram": {
+                "kind": "layers",
+                "title": "REST constraints",
+                "rows": [
+                    {
+                        "label": "Uniform interface",
+                        "note": "resources, verbs, representations"
+                    },
+                    {
+                        "label": "Statelessness",
+                        "note": "requests carry all context"
+                    },
+                    {
+                        "label": "Cacheability",
+                        "note": "explicit cache headers"
+                    },
+                    {
+                        "label": "Layered system",
+                        "note": "proxies stay invisible"
+                    }
+                ]
+            }
         },
         {
             "id": "api-design-q2",
             "difficulty": "basic",
-            "tags": ["graphql", "fundamentals", "over-fetching"],
+            "tags": [
+                "graphql",
+                "fundamentals",
+                "over-fetching"
+            ],
             "question": "What problem does GraphQL solve compared with REST, and what does the diagram show?",
-            "answer": "REST endpoints return fixed shapes, so clients over-fetch fields they do not need or under-fetch and must call several endpoints to build one view. GraphQL exposes a single endpoint where the client declares exactly the fields it wants and gets exactly those back in one round trip, which suits mobile clients and nested data graphs. The trade-off is that flexibility moves complexity server-side: caching, cost control, and N+1 resolution become your problem. Choose by client diversity and data shape, not by fashion.",
+            "answer": "REST returns fixed shapes, so clients either over-fetch or under-fetch and call several endpoints per view. GraphQL has a single endpoint where the client declares the exact fields and gets them in one round trip, which suits mobile and nested data. The trade-off is that complexity moves server-side, and caching, cost control, and N+1 resolution become your problem. I choose based on client diversity and data shape.",
             "keyTakeaway": "GraphQL trades server complexity for exactly-shaped, single-request responses.",
             "diagram": "rest-vs-graphql"
         },
         {
             "id": "api-design-q3",
             "difficulty": "intermediate",
-            "tags": ["trade-offs", "caching", "decision"],
+            "tags": [
+                "trade-offs",
+                "caching",
+                "decision"
+            ],
             "question": "How do you decide between REST and GraphQL for a new public API?",
-            "answer": "Default to REST for public APIs: it leverages HTTP caching, CDN behavior, well-understood tooling, and simple per-endpoint rate limiting, and consumers already know it. Choose GraphQL when clients have highly variable data needs, deep nested graphs, or when the API aggregates many backend services behind one schema, typical for internal product APIs feeding mobile and web apps. Weigh operational cost: GraphQL needs persisted queries, depth limiting, and dataloader-style batching to stay safe and fast. A mixed answer, REST for resources, GraphQL for the product gateway, is often the strongest.",
-            "keyTakeaway": "REST for public cacheable resources; GraphQL for diverse clients over a nested graph."
+            "answer": "I default to REST for public APIs: you get HTTP caching, CDN behavior, and per-endpoint rate limiting. I pick GraphQL for variable client data needs, deep nested graphs, or aggregating many backend services behind one schema. It needs persisted queries, depth limiting, and dataloader-style batching to stay safe and fast. A strong answer is often mixed: REST for resources, GraphQL for a product gateway.",
+            "keyTakeaway": "REST for public cacheable resources; GraphQL for diverse clients over a nested graph.",
+            "diagram": {
+                "kind": "branch",
+                "title": "REST or GraphQL",
+                "condition": "Public, cacheable resources?",
+                "yes": {
+                    "label": "Default to REST",
+                    "note": "CDN and HTTP caching"
+                },
+                "no": {
+                    "label": "Consider GraphQL",
+                    "note": "aggregation, varied clients"
+                }
+            }
         },
         {
             "id": "api-design-q4",
             "difficulty": "intermediate",
-            "tags": ["versioning", "evolution", "compatibility"],
+            "tags": [
+                "versioning",
+                "evolution",
+                "compatibility"
+            ],
             "question": "How do you evolve an API without breaking existing clients?",
-            "answer": "Make additive changes the default: new optional fields, new endpoints, and new enum values, when clients tolerate them, are non-breaking. Design clients to ignore unknown fields from day one, which makes most additions free. When a genuinely breaking change is unavoidable, version the API at the URL or media-type level, publish a deprecation timeline, and monitor usage of old versions before retiring them. Contract tests and a consumer-driven test suite catch accidental breaks in CI.",
-            "keyTakeaway": "Evolve additively; version only for real breaks, with a published sunset."
+            "answer": "I default to additive changes. New optional fields, endpoints, and enum values (when clients tolerate them) don't break anything, and I make clients ignore unknown fields from day one. For unavoidable breaks, I version at the URL or media-type level, publish a deprecation timeline, and watch old-version usage before retiring it. I also run contract tests in CI.",
+            "keyTakeaway": "Evolve additively; version only for real breaks, with a published sunset.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Safe API evolution",
+                "steps": [
+                    {
+                        "label": "Add optional fields",
+                        "note": "clients ignore unknowns"
+                    },
+                    {
+                        "label": "Add new endpoints",
+                        "note": "old ones untouched"
+                    },
+                    {
+                        "label": "Run contract tests",
+                        "note": "CI catches breaks"
+                    },
+                    {
+                        "label": "Version real breaks",
+                        "note": "publish sunset timeline"
+                    },
+                    {
+                        "label": "Monitor old usage",
+                        "note": "retire near zero"
+                    }
+                ]
+            }
         },
         {
             "id": "api-design-q5",
             "difficulty": "intermediate",
-            "tags": ["graphql", "n+1", "dataloader", "typescript"],
+            "tags": [
+                "graphql",
+                "n+1",
+                "dataloader",
+                "typescript"
+            ],
             "question": "What is the N+1 problem in GraphQL and how do you fix it?",
-            "answer": "A resolver that fetches per field issues one query per related object, so a list of 50 orders with an author field fires 51 database or service calls. Fix it with batching: collect all keys for a field within one request, then load them in a single query, typically with a DataLoader that coalesces loads per tick and caches per request. Move authorization and filtering into the batched query, not the individual resolver. Measure with tracing to confirm the call count actually dropped from N+1 to a constant.",
+            "answer": "A resolver that fetches per field issues one query per related object, so 50 orders with an author field fire 51 calls. The fix is batching: collect all the keys for a field within one request and load them in a single query. I use DataLoader, which coalesces per tick and caches per request. Authorization and filtering go in the batched query. Then I confirm with tracing that the call count drops from N+1 to a constant.",
             "keyTakeaway": "Batch field loads per request with DataLoader; N+1 calls become one.",
             "code": {
                 "language": "typescript",
                 "snippet": "const userLoader = new DataLoader(async (ids: readonly string[]) => {\n  const users = await db.users.whereIn('id', ids as string[]); // 1 query\n  return ids.map((id) => users.find((u) => u.id === id) ?? null);\n});\n// resolver: (order) => userLoader.load(order.authorId) — coalesced per request"
+            },
+            "diagram": {
+                "kind": "compare",
+                "title": "N+1 versus batched resolvers",
+                "columns": [
+                    "N+1",
+                    "Batched with DataLoader"
+                ],
+                "rows": [
+                    {
+                        "label": "Queries for 50 orders",
+                        "values": [
+                            "51 calls",
+                            "2 calls"
+                        ]
+                    },
+                    {
+                        "label": "Key handling",
+                        "values": [
+                            "One fetch per field",
+                            "Keys coalesced per tick"
+                        ]
+                    },
+                    {
+                        "label": "Caching",
+                        "values": [
+                            "None",
+                            "Per request"
+                        ]
+                    }
+                ]
             }
         },
         {
             "id": "api-design-q6",
             "difficulty": "intermediate",
-            "tags": ["http", "idempotency", "safety"],
+            "tags": [
+                "http",
+                "idempotency",
+                "safety"
+            ],
             "question": "Which HTTP methods are safe and idempotent, and why does it matter for clients?",
-            "answer": "GET and HEAD are safe: they change no state, so caches and prefetchers can repeat them freely. PUT and DELETE are idempotent but not safe: repeating them leaves the same result, so a client can safely retry after a timeout. POST is neither, so retries can double-charge or double-create unless the server deduplicates with an idempotency key. Getting this right lets clients retry on flaky networks without corrupting data.",
-            "keyTakeaway": "Safe methods never change state; idempotent methods are retry-safe; POST needs a key."
+            "answer": "GET and HEAD are safe: they don't change state, so caches and prefetchers can repeat them. PUT and DELETE are idempotent but not safe. Repeats leave the same result, so a retry after a timeout is fine. POST is neither, so retries can double-create unless the server deduplicates with an idempotency key.",
+            "keyTakeaway": "Safe methods never change state; idempotent methods are retry-safe; POST needs a key.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Method semantics",
+                "columns": [
+                    "GET/HEAD",
+                    "PUT/DELETE",
+                    "POST"
+                ],
+                "rows": [
+                    {
+                        "label": "Safe",
+                        "values": [
+                            "yes",
+                            "no",
+                            "no"
+                        ]
+                    },
+                    {
+                        "label": "Idempotent",
+                        "values": [
+                            "yes",
+                            "yes",
+                            "no"
+                        ]
+                    },
+                    {
+                        "label": "Retry behavior",
+                        "values": [
+                            "always safe",
+                            "safe to repeat",
+                            "needs idempotency key"
+                        ]
+                    }
+                ]
+            }
         },
         {
             "id": "api-design-q7",
             "difficulty": "advanced",
-            "tags": ["pagination", "cursor", "scale"],
+            "tags": [
+                "pagination",
+                "cursor",
+                "scale"
+            ],
             "question": "How do you design pagination for a large, changing collection?",
-            "answer": "Use cursor pagination: return an opaque cursor encoding the sort position of the last item, and the next page starts after it. Offset pagination breaks under writes, offset 1000 skips or repeats rows when items are inserted or deleted, and degrades because the database still scans all skipped rows. Encode the sort key plus id in the cursor so the ordering stays stable and unique, and expose total counts only when required, since counting is expensive. Cursors also work with keyset indexes, keeping page latency flat.",
-            "keyTakeaway": "Cursor pagination stays correct under writes and fast at depth; offsets do not."
+            "answer": "I use cursor pagination. An opaque cursor encodes the sort key plus the id of the last item, and the next page starts after it. Offset breaks under writes, since offset 1000 skips or repeats rows on insert or delete, and it still scans the skipped rows. Keyset indexes keep page latency flat. I expose total counts only when required, because counting is expensive.",
+            "keyTakeaway": "Cursor pagination stays correct under writes and fast at depth; offsets do not.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Cursor pagination",
+                "steps": [
+                    {
+                        "label": "Sort by stable keys",
+                        "note": "sort column plus id"
+                    },
+                    {
+                        "label": "Return opaque cursor",
+                        "note": "encodes last position"
+                    },
+                    {
+                        "label": "Client sends cursor",
+                        "note": "parameter on next request"
+                    },
+                    {
+                        "label": "Query after cursor",
+                        "note": "keyset index, flat latency"
+                    }
+                ]
+            }
         },
         {
             "id": "api-design-q8",
             "difficulty": "advanced",
-            "tags": ["security", "rate-limiting", "graphql", "cost"],
+            "tags": [
+                "security",
+                "rate-limiting",
+                "graphql",
+                "cost"
+            ],
             "question": "How do you protect an API, especially GraphQL, from abusive or expensive queries?",
-            "answer": "Authenticate at the edge and authorize per resource, never just at the endpoint, and rate-limit per identity, not just per IP. GraphQL needs query cost control: depth limiting, complexity scoring with per-client budgets, persisted queries so clients cannot send arbitrary text, and timeouts on resolver execution. Disable introspection in production for public APIs so the schema is not a free reconnaissance map. Log rejected queries with their complexity scores to tune budgets over time.",
-            "keyTakeaway": "Limit depth, cost, and introspection; authorize per resource, per identity."
+            "answer": "I authenticate at the edge and authorize per resource, never just per endpoint. Rate limits go per identity, not just per IP. For GraphQL I control query cost with depth limiting, complexity scoring with per-client budgets, persisted queries, and resolver timeouts. I also disable introspection in production for public APIs.",
+            "keyTakeaway": "Limit depth, cost, and introspection; authorize per resource, per identity.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Protecting a GraphQL API",
+                "rows": [
+                    {
+                        "label": "Edge",
+                        "note": "Authenticate every request"
+                    },
+                    {
+                        "label": "Authorization",
+                        "note": "Per resource, not per endpoint"
+                    },
+                    {
+                        "label": "Rate limits",
+                        "note": "Per identity, not just per IP"
+                    },
+                    {
+                        "label": "Query cost",
+                        "note": "Depth, complexity budget, timeouts"
+                    },
+                    {
+                        "label": "Exposure",
+                        "note": "Persisted queries, no introspection"
+                    }
+                ]
+            }
         },
         {
             "id": "api-design-q9",
             "difficulty": "intermediate",
-            "tags": ["rate-limiting", "algorithms", "gateway"],
+            "tags": [
+                "rate-limiting",
+                "algorithms",
+                "gateway"
+            ],
             "question": "How do you design a rate limiter, and which algorithm fits which case?",
-            "answer": "Enforce server-side, either in middleware or at the API gateway, because client-side limits are trivially bypassed, and return 429 with Retry-After so well-behaved clients back off. Token bucket, a fixed refill rate into a bounded capacity, is the default: memory-cheap, and it tolerates bursts up to the bucket size. Leaky bucket drains at a constant outflow, which protects a downstream that needs an even rate, but bursts queue and wait. Sliding window counters avoid the fixed-window edge problem, where a burst straddling a boundary doubles the effective limit, by blending two adjacent windows cheaply. In a cluster, keep counters in a shared in-memory store and update them atomically, one round trip or a stored script, so concurrent nodes cannot over-admit, and log rejections per client to tune the limits.",
-            "keyTakeaway": "Token bucket by default, sliding window against edge bursts, atomic shared counters."
+            "answer": "I enforce limits server-side, in middleware or the API gateway, because client-side limits are trivially bypassed. The response is a 429 with Retry-After. My default is a token bucket, a fixed refill into a bounded capacity: it's cheap on memory and tolerates bursts up to the bucket size. A leaky bucket drains at a constant rate, which gives even downstream load, but bursts queue. Sliding window counters blend two adjacent windows to avoid the fixed-window edge, where a burst straddling the boundary doubles the effective limit. In a cluster, I update shared in-memory counters atomically, in one round trip or a stored script, so nodes can't over-admit.",
+            "keyTakeaway": "Token bucket by default, sliding window against edge bursts, atomic shared counters.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Limiter algorithms",
+                "columns": [
+                    "Token bucket",
+                    "Leaky bucket",
+                    "Sliding window"
+                ],
+                "rows": [
+                    {
+                        "label": "Bursts",
+                        "values": [
+                            "allowed to capacity",
+                            "queued and paced",
+                            "boundary-safe"
+                        ]
+                    },
+                    {
+                        "label": "Output",
+                        "values": [
+                            "bursty",
+                            "constant rate",
+                            "near constant"
+                        ]
+                    },
+                    {
+                        "label": "Best for",
+                        "values": [
+                            "default choice",
+                            "even downstream load",
+                            "straddling bursts"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "api-design-q10",
+            "difficulty": "intermediate",
+            "tags": [
+                "webhooks",
+                "hmac",
+                "retries",
+                "reliability"
+            ],
+            "question": "How do you design webhooks so consumers can trust and reliably process them?",
+            "answer": "I treat webhooks as an API I expose. I sign the payload with an HMAC over the timestamp plus the raw body, using a per-endpoint secret, so receivers can verify authenticity and reject replays. Each event includes a unique id for deduplication. Ordering is never guaranteed, so I add sequence numbers or timestamps. I retry only on non-2xx with exponential backoff, cap attempts, and dead-letter failures. Receivers should acknowledge fast with a 2xx and process async, or timeouts trigger retry storms.",
+            "keyTakeaway": "Sign payloads with HMAC, dedupe by event id, and never promise ordering.",
+            "code": {
+                "language": "typescript",
+                "snippet": "const expected = createHmac('sha256', secret)\n  .update(`${timestamp}.${rawBody}`)\n  .digest('hex');\nconst ok =\n  signature.length === expected.length &&\n  timingSafeEqual(Buffer.from(expected), Buffer.from(signature));\nif (!ok || Date.now() / 1000 - Number(timestamp) > 300) {\n  return res.status(401).end(); // forged or replayed\n}"
+            },
+            "diagram": {
+                "kind": "sequence",
+                "title": "Webhook delivery",
+                "actors": [
+                    "Provider",
+                    "Consumer"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "POST signed event"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "Ack 2xx fast"
+                    },
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Retry on failure, backoff"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "Fetch full resource"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "api-design-q11",
+            "difficulty": "intermediate",
+            "tags": [
+                "async",
+                "long-running",
+                "polling",
+                "sse"
+            ],
+            "question": "How do you expose an operation that takes minutes without holding the HTTP request open?",
+            "answer": "I never hold an HTTP request open for minutes. I return 202 Accepted with a Location header pointing at an operation resource (queued, running, succeeded, failed) that links the result when it's ready. I default to polling it, since that's stateless, cache-friendly, and survives proxies. I use SSE only when progress visibility matters or polling would become abusive. Finished operations expire. The operation should be a real resource, not a boolean flag.",
+            "keyTakeaway": "Return 202 with a pollable operation resource; reserve push for real progress needs.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Long-running operation",
+                "steps": [
+                    {
+                        "label": "Client starts job",
+                        "note": "POST returns 202"
+                    },
+                    {
+                        "label": "Server queues work",
+                        "note": "operation resource created"
+                    },
+                    {
+                        "label": "Client polls operation",
+                        "note": "status via GET"
+                    },
+                    {
+                        "label": "Server reports done",
+                        "note": "result link included"
+                    },
+                    {
+                        "label": "Client fetches result",
+                        "note": "final resource returned"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "api-design-q12",
+            "difficulty": "intermediate",
+            "tags": [
+                "http",
+                "caching",
+                "etags"
+            ],
+            "question": "How do conditional requests with ETags work, and why should every API support them?",
+            "answer": "The server stamps each representation with an ETag, from a content hash or id plus updated_at. The client sends it back as If-None-Match on the next GET. If nothing changed, it gets a 304 Not Modified with no body, which saves bandwidth. If it changed, it gets a 200 with the new tag. Requiring If-Match on writes gives optimistic concurrency, so lost updates become a clean 412. It's the cheapest performance win in HTTP API design.",
+            "keyTakeaway": "ETags with If-None-Match turn refetches into 304s that carry no body.",
+            "code": {
+                "language": "bash",
+                "snippet": "curl -s -D - -o /dev/null https://api.example.com/orders/42 \\\n  -H 'If-None-Match: \"7c9e6\"'\n# 304 Not Modified: empty body, cache stays valid\n# 200: changed; response carries the new ETag to store"
+            },
+            "diagram": {
+                "kind": "sequence",
+                "title": "Conditional GET with an ETag",
+                "actors": [
+                    "Client",
+                    "Server"
+                ],
+                "messages": [
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "200 with ETag"
+                    },
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "GET with If-None-Match"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "304 Not Modified, no body"
+                    },
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "PUT with If-Match, stale tag"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "412 Precondition Failed"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "api-design-q13",
+            "difficulty": "intermediate",
+            "tags": [
+                "bulk",
+                "partial-failure",
+                "batching"
+            ],
+            "question": "How do you design a bulk endpoint that handles partial failures honestly?",
+            "answer": "Twenty POSTs waste twenty round trips and multiply retry logic. I'd offer a bulk endpoint that accepts an array and returns one result per item: created ids for successes, and structured errors with the failing item's index for failures. That can be a 207 Multi-Status or a 200 with a results array. I fail the whole batch only when the business requires atomicity. I cap batch size, use per-item idempotency keys so retries don't double-create, and document the partial-failure semantics.",
+            "keyTakeaway": "Bulk endpoints report per-item outcomes; partial success beats all-or-nothing failure.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Bulk write outcome",
+                "condition": "All items valid?",
+                "yesLabel": "atomic",
+                "noLabel": "partial",
+                "yes": {
+                    "label": "Commit whole batch",
+                    "note": "201 with all created"
+                },
+                "no": {
+                    "label": "Return per-item results",
+                    "note": "207 or 200 array"
+                }
+            }
+        },
+        {
+            "id": "api-design-q14",
+            "difficulty": "intermediate",
+            "tags": [
+                "errors",
+                "rfc-9457",
+                "consistency"
+            ],
+            "question": "How do you standardize error responses across a large API surface?",
+            "answer": "I pick one error format and enforce it everywhere. My default is RFC 9457 problem details, because it's a standard and not something invented. Every failure returns a type URI (the error class), a title, a status, a human detail, an instance path, and extra fields like validation failures. Clients switch on the type URI, while title and detail are for humans. Mixed 400 shapes force defensive parsing in every consumer.",
+            "keyTakeaway": "Return RFC 9457 problem+json with a type URI on every failure.",
+            "code": {
+                "language": "typescript",
+                "snippet": "const problem = {\n  type: 'https://api.example.com/errors/insufficient-stock',\n  title: 'Insufficient stock',\n  status: 409,\n  detail: 'Only 2 units of sku-9 remain',\n  instance: '/orders/42',\n};\nreturn res.status(409).type('application/problem+json').json(problem);"
+            },
+            "diagram": {
+                "kind": "layers",
+                "title": "Problem details error body",
+                "rows": [
+                    {
+                        "label": "type",
+                        "note": "URI for the error class, clients switch on it"
+                    },
+                    {
+                        "label": "title and status",
+                        "note": "Short summary and HTTP code"
+                    },
+                    {
+                        "label": "detail and instance",
+                        "note": "Human message and request path"
+                    },
+                    {
+                        "label": "Extra fields",
+                        "note": "Such as validation failures"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "api-design-q15",
+            "difficulty": "intermediate",
+            "tags": [
+                "bff",
+                "aggregation",
+                "gateway"
+            ],
+            "question": "What is the backend-for-frontend pattern, and where do teams misuse it?",
+            "answer": "A backend-for-frontend gives each client family its own aggregation layer, owned by that client's team. The gateway holds cross-cutting concerns (authentication, rate limiting, routing), and the BFF holds experience-specific composition. I avoid one unified aggregation API, because every feature changes it and couples all frontends to one release train. I keep BFFs thin, with no business logic. Shared logic belongs in a domain service.",
+            "keyTakeaway": "Give each client family a thin BFF; gateways stay cross-cutting, BFFs stay logic-free.",
+            "diagram": {
+                "kind": "layers",
+                "title": "BFF topology",
+                "rows": [
+                    {
+                        "label": "Client apps",
+                        "note": "web, mobile, partner"
+                    },
+                    {
+                        "label": "BFF per client",
+                        "note": "owned by client team"
+                    },
+                    {
+                        "label": "API gateway",
+                        "note": "auth, limits, routing"
+                    },
+                    {
+                        "label": "Domain services",
+                        "note": "own their own data"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "api-design-q16",
+            "difficulty": "intermediate",
+            "tags": [
+                "schema-first",
+                "code-first",
+                "openapi"
+            ],
+            "question": "How do you choose between schema-first and code-first API development?",
+            "answer": "Schema-first means the contract (OpenAPI, protobuf, GraphQL SDL) is reviewed before implementation and code is generated from it. Code-first derives the spec from annotations. Schema-first wins for public and cross-team APIs: you get real review, parallel client work, and honest SDKs. Code-first is faster for internal services, but the spec drifts unless CI diffs it on every merge. Once more than one team consumes the API, the schema moves first.",
+            "keyTakeaway": "Schema-first for shared contracts; code-first only with CI spec diffing.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Contract authoring",
+                "columns": [
+                    "Schema-first",
+                    "Code-first"
+                ],
+                "rows": [
+                    {
+                        "label": "Source of truth",
+                        "values": [
+                            "reviewed contract",
+                            "annotated code"
+                        ]
+                    },
+                    {
+                        "label": "Client onboarding",
+                        "values": [
+                            "SDKs immediately",
+                            "after deploy"
+                        ]
+                    },
+                    {
+                        "label": "Drift risk",
+                        "values": [
+                            "low",
+                            "high without CI"
+                        ]
+                    },
+                    {
+                        "label": "Best fit",
+                        "values": [
+                            "shared, public APIs",
+                            "internal services"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "api-design-q17",
+            "difficulty": "intermediate",
+            "tags": [
+                "streaming",
+                "sse",
+                "websocket",
+                "polling"
+            ],
+            "question": "When do you pick SSE versus WebSockets versus polling for live updates?",
+            "answer": "I match the transport to the direction and freshness I need. Polling fits when minutes-old data is enough, and it needs no infrastructure. SSE gives one-way push over plain HTTP, with automatic reconnection and event ids for resume, which suits notifications, feeds, and progress bars. WebSockets earn their operational cost (stateful connections, heartbeats, sticky load balancing or a relay) only when the client streams data back continuously, like chat, collaborative editing, or games.",
+            "keyTakeaway": "Poll for tolerant clients, SSE for one-way push, WebSockets only for true bidirectionality.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Choosing realtime transport",
+                "condition": "Client streams upstream?",
+                "yes": {
+                    "label": "Use WebSockets",
+                    "note": "bidirectional, stateful infra"
+                },
+                "no": {
+                    "label": "SSE or polling",
+                    "note": "SSE live, poll otherwise"
+                }
+            }
+        },
+        {
+            "id": "api-design-q18",
+            "difficulty": "intermediate",
+            "tags": [
+                "pagination",
+                "filtering",
+                "sorting"
+            ],
+            "question": "How do you combine pagination with filtering and sorting without wrecking performance?",
+            "answer": "I design filtering, sorting, and pagination as one contract. First I fix a stable total order: every sort needs a unique tiebreaker, usually id, backed by a database index. Cursors are only as stable as the order they encode. Filters apply before pagination and must map to indexed predicates, since a scan destroys flat page latency. I offer curated combinations, not an arbitrary DSL, and gate expensive counts behind an explicit include parameter.",
+            "keyTakeaway": "Pin a unique, indexed sort order first; filters run before pagination, counts behind a flag.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Filter, sort and paginate as one contract",
+                "steps": [
+                    {
+                        "label": "Stable total order",
+                        "note": "unique tiebreaker, id"
+                    },
+                    {
+                        "label": "Apply filters",
+                        "note": "indexed predicates only"
+                    },
+                    {
+                        "label": "Paginate",
+                        "note": "cursor encodes the order"
+                    },
+                    {
+                        "label": "Counts",
+                        "note": "opt-in parameter"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "api-design-q19",
+            "difficulty": "advanced",
+            "tags": [
+                "idempotency",
+                "reliability",
+                "persistence"
+            ],
+            "question": "How do you implement idempotency keys correctly on the server?",
+            "answer": "I store the outcome in Redis or a database, keyed by the Idempotency-Key header scoped to client identity and route, with a status of in-flight or completed. A completed key returns the saved response unchanged, with a replay header. An in-flight key returns 409. The same key with a different body hash returns 422, since that's a client bug, not a retry. Keys expire after twenty-four to forty-eight hours.",
+            "keyTakeaway": "Persist key, status, and full response; replays return the saved result, mismatches get 422.",
+            "code": {
+                "language": "typescript",
+                "snippet": "const saved = await idempotency.get(`idem:${clientId}:${key}`);\nif (saved) {\n  if (saved.bodyHash !== sha256(rawBody)) return res.status(422).end();\n  return res.status(saved.status).set('Idempotent-Replay', 'true').json(saved.body);\n}\n// miss: set in-flight, execute handler, persist status + body + hash"
+            },
+            "diagram": {
+                "kind": "flow",
+                "title": "Idempotent write path",
+                "steps": [
+                    {
+                        "label": "Read key header",
+                        "note": "scoped per client"
+                    },
+                    {
+                        "label": "Lookup stored response",
+                        "note": "Redis or database"
+                    },
+                    {
+                        "label": "Found? Replay result",
+                        "note": "saved status, body"
+                    },
+                    {
+                        "label": "Miss? Execute write",
+                        "note": "then persist response"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "api-design-q20",
+            "difficulty": "advanced",
+            "tags": [
+                "grpc",
+                "protobuf",
+                "versioning"
+            ],
+            "question": "What does good API design look like with gRPC, and how do you evolve protobuf contracts?",
+            "answer": "gRPC gives you a strict protobuf contract, efficient HTTP/2 binary framing, and generated clients, so it's best for internal service-to-service traffic. Never reuse or renumber field tags, reserve the numbers of deleted fields, add only optional fields, and never change a field type, because each of those breaks the wire format silently. I version through the package path, like payments.v1. Every call gets a deadline. Errors map to gRPC status codes, not payloads. Browsers need grpc-web or a REST facade.",
+            "keyTakeaway": "In protobuf, reserve retired field numbers, add only optional fields, version via package path.",
+            "diagram": {
+                "kind": "compare",
+                "title": "gRPC versus REST",
+                "columns": [
+                    "gRPC",
+                    "REST"
+                ],
+                "rows": [
+                    {
+                        "label": "Contract",
+                        "values": [
+                            "protobuf, strict",
+                            "OpenAPI, flexible"
+                        ]
+                    },
+                    {
+                        "label": "Transport",
+                        "values": [
+                            "HTTP/2 multiplexed",
+                            "HTTP 1.1 or 2"
+                        ]
+                    },
+                    {
+                        "label": "Browser clients",
+                        "values": [
+                            "grpc-web facade",
+                            "native fetch"
+                        ]
+                    },
+                    {
+                        "label": "Evolution",
+                        "values": [
+                            "field number rules",
+                            "URL versioning"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "api-design-q21",
+            "difficulty": "advanced",
+            "tags": [
+                "deprecation",
+                "sunset",
+                "governance"
+            ],
+            "question": "How do you run deprecation and sunset for old API versions in practice?",
+            "answer": "I treat deprecation as a program with dates, not a changelog note. Every old-version response carries Deprecation and Sunset headers. I track which clients and tokens still call the deprecated surface, because \"we think nobody uses it\" causes outages. I publish the removal date and notify through every channel. I retire it only after usage drops below an agreed threshold, and I keep the shutdown reversible for a grace period.",
+            "keyTakeaway": "Deprecate with Sunset headers, measured usage, and a reversible shutdown date.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Deprecation and sunset program",
+                "steps": [
+                    {
+                        "label": "Add headers",
+                        "note": "Deprecation and Sunset"
+                    },
+                    {
+                        "label": "Track usage",
+                        "note": "clients and tokens"
+                    },
+                    {
+                        "label": "Announce date",
+                        "note": "every channel"
+                    },
+                    {
+                        "label": "Retire",
+                        "note": "after usage threshold"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "api-design-q22",
+            "difficulty": "advanced",
+            "tags": [
+                "multi-tenancy",
+                "isolation",
+                "rate-limiting"
+            ],
+            "question": "How does multi-tenancy change API design?",
+            "answer": "I resolve the tenant at the edge, from subdomain, token claim, or header, and pass it as explicit context through every layer, because implicit tenancy eventually crosses tenants. Isolation gets enforced in the data layer, not just in queries. Postgres row-level security is cheap, while schema-per-tenant or database-per-tenant gives stronger isolation and noisy-neighbor protection at an operational cost. I rate-limit and meter per tenant, and I put the tenant id in cache keys, logs, and metrics.",
+            "keyTakeaway": "Resolve tenancy at the edge, enforce it in the data layer, meter per tenant.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Tenant isolation",
+                "rows": [
+                    {
+                        "label": "Edge resolution",
+                        "note": "subdomain or claim"
+                    },
+                    {
+                        "label": "Gateway quotas",
+                        "note": "per-tenant rate limits"
+                    },
+                    {
+                        "label": "Scoped data access",
+                        "note": "row-level security"
+                    },
+                    {
+                        "label": "Namespaced caches",
+                        "note": "keys include tenant id"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "api-design-q23",
+            "difficulty": "advanced",
+            "tags": [
+                "hateoas",
+                "hypermedia",
+                "coupling"
+            ],
+            "question": "Is HATEOAS worth implementing, or is it REST purity theater?",
+            "answer": "Full HATEOAS stays rare because tooling and consumers prefer contracts. My pragmatic middle is to embed links only for things that genuinely vary, like a next-page link, a cancellation URL, or a payment-flow redirect. When the server controls the flow, links let you change steps without breaking clients, and payment and OAuth APIs use them heavily. A good OpenAPI contract gives you most of the decoupling at a fraction of the cost.",
+            "keyTakeaway": "Use hypermedia links for server-driven flows; skip full HATEOAS for contract-first docs.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Full HATEOAS versus pragmatic links",
+                "columns": [
+                    "Full HATEOAS",
+                    "Pragmatic links"
+                ],
+                "rows": [
+                    {
+                        "label": "Links",
+                        "values": [
+                            "Everywhere",
+                            "Only where flow varies"
+                        ]
+                    },
+                    {
+                        "label": "Tooling",
+                        "values": [
+                            "Rare, consumers resist",
+                            "Fits OpenAPI contract"
+                        ]
+                    },
+                    {
+                        "label": "Good fit",
+                        "values": [
+                            "Rarely",
+                            "Next page, cancel, payment redirect"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "api-design-q24",
+            "difficulty": "advanced",
+            "tags": [
+                "concurrency",
+                "optimistic-locking",
+                "etag"
+            ],
+            "question": "How do you prevent lost updates when many clients write the same resource?",
+            "answer": "When two clients read and then write the same resource, you get a lost update, and last-write-wins silently deletes work. I require conditional writes: the client sends If-Match with the ETag it read, or a version field, and the server rejects with 412 Precondition Failed when the state has moved. The client reloads, reapplies, and retries. The 412 returns the current resource and ETag. I reserve pessimistic locking for hot resources where retries thrash, like seat inventory. Every response carries the current version.",
+            "keyTakeaway": "Require If-Match conditional writes and answer mismatches with 412 plus current state.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Optimistic concurrency",
+                "actors": [
+                    "Client",
+                    "API"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "GET returns ETag"
+                    },
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "PUT with If-Match"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "412, state moved"
+                    },
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Re-read, reapply change"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "200 with new ETag"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "api-design-q25",
+            "difficulty": "advanced",
+            "tags": [
+                "contract-testing",
+                "ci",
+                "pact"
+            ],
+            "question": "How do consumer-driven contract tests change how you ship API changes safely?",
+            "answer": "Consumer-driven contract tests catch the breaks that page you, like a consumer depending on a renamed field. The consumer writes a contract stating what it calls and expects, tests its client against a mock generated from it, and publishes it. The provider verifies every published contract in CI, so a breaking change fails the provider's build before merge. I use a broker once several teams are involved, keep contracts narrow, and keep a few end-to-end smoke tests.",
+            "keyTakeaway": "Consumer-defined contracts verified against the provider in CI catch breaks before merge.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Consumer-driven contract test",
+                "actors": [
+                    "Consumer",
+                    "Broker",
+                    "Provider CI"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Publish contract"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "Fetch contracts"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Contracts"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "Publish result, break fails build"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "api-design-q26",
+            "difficulty": "advanced",
+            "tags": [
+                "patch",
+                "rfc-7386",
+                "rfc-6902"
+            ],
+            "question": "How do you choose between JSON Merge Patch and JSON Patch for partial updates?",
+            "answer": "PUT replaces the whole representation and requires every field. PATCH changes part of it, so you have to choose what 'part' means. JSON Merge Patch, RFC 7386, is an object of fields to change, where null deletes a field. It's simple, but it can't update array elements. JSON Patch, RFC 6902, is a list of add, remove, replace, and move operations. It's precise for arrays but hard to hand-author. I use merge-patch for simple resources and JSON Patch for collections or atomic multi-field edits.",
+            "keyTakeaway": "Merge Patch for simple field updates; JSON Patch when arrays or atomic edits matter.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Merge Patch versus JSON Patch",
+                "columns": [
+                    "Merge Patch",
+                    "JSON Patch"
+                ],
+                "rows": [
+                    {
+                        "label": "Format",
+                        "values": [
+                            "Object of changed fields",
+                            "List of operations"
+                        ]
+                    },
+                    {
+                        "label": "Arrays",
+                        "values": [
+                            "Cannot edit elements",
+                            "Precise"
+                        ]
+                    },
+                    {
+                        "label": "Use for",
+                        "values": [
+                            "Simple resources",
+                            "Collections, atomic edits"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "api-design-q27",
+            "difficulty": "advanced",
+            "tags": [
+                "graphql",
+                "schema-evolution",
+                "deprecation"
+            ],
+            "question": "How do you evolve a GraphQL schema when URL versioning is not an option?",
+            "answer": "GraphQL doesn't version by URL. The schema evolves in place, and discipline keeps it non-breaking. I add nullable fields only. I retire a field with @deprecated and a reason naming the replacement, and I never delete it while anyone still calls it. Persisted queries show which clients execute a field, so removal dates rest on evidence. CI fails on breaking schema diffs. For public APIs with unseen clients, I use date-versioned schemas and a published sunset.",
+            "keyTakeaway": "Evolve GraphQL in place: nullable additions, @deprecated retirements, CI schema diffs.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Evolving a GraphQL schema in place",
+                "steps": [
+                    {
+                        "label": "Add nullable fields",
+                        "note": "only"
+                    },
+                    {
+                        "label": "Mark @deprecated",
+                        "note": "name the replacement"
+                    },
+                    {
+                        "label": "Check usage",
+                        "note": "persisted queries"
+                    },
+                    {
+                        "label": "Remove",
+                        "note": "after callers gone"
+                    }
+                ]
+            }
         }
     ]
 }

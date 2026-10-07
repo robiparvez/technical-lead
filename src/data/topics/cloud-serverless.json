@@ -1,72 +1,1016 @@
 {
-  "slug": "cloud-serverless",
-  "title": "Cloud, Containers & Serverless",
-  "requirement": "Solid understanding of cloud deployment, containerization, CI/CD pipelines.",
-  "questions": [
-    {
-      "id": "cloud-serverless-q1",
-      "difficulty": "basic",
-      "tags": ["docker", "containers", "fundamentals"],
-      "question": "How are containers different from virtual machines?",
-      "answer": "A virtual machine virtualizes hardware and runs a full guest operating system, so it is heavy, taking gigabytes and minutes to start. A container shares the host kernel and isolates processes with namespaces and control groups, so it starts in seconds and megabytes. Containers package the application with its exact dependencies, which kills works-on-my-machine drift between environments. The trade-off is weaker isolation than a VM, since the kernel is shared, which is why multi-tenant workloads sometimes still run inside VMs.",
-      "keyTakeaway": "VMs virtualize hardware with full isolation; containers share the kernel for speed and density."
-    },
-    {
-      "id": "cloud-serverless-q2",
-      "difficulty": "basic",
-      "tags": ["kubernetes", "orchestration", "fundamentals"],
-      "question": "What problem does a container orchestrator like Kubernetes solve?",
-      "answer": "An orchestrator turns a fleet of machines into one scheduling surface: it starts the number of replicas you declare, restarts crashed containers, reschedules pods when a node dies, and scales on load. It gives service discovery and load balancing between pods, rolling updates with rollback, and secrets or config injection. Without it, a team scripts deployment and failover by hand per host, which stops scaling past a handful of services. The cost is real operational complexity, so smaller deployments often start with managed platform services.",
-      "keyTakeaway": "Orchestration replaces hand-run deployments with declared replicas, self-healing, and rolling updates.",
-      "diagram": "container-deploy"
-    },
-    {
-      "id": "cloud-serverless-q3",
-      "difficulty": "intermediate",
-      "tags": ["docker", "images", "layers"],
-      "question": "How do Docker image layers work, and how do you keep images small?",
-      "answer": "Each Dockerfile instruction creates a layer; layers are cached and shared, so rebuilds only redo changed steps and base images are downloaded once per host. Order instructions from stable to volatile, dependencies before source code, so a code edit does not invalidate the dependency-download layer. Keep images small with a slim or distroless base, a .dockerignore for build artifacts, multi-stage builds that compile in one image and copy only runtime output to another, and no build tools in the final image. Small images mean faster pulls, faster deploys, and a smaller attack surface.",
-      "keyTakeaway": "Layer order maximizes cache hits; multi-stage builds ship only runtime artifacts."
-    },
-    {
-      "id": "cloud-serverless-q4",
-      "difficulty": "intermediate",
-      "tags": ["kubernetes", "rolling-update", "deployment"],
-      "question": "What do you consider when running a rolling update in Kubernetes?",
-      "answer": "A Deployment replaces pods gradually, and the two dials are maxSurge, how many extra pods may exist during the update, and maxUnavailable, how many may be down. Set them to keep capacity and error budget intact, typically surge 1 and unavailable 0 for customer-facing services. Pair them with readiness probes so traffic only reaches the new version when it is actually serving, and resource requests so the scheduler can place the new pods. Define the rollback trigger before the release, watch error rate and latency during the rollout, and roll back on breach rather than debugging forward.",
-      "keyTakeaway": "Tune surge and availability, gate traffic with readiness probes, and predefine the rollback trigger."
-    },
-    {
-      "id": "cloud-serverless-q5",
-      "difficulty": "intermediate",
-      "tags": ["serverless", "decision", "trade-offs"],
-      "question": "When would you choose serverless functions over containers?",
-      "answer": "Serverless fits spiky, short, event-driven work: you pay per invocation, scale is the provider's problem, and there is nothing to patch at the OS level. Containers fit long-running, latency-sensitive, or stateful services: no cold starts, full control of the runtime, and predictable cost under steady high traffic. Serverless constraints bite on execution time limits, package sizes, and per-request costs at sustained volume, and debugging distributed functions is harder than one service. A common split keeps steady core services in containers and puts bursty glue, webhooks, and scheduled jobs on functions.",
-      "keyTakeaway": "Functions for spiky glue; containers for steady, latency-critical, stateful services."
-    },
-    {
-      "id": "cloud-serverless-q6",
-      "difficulty": "intermediate",
-      "tags": ["stateless", "scaling", "cloud"],
-      "question": "Why do cloud architectures insist on stateless services, and where does state go?",
-      "answer": "A stateless service treats every request independently, so any instance can serve any request, which makes horizontal scaling and rolling deploys trivial. State moves down the stack: sessions to a shared store such as Redis, files to object storage, and durable data to the database or a queue. When state sneaks into local memory, instances become irreplaceable, autoscaling strands users, and a deploy drops in-flight work. If sticky sessions are used as a bridge, treat them as debt with a plan to externalize the state.",
-      "keyTakeaway": "Keep compute stateless; push session, file, and durable state into purpose-built stores."
-    },
-    {
-      "id": "cloud-serverless-q7",
-      "difficulty": "advanced",
-      "tags": ["iac", "terraform", "environments"],
-      "question": "How do you manage infrastructure across multiple environments without drift?",
-      "answer": "Define every environment in infrastructure as code, Terraform, Pulumi, or CloudFormation, and provision exclusively through it; manual console changes are reverted on sight and audited. Use modules so dev, staging, and production differ by parameters, not by copy-pasted divergence, and keep the state remote and locked so concurrent applies cannot corrupt it. Promote the same artifact through environments, changing configuration only, so staging actually proves production. Review infrastructure diffs like code in pull requests, and plan before every apply in a regulated environment.",
-      "keyTakeaway": "One parameterized module per environment, applied only through IaC with reviewed diffs."
-    },
-    {
-      "id": "cloud-serverless-q8",
-      "difficulty": "advanced",
-      "tags": ["serverless", "cold-start", "limits"],
-      "question": "What are the real costs and limits of serverless at production scale?",
-      "answer": "Cold starts add latency when a new instance boots, which hurts p99 and timeouts on bursty traffic; provisioning concurrency fixes it by pre-warming, but at always-on price. Execution time, memory, payload size, and concurrent invocation limits are platform ceilings you must design around with shorter functions and queue buffering. Observability is the biggest jump: you need structured logs, distributed tracing across function boundaries, and cost telemetry per function, because a chatty fan-out can quietly cost more than a container. Model the cost curve against steady containers before committing, and re-check it as traffic grows.",
-      "keyTakeaway": "Pre-warm for latency, design inside platform limits, and watch per-function cost as traffic grows."
-    }
-  ]
+    "slug": "cloud-serverless",
+    "title": "Cloud, Containers & Serverless",
+    "requirement": "Solid understanding of cloud deployment, containerization, CI/CD pipelines.",
+    "questions": [
+        {
+            "id": "cloud-serverless-q1",
+            "difficulty": "basic",
+            "tags": [
+                "docker",
+                "containers",
+                "fundamentals"
+            ],
+            "question": "How are containers different from virtual machines?",
+            "answer": "A VM is virtualized hardware with a full guest operating system, gigabytes in size, and takes minutes to start. A container shares the host kernel using namespaces and control groups, is megabytes, and starts in seconds. Packaged dependencies end works-on-my-machine drift. The shared kernel means weaker isolation, so multi-tenant workloads sometimes use VMs.",
+            "keyTakeaway": "VMs virtualize hardware with full isolation; containers share the kernel for speed and density.",
+            "diagram": {
+                "kind": "layers",
+                "title": "VM versus container stack",
+                "rows": [
+                    {
+                        "label": "App plus libraries",
+                        "note": "packaged the same either way"
+                    },
+                    {
+                        "label": "Guest operating system",
+                        "note": "VM only; gigabytes, minutes to boot"
+                    },
+                    {
+                        "label": "Container engine",
+                        "note": "namespaces and cgroups isolate"
+                    },
+                    {
+                        "label": "Host kernel",
+                        "note": "shared by every container"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cloud-serverless-q2",
+            "difficulty": "basic",
+            "tags": [
+                "kubernetes",
+                "orchestration",
+                "fundamentals"
+            ],
+            "question": "What problem does a container orchestrator like Kubernetes solve?",
+            "answer": "An orchestrator turns machines into one scheduling surface. It runs the declared replicas, restarts crashed containers, reschedules pods when a node dies, and scales on load. You also get service discovery, load balancing, rolling updates with rollback, and secrets injection. Without it, teams script failover per host. The cost is operational complexity, so small deployments often use managed platform services.",
+            "keyTakeaway": "Orchestration replaces hand-run deployments with declared replicas, self-healing, and rolling updates.",
+            "diagram": "container-deploy"
+        },
+        {
+            "id": "cloud-serverless-q3",
+            "difficulty": "intermediate",
+            "tags": [
+                "docker",
+                "images",
+                "layers"
+            ],
+            "question": "How do Docker image layers work, and how do you keep images small?",
+            "answer": "Each Dockerfile instruction creates a cached layer, so rebuilds redo only the changed steps. I order from stable to volatile, dependencies before source, so a code edit keeps the dependency layer. I keep images small with a slim or distroless base, a .dockerignore, and multi-stage builds that copy only the runtime output. Smaller images mean faster pulls and deploys and a smaller attack surface.",
+            "keyTakeaway": "Layer order maximizes cache hits; multi-stage builds ship only runtime artifacts.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Image layer ordering",
+                "rows": [
+                    {
+                        "label": "Source code",
+                        "note": "most volatile; add last"
+                    },
+                    {
+                        "label": "Dependencies",
+                        "note": "changes rarely; cacheable"
+                    },
+                    {
+                        "label": "Base image",
+                        "note": "slim or distroless; shared"
+                    },
+                    {
+                        "label": "Runtime output",
+                        "note": "multi-stage ships only artifacts"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cloud-serverless-q4",
+            "difficulty": "intermediate",
+            "tags": [
+                "kubernetes",
+                "rolling-update",
+                "deployment"
+            ],
+            "question": "What do you consider when running a rolling update in Kubernetes?",
+            "answer": "A Deployment replaces pods gradually. maxSurge sets how many extra pods are allowed during the update, and maxUnavailable sets how many can be down. Customer-facing services typically use surge 1 and unavailable 0. I add readiness probes so traffic reaches the new version only when it's serving, and resource requests so the scheduler can place pods. I define the rollback trigger before release, and roll back on breach rather than debug forward.",
+            "keyTakeaway": "Tune surge and availability, gate traffic with readiness probes, and predefine the rollback trigger.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Rolling update traffic shift",
+                "actors": [
+                    "Deployment",
+                    "New pod",
+                    "Old pod"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Create surge pod"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "Pass readiness probe"
+                    },
+                    {
+                        "from": 0,
+                        "to": 2,
+                        "label": "Stop after drain"
+                    },
+                    {
+                        "from": 2,
+                        "to": 0,
+                        "label": "Exit cleanly"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cloud-serverless-q5",
+            "difficulty": "intermediate",
+            "tags": [
+                "serverless",
+                "decision",
+                "trade-offs"
+            ],
+            "question": "When would you choose serverless functions over containers?",
+            "answer": "Serverless fits spiky, short, event-driven work: you pay per invocation, the provider handles scale, and there's no OS patching. Containers fit long-running, latency-sensitive, or stateful services, with no cold starts and predictable cost under steady high traffic. Serverless bites on time limits, package size, and per-request cost at sustained volume. I split it: core services in containers, and bursty glue, webhooks, and scheduled jobs on functions.",
+            "keyTakeaway": "Functions for spiky glue; containers for steady, latency-critical, stateful services.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Functions or containers",
+                "condition": "Spiky, short, event-driven workload?",
+                "yesLabel": "serverless",
+                "noLabel": "containers",
+                "yes": {
+                    "label": "Functions",
+                    "note": "pay per invocation only"
+                },
+                "no": {
+                    "label": "Containers",
+                    "note": "full runtime and network control"
+                }
+            }
+        },
+        {
+            "id": "cloud-serverless-q6",
+            "difficulty": "intermediate",
+            "tags": [
+                "stateless",
+                "scaling",
+                "cloud"
+            ],
+            "question": "Why do cloud architectures insist on stateless services, and where does state go?",
+            "answer": "A stateless service treats every request independently, so any instance can serve any request, and horizontal scaling and rolling deploys become trivial. I move state out: sessions to Redis, files to object storage, durable data to a database or queue. Local state makes instances irreplaceable, so autoscaling strands users and deploys drop in-flight work. I treat sticky sessions as debt.",
+            "keyTakeaway": "Keep compute stateless; push session, file, and durable state into purpose-built stores.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Where state goes",
+                "rows": [
+                    {
+                        "label": "Stateless services",
+                        "note": "Any instance serves any request"
+                    },
+                    {
+                        "label": "Sessions",
+                        "note": "Redis"
+                    },
+                    {
+                        "label": "Files",
+                        "note": "Object storage"
+                    },
+                    {
+                        "label": "Durable data",
+                        "note": "Database or queue"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cloud-serverless-q7",
+            "difficulty": "advanced",
+            "tags": [
+                "iac",
+                "terraform",
+                "environments"
+            ],
+            "question": "How do you manage infrastructure across multiple environments without drift?",
+            "answer": "I define every environment in infrastructure as code (Terraform, Pulumi, or CloudFormation) and provision only through it. Console changes get reverted and audited. Modules let environments differ by parameters only, and state stays remote and locked. We promote the same artifact and change only configuration, so staging proves production. Infrastructure diffs get reviewed in pull requests.",
+            "keyTakeaway": "One parameterized module per environment, applied only through IaC with reviewed diffs.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Drift-free environments",
+                "steps": [
+                    {
+                        "label": "Define in IaC",
+                        "note": "Terraform, Pulumi"
+                    },
+                    {
+                        "label": "Review diff",
+                        "note": "in pull request"
+                    },
+                    {
+                        "label": "Apply via pipeline",
+                        "note": "remote locked state"
+                    },
+                    {
+                        "label": "Promote artifact",
+                        "note": "change only config"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cloud-serverless-q8",
+            "difficulty": "advanced",
+            "tags": [
+                "serverless",
+                "cold-start",
+                "limits"
+            ],
+            "question": "What are the real costs and limits of serverless at production scale?",
+            "answer": "Cold starts add latency when a new instance boots, hurting p99 and causing timeouts on bursty traffic. Provisioned concurrency pre-warms, at an always-on price. Time, memory, payload, and concurrency limits are platform ceilings, so I use shorter functions and queue buffering. I add structured logs, distributed tracing, and per-function cost telemetry, since chatty fan-out can cost more than a container. I model cost against steady containers first.",
+            "keyTakeaway": "Pre-warm for latency, design inside platform limits, and watch per-function cost as traffic grows.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Serverless limits and mitigations",
+                "columns": [
+                    "Problem",
+                    "Response"
+                ],
+                "rows": [
+                    {
+                        "label": "Cold starts",
+                        "values": [
+                            "Hurt p99 latency",
+                            "Provisioned concurrency"
+                        ]
+                    },
+                    {
+                        "label": "Platform ceilings",
+                        "values": [
+                            "Time, memory, payload",
+                            "Shorter functions, queues"
+                        ]
+                    },
+                    {
+                        "label": "Cost",
+                        "values": [
+                            "Chatty fan-out",
+                            "Per-function cost telemetry"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cloud-serverless-q9",
+            "difficulty": "intermediate",
+            "tags": [
+                "kubernetes",
+                "pods",
+                "containers"
+            ],
+            "question": "When would you reach for a sidecar container versus an init container or a DaemonSet?",
+            "answer": "Sidecars run beside the main container for the pod's life and share localhost: log shippers, mesh proxies, local caches. Init containers run to completion before the main one starts: schema migrations, dependency waits, volume permissions. A DaemonSet runs one per node: log collectors, monitoring exporters. Run as sidecars, those would multiply cost by replica count. Newer Kubernetes has native sidecars that start before and stop after the main container. I pick by scope: pod-local, one-shot, or node-global.",
+            "keyTakeaway": "Sidecars share the pod's life, init containers run once before startup, and DaemonSets place one agent per node.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Helper container roles",
+                "columns": [
+                    "Sidecar",
+                    "Init",
+                    "Daemon"
+                ],
+                "rows": [
+                    {
+                        "label": "Lifecycle",
+                        "values": [
+                            "Whole pod lifetime",
+                            "Runs once, then exits",
+                            "One per node"
+                        ]
+                    },
+                    {
+                        "label": "Typical jobs",
+                        "values": [
+                            "Logs, mesh proxy",
+                            "Migrations, waits",
+                            "Node agents, metrics"
+                        ]
+                    },
+                    {
+                        "label": "Scope",
+                        "values": [
+                            "Per pod",
+                            "Per pod, one-shot",
+                            "Per node"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cloud-serverless-q10",
+            "difficulty": "intermediate",
+            "tags": [
+                "kubernetes",
+                "resources",
+                "qos",
+                "eviction"
+            ],
+            "question": "How do resource requests and limits shape scheduling, throttling, and eviction in Kubernetes?",
+            "answer": "Requests decide scheduler placement. A limit is the runtime ceiling: CPU overage is throttled, and memory overage gets OOM-killed. For QoS class, Guaranteed (requests equal limits) is evicted last, Burstable (requests below limits) next, and BestEffort (nothing set) first. I set requests from measured p95 usage, since over-requesting wastes a third of the cluster. I always cap memory, which isn't compressible, and treat CPU limits skeptically. Overcommit CPU freely, never memory.",
+            "keyTakeaway": "Requests drive scheduling and eviction protection; set memory limits always and treat CPU limits as optional.",
+            "code": {
+                "language": "yaml",
+                "snippet": "resources:\n    requests:\n        cpu: \"250m\"\n        memory: \"256Mi\"\n    limits:\n        memory: \"512Mi\""
+            },
+            "diagram": {
+                "kind": "compare",
+                "title": "Kubernetes QoS classes",
+                "columns": [
+                    "Guaranteed",
+                    "Burstable",
+                    "BestEffort"
+                ],
+                "rows": [
+                    {
+                        "label": "Setting",
+                        "values": [
+                            "Requests equal limits",
+                            "Requests below limits",
+                            "Nothing set"
+                        ]
+                    },
+                    {
+                        "label": "Eviction",
+                        "values": [
+                            "Last",
+                            "Next",
+                            "First"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cloud-serverless-q11",
+            "difficulty": "intermediate",
+            "tags": [
+                "kubernetes",
+                "autoscaling",
+                "keda"
+            ],
+            "question": "When is KEDA the right choice over the plain Horizontal Pod Autoscaler?",
+            "answer": "HPA ships with Kubernetes and scales replicas on CPU and memory, or on custom metrics via the Prometheus adapter. KEDA takes its signal from an event source: SQS depth, Kafka consumer lag, Redis queue length, or cron. It's the standard for scaling to zero. CPU is a lagging, noisy proxy for waiting messages, so queue workers belong on KEDA. I keep HPA for latency-sensitive services whose load shows up as CPU.",
+            "keyTakeaway": "KEDA scales on external event signals and to zero; plain HPA only reads CPU, memory, or wired custom metrics.",
+            "diagram": {
+                "kind": "compare",
+                "title": "HPA versus KEDA",
+                "columns": [
+                    "HPA",
+                    "KEDA"
+                ],
+                "rows": [
+                    {
+                        "label": "Signal",
+                        "values": [
+                            "CPU, memory, custom metrics",
+                            "Queue depth, lag, cron"
+                        ]
+                    },
+                    {
+                        "label": "Scale to zero",
+                        "values": [
+                            "Not supported",
+                            "Native"
+                        ]
+                    },
+                    {
+                        "label": "Best fit",
+                        "values": [
+                            "CPU-bound services",
+                            "Event-driven workers"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cloud-serverless-q12",
+            "difficulty": "intermediate",
+            "tags": [
+                "queues",
+                "sqs",
+                "workers",
+                "reliability"
+            ],
+            "question": "How do visibility timeouts work for queue-triggered workers, and what breaks when they are set wrong?",
+            "answer": "The queue hides a received message for the visibility timeout. The worker deletes it on success, otherwise it reappears, which gives at-least-once delivery. A timeout shorter than processing time causes duplicate work. A timeout far longer than the crash path leaves a dead worker's messages invisible and recovery slow. I set it above p99 processing time and heartbeat long jobs. Repeat failures route to a dead-letter queue. Handlers must be idempotent, because duplicates are a when, not an if.",
+            "keyTakeaway": "A visibility timeout that expires mid-job re-delivers the message, so set it above p99 processing time and make handlers idempotent.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Queue visibility timeout flow",
+                "actors": [
+                    "Producer",
+                    "Queue",
+                    "Worker",
+                    "Dead-letter"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Enqueue job"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Deliver, hide from others"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "Extend visibility timeout"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "Delete on success"
+                    },
+                    {
+                        "from": 1,
+                        "to": 3,
+                        "label": "Dead-letter after max receives"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cloud-serverless-q13",
+            "difficulty": "intermediate",
+            "tags": [
+                "s3",
+                "cdn",
+                "storage",
+                "lifecycle"
+            ],
+            "question": "How do you pair CDN caching with object storage lifecycle rules without breaking production?",
+            "answer": "A CDN in front of the bucket absorbs reads and collapses origin cost. Lifecycle rules move cold objects to infrequent-access or archive tiers and expire junk. The classic failure is deleting or tiering an object while the edge still considers it fresh, or code hot-linking the bucket, which causes NoSuchKey errors. I version the bucket, expire only noncurrent versions, and set explicit Cache-Control. Hashed immutable assets get months-long TTLs, and private content is served through signed URLs.",
+            "keyTakeaway": "Cache hot objects at the edge, tier cold objects with lifecycle rules, and align cache TTLs with object versioning so deletes never 404.",
+            "diagram": {
+                "kind": "layers",
+                "title": "CDN over object storage",
+                "rows": [
+                    {
+                        "label": "CDN edge",
+                        "note": "Explicit Cache-Control, long TTL for hashed assets"
+                    },
+                    {
+                        "label": "Bucket",
+                        "note": "Versioned, signed URLs for private content"
+                    },
+                    {
+                        "label": "Lifecycle rules",
+                        "note": "Tier cold objects, expire noncurrent versions"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cloud-serverless-q14",
+            "difficulty": "intermediate",
+            "tags": [
+                "security",
+                "secrets",
+                "kubernetes"
+            ],
+            "question": "Where should application secrets live: environment variables, a managed secrets store, or a vault sidecar?",
+            "answer": "Environment variables suit non-secret configuration. Secrets there leak through build logs, crash dumps, committed manifests, and anyone who can describe a pod. A managed secrets store (Secrets Manager, Parameter Store) gives auditable, IAM-scoped access with rotation, and the application fetches secrets at startup with its runtime identity. In Kubernetes, the secrets-store CSI driver mounts secrets as files and rotates them. I never bake secrets into images, because every historical layer stays recoverable.",
+            "keyTakeaway": "Secrets belong in a managed store fetched by the runtime identity, never in env vars committed to manifests or baked into images.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Where secrets live",
+                "columns": [
+                    "Environment variables",
+                    "Managed secrets store"
+                ],
+                "rows": [
+                    {
+                        "label": "Good for",
+                        "values": [
+                            "Non-secret config",
+                            "Credentials and keys"
+                        ]
+                    },
+                    {
+                        "label": "Leak paths",
+                        "values": [
+                            "Build logs, dumps, manifests",
+                            "IAM-scoped, audited"
+                        ]
+                    },
+                    {
+                        "label": "Rotation",
+                        "values": [
+                            "Manual",
+                            "Built in"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cloud-serverless-q15",
+            "difficulty": "intermediate",
+            "tags": [
+                "docker",
+                "registry",
+                "scanning",
+                "supply-chain"
+            ],
+            "question": "What does a sane container registry strategy look like, including image scanning?",
+            "answer": "I run one private registry (ECR or Artifact Registry) inside the delivery pipeline and make tags immutable. Production references a digest or git-SHA tag, never latest. Promotion rebuilds nothing: the exact digest that passed staging moves on. Every push is scanned with Trivy, Grype, or the registry scanner. I fail on critical findings in runtime dependencies, not on every build-stage CVE. We rebuild when a base patch lands and prune with lifecycle policies.",
+            "keyTakeaway": "Tag images immutably with the git SHA, promote the digest unchanged, and gate deploys on critical scan findings.",
+            "code": {
+                "language": "bash",
+                "snippet": "docker build -t \"$REGISTRY/app:$GIT_SHA\" .\ntrivy image --exit-code 1 --severity HIGH,CRITICAL \"$REGISTRY/app:$GIT_SHA\"\ndocker push \"$REGISTRY/app:$GIT_SHA\""
+            },
+            "diagram": {
+                "kind": "flow",
+                "title": "Container registry pipeline",
+                "steps": [
+                    {
+                        "label": "Push image",
+                        "note": "immutable tag"
+                    },
+                    {
+                        "label": "Scan",
+                        "note": "fail on critical findings"
+                    },
+                    {
+                        "label": "Staging passes",
+                        "note": "same digest"
+                    },
+                    {
+                        "label": "Promote digest",
+                        "note": "never rebuild"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cloud-serverless-q16",
+            "difficulty": "intermediate",
+            "tags": [
+                "serverless",
+                "vpc",
+                "networking",
+                "cost"
+            ],
+            "question": "When is it worth putting a serverless function inside a VPC, and what does it cost?",
+            "answer": "A function that reaches a database or cache in private subnets must live in the VPC. Everything else is cost. Traffic from the VPC to public AWS services rides the NAT gateway, with an hourly charge plus per-gigabyte processing. Private endpoints for S3, DynamoDB, and Secrets Manager avoid NAT at a fixed price, and that's usually the first optimization. The ENI cold-start penalty is largely solved, but my default stays functions outside the VPC unless a private resource requires it.",
+            "keyTakeaway": "Put functions in a VPC only to reach private resources, and use private endpoints over NAT wherever the service supports them.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Two paths out of a VPC",
+                "actors": [
+                    "Function",
+                    "NAT gateway",
+                    "VPC endpoint",
+                    "AWS service"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Public path via NAT"
+                    },
+                    {
+                        "from": 1,
+                        "to": 3,
+                        "label": "Billed per GB processed"
+                    },
+                    {
+                        "from": 0,
+                        "to": 2,
+                        "label": "Private endpoint path"
+                    },
+                    {
+                        "from": 2,
+                        "to": 3,
+                        "label": "Stays on AWS backbone"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cloud-serverless-q17",
+            "difficulty": "intermediate",
+            "tags": [
+                "database",
+                "rds",
+                "aurora",
+                "dynamodb"
+            ],
+            "question": "How do you choose between RDS, Aurora Serverless, and DynamoDB for a new service?",
+            "answer": "I start from access patterns. For relational data with joins, ad hoc queries, and steady load, it's plain RDS Postgres, the boring correct default. Aurora Serverless suits spiky or rarely used SQL workloads like staging, scaling near zero. Its cold-start floor suits latency-sensitive paths poorly, and sustained heavy load can cost more than provisioned Aurora. DynamoDB wins when access patterns are few, fixed, and key-shaped, with extreme scale or single-digit millisecond latency. The price is designing tables around queries upfront, with no joins.",
+            "keyTakeaway": "Default to relational Postgres, take Aurora Serverless for spiky SQL workloads, and pick DynamoDB only for fixed access patterns at large scale.",
+            "diagram": {
+                "kind": "compare",
+                "title": "RDS, Aurora Serverless, DynamoDB",
+                "columns": [
+                    "RDS",
+                    "Aurora Serverless",
+                    "DynamoDB"
+                ],
+                "rows": [
+                    {
+                        "label": "Best for",
+                        "values": [
+                            "Joins, steady load",
+                            "Spiky or rare SQL",
+                            "Fixed key access patterns"
+                        ]
+                    },
+                    {
+                        "label": "Tradeoff",
+                        "values": [
+                            "Provisioned capacity",
+                            "Cold-start floor",
+                            "No joins"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cloud-serverless-q18",
+            "difficulty": "advanced",
+            "tags": [
+                "serverless",
+                "lambda",
+                "concurrency",
+                "throttling"
+            ],
+            "question": "What happens when a Lambda function exhausts its concurrency, and how do you contain the blast radius?",
+            "answer": "Concurrency is a shared regional budget, roughly a thousand by default. Exhausting a reserved share causes 429 throttling. Synchronous callers get errors, asynchronous invocations retry with backoff, and stream and queue sources fall behind. Retries amplify load exactly when capacity is scarcest. I set reserved concurrency on critical functions so one noisy function can't starve the account, and put a queue between producers and consumers so a throttle becomes queue depth, not user errors. Provisioned concurrency covers latency contracts.",
+            "keyTakeaway": "Concurrency exhaustion returns 429 throttles, so wall off critical functions with reserved concurrency and put queues in front of bursty producers.",
+            "diagram": {
+                "kind": "flow",
+                "title": "When concurrency runs out",
+                "steps": [
+                    {
+                        "label": "Invocation burst arrives",
+                        "note": "demand exceeds reserved concurrency"
+                    },
+                    {
+                        "label": "Platform throttles with 429",
+                        "note": "sync callers see errors"
+                    },
+                    {
+                        "label": "Retries amplify load",
+                        "note": "worst when capacity is scarcest"
+                    },
+                    {
+                        "label": "Queue absorbs the spike",
+                        "note": "depth grows instead of errors"
+                    },
+                    {
+                        "label": "Reserved concurrency isolates",
+                        "note": "critical functions keep their budget"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cloud-serverless-q19",
+            "difficulty": "advanced",
+            "tags": [
+                "cloud",
+                "cost",
+                "fargate",
+                "decision"
+            ],
+            "question": "How do the cost models of managed Kubernetes, Fargate or Cloud Run, and Lambda actually compare?",
+            "answer": "Kubernetes on nodes is the cheapest raw compute, but the node pool bills whether pods use it or not, so the economics depend on bin-packing, plus operating time. Fargate and Cloud Run bill per second of running container at a premium, with no node to touch, which is good for small teams and spiky workloads. Lambda bills per invocation and gigabyte-second, so idle-prone workloads are nearly free and steady high utilization is the most expensive. I model all three against real traffic and on-call time.",
+            "keyTakeaway": "Sustained high utilization is cheapest on packed nodes, sparse spiky load is cheapest serverless, and Fargate or Cloud Run buys the middle.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Compute cost models",
+                "columns": [
+                    "Kubernetes nodes",
+                    "Fargate, Cloud Run",
+                    "Lambda"
+                ],
+                "rows": [
+                    {
+                        "label": "Billed by",
+                        "values": [
+                            "Node pool, always on",
+                            "Running container second",
+                            "Invocation and GB-second"
+                        ]
+                    },
+                    {
+                        "label": "Cheapest when",
+                        "values": [
+                            "Well bin-packed",
+                            "Small team, spiky",
+                            "Idle-prone"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cloud-serverless-q20",
+            "difficulty": "advanced",
+            "tags": [
+                "multi-region",
+                "disaster-recovery",
+                "architecture"
+            ],
+            "question": "How do you decide between active-passive and active-active for a multi-region architecture?",
+            "answer": "Active-passive keeps a second region warm with replicated data and DNS or health-check promotion. Recovery takes minutes, at the cost of duplicated data plus a small standby. One region writes, so consistency stays simple. Active-active serves every region, with near-zero failover and lower latency, but stateful layers must resolve concurrent writes (DynamoDB global tables, Spanner, tested last-writer-wins). The bill roughly doubles. I decide by RTO, RPO, and conflict tolerance, and start with active-passive and a rehearsed, automated failover.",
+            "keyTakeaway": "Start active-passive for minutes-level failover at half the cost; go active-active only when latency or uptime contracts justify multi-master data conflicts.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Multi-region patterns",
+                "columns": [
+                    "Active-passive",
+                    "Active-active"
+                ],
+                "rows": [
+                    {
+                        "label": "Failover",
+                        "values": [
+                            "Minutes",
+                            "Near zero"
+                        ]
+                    },
+                    {
+                        "label": "Writes",
+                        "values": [
+                            "One region",
+                            "Conflicts must resolve"
+                        ]
+                    },
+                    {
+                        "label": "Cost",
+                        "values": [
+                            "Small standby",
+                            "Roughly double"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cloud-serverless-q21",
+            "difficulty": "advanced",
+            "tags": [
+                "iac",
+                "terraform",
+                "drift",
+                "detection"
+            ],
+            "question": "Beyond writing everything in Terraform, how do you detect and resolve infrastructure drift in production?",
+            "answer": "Drift is divergence between declared state and what runs: console fixes during incidents, autoscaler mutations, manual patches, half-failed applies. I schedule detection by running plan per stack in CI on a timer, and a nonempty diff alerts. For resources Terraform doesn't own, I use CloudFormation drift detection or AWS Config rules. Never blindly reapply over a production change, since it may be a hotfix. Triage: codify correct changes into modules or import them into state, and revert the rest.",
+            "keyTakeaway": "Detect drift with scheduled plans that alert on divergence, then codify or revert the change rather than blindly reapplying.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Detect and resolve drift",
+                "steps": [
+                    {
+                        "label": "Scan live infrastructure",
+                        "note": "scheduled plan in CI"
+                    },
+                    {
+                        "label": "Diff declared versus real",
+                        "note": "non-empty diff means drift"
+                    },
+                    {
+                        "label": "Alert the owning team",
+                        "note": "never auto-reapply a hotfix"
+                    },
+                    {
+                        "label": "Codify or revert",
+                        "note": "import fixes into modules"
+                    },
+                    {
+                        "label": "Re-plan until clean",
+                        "note": "convergence proves resolution"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cloud-serverless-q22",
+            "difficulty": "advanced",
+            "tags": [
+                "terraform",
+                "blue-green",
+                "deployment",
+                "workspaces"
+            ],
+            "question": "How would you implement blue-green deployments for infrastructure using Terraform workspaces?",
+            "answer": "The core stack holds the shared stateful pieces: load balancer, databases, queues. Blue and green workspaces each bring up a full parallel compute stack with its own target group. I apply the release to the idle color and run smoke tests, then one traffic switch (a listener rule or weighted target group) moves production atomically. The previous color stays warm for instant rollback through the soak period. Data never lives inside the swapped stack. Budget for the temporary double footprint.",
+            "keyTakeaway": "Provision two parallel stacks in separate workspaces, shift traffic atomically at the load balancer, and destroy the old color only after soak.",
+            "code": {
+                "language": "bash",
+                "snippet": "terraform workspace select blue\nterraform apply -var-file=\"env/prod.tfvars\"\nterraform workspace select green\nterraform apply -var-file=\"env/prod.tfvars\"\n# flip the listener after smoke tests, destroy blue after soak"
+            },
+            "diagram": {
+                "kind": "flow",
+                "title": "Blue-green with Terraform",
+                "steps": [
+                    {
+                        "label": "Apply to idle color",
+                        "note": "full parallel stack"
+                    },
+                    {
+                        "label": "Smoke test"
+                    },
+                    {
+                        "label": "Switch traffic",
+                        "note": "one atomic change"
+                    },
+                    {
+                        "label": "Keep old warm",
+                        "note": "instant rollback"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cloud-serverless-q23",
+            "difficulty": "advanced",
+            "tags": [
+                "security",
+                "iam",
+                "least-privilege",
+                "policy"
+            ],
+            "question": "How do you make IAM least privilege practical instead of aspirational?",
+            "answer": "I generate least privilege from evidence, not imagination. Run the service in development with audit logging, then use IAM Access Analyzer or CloudTrail to generate a policy from the API calls actually made. Every function and service gets its own role, with permissions boundaries so a compromised role can't escalate. I prefer temporary STS credentials over long-lived keys. CI lints policies, flags wildcards, and fails when a new grant exceeds observed calls. Start narrow.",
+            "keyTakeaway": "Generate policies from observed API usage, give each service its own role, and gate wildcards in CI rather than trusting review alone.",
+            "code": {
+                "language": "typescript",
+                "snippet": "const table = dynamodb.Table.fromTableName(scope, \"Orders\", \"orders\");\nrole.addToPolicy(new iam.PolicyStatement({\n    actions: [\"dynamodb:GetItem\", \"dynamodb:Query\"],\n    resources: [table.tableArn],\n}));"
+            },
+            "diagram": {
+                "kind": "flow",
+                "title": "Evidence-based IAM policy",
+                "steps": [
+                    {
+                        "label": "Log actual API calls",
+                        "note": "CloudTrail in development"
+                    },
+                    {
+                        "label": "Generate policy from usage",
+                        "note": "Access Analyzer drafts it"
+                    },
+                    {
+                        "label": "Narrow wildcards in review",
+                        "note": "deny by default"
+                    },
+                    {
+                        "label": "Gate grants in CI",
+                        "note": "pipeline fails on escalation"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cloud-serverless-q24",
+            "difficulty": "advanced",
+            "tags": [
+                "queues",
+                "dlq",
+                "retries",
+                "resilience"
+            ],
+            "question": "How do you design retry and dead-letter behavior so poison messages cannot take down an event-driven system?",
+            "answer": "Every asynchronous consumer needs an explicit failure policy, or failures become silent data loss or infinite retry. Transient errors like timeouts and throttles get retried with exponential backoff and jitter. Permanent failures like malformed payloads and validation errors go straight to the dead-letter queue. Attempts are bounded, typically a handful, then the message lands in the DLQ with retention long enough to triage. Alarm on any DLQ depth, fix the handler, and replay through redrive. Bounded attempts stop a poison message from blocking the queue head.",
+            "keyTakeaway": "Retry transient failures with backoff, dead-letter after bounded attempts, alarm on DLQ depth, and replay after the fix.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Bounded retries to a DLQ",
+                "steps": [
+                    {
+                        "label": "Handler fails",
+                        "note": "classify transient or permanent"
+                    },
+                    {
+                        "label": "Retry with backoff",
+                        "note": "jitter prevents thundering herd"
+                    },
+                    {
+                        "label": "Attempts exhausted",
+                        "note": "bounded, typically a handful"
+                    },
+                    {
+                        "label": "Route to DLQ",
+                        "note": "long retention for triage"
+                    },
+                    {
+                        "label": "Alert, fix, replay",
+                        "note": "redrive once the fix ships"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cloud-serverless-q25",
+            "difficulty": "advanced",
+            "tags": [
+                "containers",
+                "kubernetes",
+                "graceful-shutdown",
+                "lifecycle"
+            ],
+            "question": "What must a service get right between receiving SIGTERM and the end of its grace period?",
+            "answer": "The grace period between SIGTERM and SIGKILL is thirty seconds by default in Kubernetes. First stop new work: the readiness probe fails and the orchestrator removes the pod from endpoints, with a short preStop sleep to cover the propagation gap. Then finish or abandon in-flight requests, commit or return the queue message, flush log, metric, and trace buffers, and close database connections cleanly. Unfinished work dies at SIGKILL. Keep shutdown fast and rehearsed. The same routine makes scale-in safe.",
+            "keyTakeaway": "On SIGTERM stop accepting new work, finish in-flight requests inside the grace period, and flush state before the hard kill.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Graceful shutdown choreography",
+                "actors": [
+                    "Orchestrator",
+                    "Pod",
+                    "Clients"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Send SIGTERM"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "Fail readiness probe"
+                    },
+                    {
+                        "from": 0,
+                        "to": 2,
+                        "label": "Remove pod endpoints"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Finish in-flight requests"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "Flush and exit"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cloud-serverless-q26",
+            "difficulty": "advanced",
+            "tags": [
+                "finops",
+                "cost",
+                "governance",
+                "tagging"
+            ],
+            "question": "How do you keep cloud spend visible and controlled as the footprint grows?",
+            "answer": "Cost control starts with allocation, because untagged spend is nobody's problem. I enforce tags (owner, service, environment, cost center) in IaC modules, with a policy denying untagged resources. Billing feeds per-team showback dashboards, and budgets pair with anomaly detection that pages within a day, not at month-end. We clean up unattached volumes, idle load balancers, and unused staging. Savings plans or reserved capacity get bought only for a provable baseline, and interruptible work runs on spot.",
+            "keyTakeaway": "Enforce tagging at provisioning, allocate spend to owning teams, and back alerts with scheduled cleanup of idle resources.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Cost control layers",
+                "rows": [
+                    {
+                        "label": "Enforced tagging",
+                        "note": "owner, service, env, cost center"
+                    },
+                    {
+                        "label": "Team showback dashboards",
+                        "note": "every team sees its curve"
+                    },
+                    {
+                        "label": "Budgets and anomaly alerts",
+                        "note": "page within a day"
+                    },
+                    {
+                        "label": "Rightsizing and cleanup",
+                        "note": "kill idle, trim over-provisioning"
+                    },
+                    {
+                        "label": "Commitment discounts",
+                        "note": "savings plans on proven baseline"
+                    }
+                ]
+            }
+        }
+    ]
 }

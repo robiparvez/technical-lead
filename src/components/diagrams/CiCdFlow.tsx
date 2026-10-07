@@ -55,11 +55,11 @@ export default function CiCdFlow() {
                                 stroke={stroke}
                                 strokeWidth={hot ? 3 : 2}
                             />
-                            <text x={s.x + W / 2} y={Y + 26} textAnchor='middle' fontSize='11' fill={C.primary}>
+                            <text x={s.x + W / 2} y={Y + 20} textAnchor='middle' fontSize='11' fill={C.primary}>
                                 {s.label}
                             </text>
                             {passed(i) && i < 4 && (
-                                <text x={s.x + W / 2} y={Y + 44} textAnchor='middle' fontSize='11' fill={C.accent}>
+                                <text x={s.x + W / 2} y={Y + 52} textAnchor='middle' fontSize='11' fill={C.secondary}>
                                     ✓
                                 </text>
                             )}

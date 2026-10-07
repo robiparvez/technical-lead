@@ -1,75 +1,1008 @@
 {
-  "slug": "front-end",
-  "title": "Front-End Engineering: JavaScript, TypeScript, React",
-  "requirement": "Proficiency in modern front-end tech: JavaScript, TypeScript, React, Angular, or Vue.",
-  "questions": [
-    {
-      "id": "front-end-q1",
-      "difficulty": "basic",
-      "tags": ["typescript", "javascript", "fundamentals"],
-      "question": "Why adopt TypeScript over plain JavaScript on a large codebase?",
-      "answer": "TypeScript checks contracts between modules at compile time, so a renamed field or a changed function signature breaks the build instead of production. Types are executable documentation: they state what a function accepts without reading its body, which matters when dozens of engineers touch the same code. Plain JavaScript defers those mistakes to runtime, where they surface as undefined-is-not-a-function in a customer's browser. The win is proportional to codebase size and team churn; on a two-person prototype it can be overhead.",
-      "keyTakeaway": "Types move integration bugs from runtime to compile time; value grows with team size."
-    },
-    {
-      "id": "front-end-q2",
-      "difficulty": "basic",
-      "tags": ["react", "fundamentals", "keys"],
-      "question": "What are state and props in React, and why does the key prop matter in lists?",
-      "answer": "Props are read-only inputs passed from a parent; state is data the component owns and can change over time. When state changes, React re-renders and reconciles the new output with the old by comparing element types and keys. Keys give list items a stable identity across renders: with a stable id, React moves the existing component instance; with the array index, it reuses the wrong instance when items are inserted, removed, or reordered, which corrupts local state and input values. Use stable business ids as keys, never indices for dynamic lists.",
-      "keyTakeaway": "Props flow down, state stays local; stable keys keep list identity correct across re-renders."
-    },
-    {
-      "id": "front-end-q3",
-      "difficulty": "intermediate",
-      "tags": ["react", "angular", "vue", "decision"],
-      "question": "How do you choose between React, Angular, and Vue for a new project?",
-      "answer": "Decide on team skills, hiring pool, and ecosystem fit before syntax preferences. React is a library with a huge ecosystem and maximal flexibility, so it suits teams that want to assemble their own stack; Angular ships a full opinionated framework with DI and tooling built in, which large enterprise teams value for consistency; Vue offers a gentler middle ground with well-integrated defaults. Ask what the product needs: heavy forms and standards-heavy enterprise suites favor Angular, component-driven product UIs favor React or Vue. The worst choice is retraining a productive team for fashion.",
-      "keyTakeaway": "Team capability and ecosystem depth decide; framework syntax is a rounding error."
-    },
-    {
-      "id": "front-end-q4",
-      "difficulty": "intermediate",
-      "tags": ["react", "state-management", "context"],
-      "question": "When do you reach for Context, and when for a state library like Redux or Zustand?",
-      "answer": "Built-in state plus prop drilling is fine for local and parent-owned UI state. Context solves prop drilling for low-frequency global data, such as the current theme or locale, but every consumer re-renders on each value change, so it is wrong for rapidly changing data. A state library earns its place when many distant components share frequently updated state, when updates must be transactional, or when you need devtools time-travel for debugging. Default to the simplest thing, and extract a store when re-render pain is measured, not imagined.",
-      "keyTakeaway": "Context for slow global values; a store when shared state changes often."
-    },
-    {
-      "id": "front-end-q5",
-      "difficulty": "intermediate",
-      "tags": ["performance", "react", "typescript"],
-      "question": "A React page is slow. How do you diagnose and fix the rendering cost?",
-      "answer": "Measure first with the React profiler and find whether the cost is render work or commit work. Typical causes: large lists rendering every row, expensive computations inside render, new object or function props defeating memoization, and oversized bundles delaying first paint. Fixes in order of payoff: virtualize long lists, memoize derived data with useMemo keyed narrowly, stabilize prop identities, and code-split routes so users only download what they open. Re-measure after each change; memoizing everything adds complexity and usually fixes nothing.",
-      "keyTakeaway": "Profile before optimizing: virtualize lists, stabilize props, split routes, then re-measure.",
-      "code": {
-        "language": "typescript",
-        "snippet": "// derived rows recompute only when the filter changes\nconst visibleRows = useMemo(\n  () => rows.filter((r) => r.status === filter),\n  [rows, filter],\n);\n// stable handler identity keeps memoized children from re-rendering\nconst onRowClick = useCallback((id: string) => select(id), [select]);"
-      }
-    },
-    {
-      "id": "front-end-q6",
-      "difficulty": "intermediate",
-      "tags": ["ssr", "next", "rendering"],
-      "question": "Compare client-side rendering with server-side rendering and static generation.",
-      "answer": "Client-side rendering ships a small HTML shell and builds the page in the browser, which is simple and interactive but shows a blank shell until JavaScript loads, hurting slow connections and SEO. Server-side rendering produces HTML per request, so first contentful paint is fast and crawlers see content, at the cost of server work per page. Static generation prebuilds HTML at deploy time, giving the fastest delivery for content that changes on deploy or revalidation cadence. Pick per route: marketing and content pages static or SSR, authenticated interactive dashboards CSR or a mix.",
-      "keyTakeaway": "Choose rendering per route: static for content, SSR for dynamic first paint, CSR for heavy interaction."
-    },
-    {
-      "id": "front-end-q7",
-      "difficulty": "advanced",
-      "tags": ["typescript", "typing", "code-quality"],
-      "question": "How do you keep TypeScript strict without the types fighting the team?",
-      "answer": "Turn on strict mode from day one, because retrofitting strictness onto a loose codebase is far more expensive than starting strict. Ban any by lint rule, allow unknown at boundaries and narrow it, and prefer discriminated unions over optional-field soup, which makes impossible states unrepresentable. Reserve generics for real reuse; a generic that always gets the same parameter is ceremony. The remaining 5 percent of pragmatic escapes, typed as, non-null assertions, get an eslint-disable comment with a reason, so every lie in the types is visible in review.",
-      "keyTakeaway": "Strict from the start, unknown at the edges, unions for state, commented exceptions only."
-    },
-    {
-      "id": "front-end-q8",
-      "difficulty": "advanced",
-      "tags": ["accessibility", "spa", "focus"],
-      "question": "What does accessibility require in a single-page app beyond semantic HTML?",
-      "answer": "A SPA swaps content without a page load, so the browser's built-in announcements break and you must restore them. Manage focus: move it to new content after route or dialog transitions, trap it inside modals, and return it to the trigger on close. Announce async changes with aria-live regions so screen readers hear errors and loaded results, and keep keyboard paths working for every hover-only interaction. Test the whole flow with keyboard only and a screen reader at least once per feature, because automated audits catch markup issues but not focus order or announcement problems.",
-      "keyTakeaway": "SPAs own focus management and live announcements; audit with keyboard and a screen reader."
-    }
-  ]
+    "slug": "front-end",
+    "title": "Front-End Engineering: JavaScript, TypeScript, React",
+    "requirement": "Proficiency in modern front-end tech: JavaScript, TypeScript, React, Angular, or Vue.",
+    "questions": [
+        {
+            "id": "front-end-q1",
+            "difficulty": "basic",
+            "tags": [
+                "typescript",
+                "javascript",
+                "fundamentals"
+            ],
+            "question": "Why adopt TypeScript over plain JavaScript on a large codebase?",
+            "answer": "TypeScript checks module contracts at compile time, so a renamed field or changed signature breaks the build, not production. That matters when dozens of engineers touch the same code, since plain JavaScript defers mistakes to runtime. On a two-person prototype it can be overhead.",
+            "keyTakeaway": "Types move integration bugs from runtime to compile time; value grows with team size.",
+            "diagram": {
+                "kind": "compare",
+                "title": "TypeScript vs JavaScript",
+                "columns": [
+                    "TypeScript",
+                    "JavaScript"
+                ],
+                "rows": [
+                    {
+                        "label": "Errors surface",
+                        "values": [
+                            "at compile time",
+                            "in production"
+                        ]
+                    },
+                    {
+                        "label": "Types are",
+                        "values": [
+                            "executable docs",
+                            "absent"
+                        ]
+                    },
+                    {
+                        "label": "Best fit",
+                        "values": [
+                            "large teams, churn",
+                            "small prototypes"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "front-end-q2",
+            "difficulty": "basic",
+            "tags": [
+                "react",
+                "fundamentals",
+                "keys"
+            ],
+            "question": "What are state and props in React, and why does the key prop matter in lists?",
+            "answer": "Props are read-only inputs from the parent, and state is data the component owns and changes. A state change triggers a re-render, and React reconciles by element type and key. An array index as key reuses the wrong instance when items are inserted, removed, or reordered, which corrupts local state and input values. For dynamic lists I use stable business ids.",
+            "keyTakeaway": "Props flow down, state stays local; stable keys keep list identity correct across re-renders.",
+            "diagram": {
+                "kind": "flow",
+                "title": "List reconciliation",
+                "steps": [
+                    {
+                        "label": "List re-renders",
+                        "note": "new element tree"
+                    },
+                    {
+                        "label": "Diff type and key",
+                        "note": "identity decides reuse"
+                    },
+                    {
+                        "label": "Stable id key",
+                        "note": "existing instance moves"
+                    },
+                    {
+                        "label": "Index key",
+                        "note": "state lands on wrong item"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "front-end-q3",
+            "difficulty": "intermediate",
+            "tags": [
+                "react",
+                "angular",
+                "vue",
+                "decision"
+            ],
+            "question": "How do you choose between React, Angular, and Vue for a new project?",
+            "answer": "I decide on team skills, hiring pool, and ecosystem fit before syntax preferences. React has a huge ecosystem and is flexible, but teams assemble their own stack. Angular is an opinionated framework with DI and tooling, valued for enterprise consistency. Forms-heavy, standards-heavy enterprise suites favor Angular, and component-driven product UIs favor React or Vue. The worst choice is retraining a productive team for fashion.",
+            "keyTakeaway": "Team capability and ecosystem depth decide; framework syntax is a rounding error.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Framework choice",
+                "condition": "Forms-heavy enterprise suite?",
+                "yes": {
+                    "label": "Angular",
+                    "note": "opinionated, DI and tooling"
+                },
+                "no": {
+                    "label": "React or Vue",
+                    "note": "component-driven product UIs"
+                }
+            }
+        },
+        {
+            "id": "front-end-q4",
+            "difficulty": "intermediate",
+            "tags": [
+                "react",
+                "state-management",
+                "context"
+            ],
+            "question": "When do you reach for Context, and when for a state library like Redux or Zustand?",
+            "answer": "Built-in state plus prop drilling suits local state. Context suits low-frequency global data like theme or locale. Every consumer re-renders on each change, so it's wrong for rapidly changing data. I add a state library when many distant components share frequently updated state, when updates must be transactional, or when I need devtools time-travel.",
+            "keyTakeaway": "Context for slow global values; a store when shared state changes often.",
+            "diagram": {
+                "kind": "branch",
+                "title": "State placement",
+                "condition": "Frequent updates, far consumers?",
+                "yes": {
+                    "label": "Dedicated store",
+                    "note": "transactional updates, devtools"
+                },
+                "no": {
+                    "label": "Context or props",
+                    "note": "slow-changing global values"
+                }
+            }
+        },
+        {
+            "id": "front-end-q5",
+            "difficulty": "intermediate",
+            "tags": [
+                "performance",
+                "react",
+                "typescript"
+            ],
+            "question": "A React page is slow. How do you diagnose and fix the rendering cost?",
+            "answer": "I measure first with the React profiler to see whether it's render work or commit work. Typical causes are long lists rendering every row, expensive computation in render, new object or function props defeating memoization, and oversized bundles. I fix them in order of payoff: virtualize lists, useMemo derived data with narrow keys, stabilize prop identities, and code-split routes. Memoizing everything adds complexity and usually fixes nothing.",
+            "keyTakeaway": "Profile before optimizing: virtualize lists, stabilize props, split routes, then re-measure.",
+            "code": {
+                "language": "typescript",
+                "snippet": "// derived rows recompute only when the filter changes\nconst visibleRows = useMemo(\n  () => rows.filter((r) => r.status === filter),\n  [rows, filter],\n);\n// stable handler identity keeps memoized children from re-rendering\nconst onRowClick = useCallback((id: string) => select(id), [select]);"
+            },
+            "diagram": {
+                "kind": "flow",
+                "title": "Fixing React rendering cost",
+                "steps": [
+                    {
+                        "label": "Profile",
+                        "note": "render or commit work"
+                    },
+                    {
+                        "label": "Virtualize lists"
+                    },
+                    {
+                        "label": "Memoize narrowly",
+                        "note": "stable prop identities"
+                    },
+                    {
+                        "label": "Code-split routes"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "front-end-q6",
+            "difficulty": "intermediate",
+            "tags": [
+                "ssr",
+                "next",
+                "rendering"
+            ],
+            "question": "Compare client-side rendering with server-side rendering and static generation.",
+            "answer": "Client-side rendering ships a small HTML shell and builds the page in the browser. It's interactive, but blank until JavaScript loads, which hurts slow connections and SEO. Server-side rendering produces HTML per request, so you get fast first contentful paint and crawlable content, at the cost of server work. Static generation prebuilds HTML at deploy, which is fastest for content that changes only on deploy or revalidation. I pick per route: marketing and content pages static or SSR, authenticated dashboards CSR or a mix.",
+            "keyTakeaway": "Choose rendering per route: static for content, SSR for dynamic first paint, CSR for heavy interaction.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Rendering strategy",
+                "columns": [
+                    "CSR",
+                    "SSR",
+                    "SSG"
+                ],
+                "rows": [
+                    {
+                        "label": "First paint",
+                        "values": [
+                            "after JS loads",
+                            "fast per request",
+                            "fastest, prebuilt"
+                        ]
+                    },
+                    {
+                        "label": "Server cost",
+                        "values": [
+                            "none",
+                            "every request",
+                            "build time only"
+                        ]
+                    },
+                    {
+                        "label": "Best for",
+                        "values": [
+                            "dashboards",
+                            "dynamic, SEO pages",
+                            "marketing, docs"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "front-end-q7",
+            "difficulty": "advanced",
+            "tags": [
+                "typescript",
+                "typing",
+                "code-quality"
+            ],
+            "question": "How do you keep TypeScript strict without the types fighting the team?",
+            "answer": "I enable strict mode from day one, because retrofitting is far costlier. I ban any by lint rule. unknown is allowed at boundaries, where I narrow it. I prefer discriminated unions over optional-field soup. Escapes like as and non-null assertions need an eslint-disable comment with a reason, so every lie in the types is visible in review.",
+            "keyTakeaway": "Strict from the start, unknown at the edges, unions for state, commented exceptions only.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Strict TypeScript without friction",
+                "rows": [
+                    {
+                        "label": "Strict mode",
+                        "note": "On from day one"
+                    },
+                    {
+                        "label": "No any",
+                        "note": "Lint rule bans it"
+                    },
+                    {
+                        "label": "unknown at boundaries",
+                        "note": "Narrow before use"
+                    },
+                    {
+                        "label": "Discriminated unions",
+                        "note": "Instead of optional fields"
+                    },
+                    {
+                        "label": "Escapes",
+                        "note": "as and ! need a reason comment"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "front-end-q8",
+            "difficulty": "advanced",
+            "tags": [
+                "accessibility",
+                "spa",
+                "focus"
+            ],
+            "question": "What does accessibility require in a single-page app beyond semantic HTML?",
+            "answer": "An SPA swaps content without a page load, so the browser's built-in announcements break and I have to restore them. I move focus to the new content after route or dialog transitions, trap it in modals, and return it to the trigger on close. Async changes get announced with aria-live regions. Hover-only interactions need keyboard paths. I test each feature with keyboard only and with a screen reader.",
+            "keyTakeaway": "SPAs own focus management and live announcements; audit with keyboard and a screen reader.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Accessibility in a single-page app",
+                "steps": [
+                    {
+                        "label": "Route or dialog change",
+                        "note": "no page load"
+                    },
+                    {
+                        "label": "Move focus",
+                        "note": "to the new content"
+                    },
+                    {
+                        "label": "Announce changes",
+                        "note": "aria-live regions"
+                    },
+                    {
+                        "label": "Return focus",
+                        "note": "to trigger on close"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "front-end-q9",
+            "difficulty": "intermediate",
+            "tags": [
+                "javascript",
+                "event-loop",
+                "async"
+            ],
+            "question": "Walk me through the browser event loop: where do microtasks like promise callbacks fit?",
+            "answer": "The event loop runs the oldest task to completion, then drains the entire microtask queue before rendering or the next task. Microtasks are promise reactions, queueMicrotask, and MutationObserver. So an await chain fully resolves before any setTimeout fires, even a zero-millisecond one. A runaway microtask chain starves rendering just like a long synchronous task.",
+            "keyTakeaway": "Microtasks drain fully after each task, before the browser renders or runs the next timer.",
+            "code": {
+                "language": "typescript",
+                "snippet": "console.log('sync');\nsetTimeout(() => console.log('timeout'), 0);\nPromise.resolve().then(() => console.log('microtask'));\n// prints: sync, microtask, timeout (microtasks drain before timers)"
+            },
+            "diagram": {
+                "kind": "flow",
+                "title": "One turn of the event loop",
+                "steps": [
+                    {
+                        "label": "Run next task",
+                        "note": "timer, event, or network callback"
+                    },
+                    {
+                        "label": "Drain microtask queue",
+                        "note": "promises run until empty"
+                    },
+                    {
+                        "label": "Paint if due",
+                        "note": "style, layout, composite"
+                    },
+                    {
+                        "label": "Loop to next task",
+                        "note": "repeat forever"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "front-end-q10",
+            "difficulty": "intermediate",
+            "tags": [
+                "performance",
+                "events",
+                "techniques"
+            ],
+            "question": "When do you debounce versus throttle an expensive handler like scroll or search input?",
+            "answer": "Debounce resets the timer on every call and fires once events stop. It's right when only the final state matters, like search-as-you-type or autosave. Throttle fires at most once per interval, which suits scroll, resize, and drag tracking, where the UI must respond during the storm. The choice is a product decision about which intermediate states the user needs to see.",
+            "keyTakeaway": "Debounce fires after events stop; throttle fires at most once per interval during them.",
+            "code": {
+                "language": "typescript",
+                "snippet": "function debounce<A extends unknown[]>(fn: (...args: A) => void, ms: number) {\n  let timer: ReturnType<typeof setTimeout> | undefined;\n  return (...args: A) => {\n    clearTimeout(timer);\n    timer = setTimeout(() => fn(...args), ms);\n  };\n}"
+            },
+            "diagram": {
+                "kind": "compare",
+                "title": "Debounce vs throttle",
+                "columns": [
+                    "Debounce",
+                    "Throttle"
+                ],
+                "rows": [
+                    {
+                        "label": "Fires",
+                        "values": [
+                            "after events stop",
+                            "once per interval"
+                        ]
+                    },
+                    {
+                        "label": "Guarantees",
+                        "values": [
+                            "final state only",
+                            "steady max rate"
+                        ]
+                    },
+                    {
+                        "label": "Typical use",
+                        "values": [
+                            "search, autosave",
+                            "scroll, resize, drag"
+                        ]
+                    },
+                    {
+                        "label": "Misuse symptom",
+                        "values": [
+                            "UI feels dead",
+                            "wasted partial calls"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "front-end-q11",
+            "difficulty": "intermediate",
+            "tags": [
+                "storage",
+                "cookies",
+                "indexeddb",
+                "security"
+            ],
+            "question": "Where does client-side data belong: localStorage, IndexedDB, or cookies?",
+            "answer": "Cookies are for server communication, not storage, because they ride on every matching request. localStorage is synchronous, roughly five megabytes, with no expiry. It's right for preferences and cached flags, and wrong for large or structured data because it blocks the main thread. IndexedDB is asynchronous with indexes and transactions, and it's right for offline caches, drafts, and blobs despite the clunky API. Anything readable from JavaScript is readable by XSS, so HttpOnly cookies still matter for sessions.",
+            "keyTakeaway": "Cookies carry server-needed data, localStorage holds small synchronous preferences, IndexedDB stores large async data.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Client storage options",
+                "columns": [
+                    "Cookies",
+                    "localStorage",
+                    "IndexedDB"
+                ],
+                "rows": [
+                    {
+                        "label": "Size",
+                        "values": [
+                            "~4 KB",
+                            "~5 MB",
+                            "large"
+                        ]
+                    },
+                    {
+                        "label": "API",
+                        "values": [
+                            "sent with requests",
+                            "synchronous, blocking",
+                            "async, transactional"
+                        ]
+                    },
+                    {
+                        "label": "Expiry",
+                        "values": [
+                            "configurable",
+                            "never",
+                            "until deleted"
+                        ]
+                    },
+                    {
+                        "label": "Best for",
+                        "values": [
+                            "session auth",
+                            "preferences, flags",
+                            "offline data, blobs"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "front-end-q12",
+            "difficulty": "intermediate",
+            "tags": [
+                "performance",
+                "browser",
+                "rendering",
+                "css"
+            ],
+            "question": "Explain the browser rendering pipeline and which steps your CSS and JavaScript choices trigger.",
+            "answer": "After the DOM and CSSOM, the pipeline runs style, layout, paint, and composite. Changing color or transform skips layout and possibly paint. Transform and opacity animations are cheap because they run on the compositor thread and survive main-thread jank. Changing width or top forces layout, which can cascade into painting large regions. Reading layout properties like offsetHeight between writes forces a synchronous reflow.",
+            "keyTakeaway": "Transform and opacity animate on the compositor cheaply; geometry changes trigger costly layout and paint.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Rendering pipeline",
+                "steps": [
+                    {
+                        "label": "Style",
+                        "note": "resolve matched rules"
+                    },
+                    {
+                        "label": "Layout",
+                        "note": "compute geometry"
+                    },
+                    {
+                        "label": "Paint",
+                        "note": "fill pixels into layers"
+                    },
+                    {
+                        "label": "Composite",
+                        "note": "GPU stacks layers"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "front-end-q13",
+            "difficulty": "intermediate",
+            "tags": [
+                "react",
+                "errors",
+                "monitoring",
+                "reliability"
+            ],
+            "question": "How do you keep one broken component from blanking out an entire React app?",
+            "answer": "An error boundary implements componentDidCatch or static getDerivedStateFromError. It catches render, lifecycle, and constructor errors in its subtree and renders a fallback instead of a white screen. I place them around routes, critical widgets, and third-party embeds so a failure stays contained. It catches nothing in event handlers, async callbacks, or server-side rendering, so I use try-catch there.",
+            "keyTakeaway": "Wrap subtrees in error boundaries with fallbacks and report every catch to real monitoring.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Error boundary placement",
+                "rows": [
+                    {
+                        "label": "App shell",
+                        "note": "Always renders"
+                    },
+                    {
+                        "label": "Routes",
+                        "note": "Boundary per route"
+                    },
+                    {
+                        "label": "Widgets, embeds",
+                        "note": "Boundary each one"
+                    },
+                    {
+                        "label": "Handlers, async",
+                        "note": "Not caught, use try-catch"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "front-end-q14",
+            "difficulty": "intermediate",
+            "tags": [
+                "browser",
+                "http",
+                "cors",
+                "security"
+            ],
+            "question": "Why does a cross-origin fetch sometimes send an OPTIONS request before the real one?",
+            "answer": "CORS is a server-side opt-in that relaxes the browser's same-origin policy. Responses must carry Access-Control-Allow-Origin matching the caller's origin. Custom headers, the Authorization header, PUT or DELETE, or a JSON content type trigger a preflight OPTIONS. The browser generates the preflight, and the server must answer it correctly or the real request never leaves. Typical bugs are an origin allowed but not the headers, credentials needing an explicit origin instead of a wildcard, and routing layers dropping OPTIONS.",
+            "keyTakeaway": "Non-simple cross-origin requests get a browser-generated OPTIONS preflight the server must explicitly allow.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "CORS preflight",
+                "actors": [
+                    "Browser",
+                    "Server"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "OPTIONS asks permission"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "Allow origin, methods, headers"
+                    },
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Send real request"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "JS reads the response"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "front-end-q15",
+            "difficulty": "intermediate",
+            "tags": [
+                "forms",
+                "validation",
+                "architecture",
+                "security"
+            ],
+            "question": "Where should form validation live, and what does a good validation architecture look like?",
+            "answer": "Server-side validation is the only boundary that counts, because an attacker can't skip it. I treat everything else as UX. I share a schema like Zod between client and server so the rules are single-sourced. Errors get tied to fields with aria-describedby. And I never use a disabled submit button as a validation strategy, since it hides state.",
+            "keyTakeaway": "Validate once with a shared schema on the client for UX and again on the server for security.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Where validation lives",
+                "columns": [
+                    "Client",
+                    "Server"
+                ],
+                "rows": [
+                    {
+                        "label": "Role",
+                        "values": [
+                            "UX feedback",
+                            "The real boundary"
+                        ]
+                    },
+                    {
+                        "label": "Can be skipped",
+                        "values": [
+                            "Yes",
+                            "No"
+                        ]
+                    },
+                    {
+                        "label": "Rules",
+                        "values": [
+                            "Shared Zod schema",
+                            "Shared Zod schema"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "front-end-q16",
+            "difficulty": "intermediate",
+            "tags": [
+                "i18n",
+                "localization",
+                "rtl",
+                "css"
+            ],
+            "question": "What does making a front-end truly international require beyond translating strings?",
+            "answer": "I externalize every user-visible string into keyed resources. I never concatenate fragments, because sentence order differs across languages. Pluralization needs ICU plural rules: Russian has three plural forms, English two. For RTL I mirror the layout with logical CSS properties like margin-inline-start and test the full flow in Arabic. This is a day-one decision, since retrofitting i18n onto hardcoded strings is a rewrite.",
+            "keyTakeaway": "Keyed strings, ICU plurals, Intl formatting, and logical CSS properties are day-one architecture, not retrofit.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Localization surface",
+                "rows": [
+                    {
+                        "label": "Strings",
+                        "note": "keyed, never concatenated"
+                    },
+                    {
+                        "label": "Plurals, formats",
+                        "note": "ICU rules via Intl"
+                    },
+                    {
+                        "label": "Layout",
+                        "note": "logical properties mirror RTL"
+                    },
+                    {
+                        "label": "Locale detection",
+                        "note": "user choice, then fallback"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "front-end-q17",
+            "difficulty": "intermediate",
+            "tags": [
+                "web-components",
+                "architecture",
+                "decision"
+            ],
+            "question": "Do Web Components matter for new front-end work today, and where do they genuinely fit?",
+            "answer": "Custom elements, shadow DOM, and slots give you framework-agnostic, encapsulated components that work anywhere HTML does. The sweet spot is design systems shared across React, Angular, and Vue codebases, plus embeddable widgets and third-party scripts. Inside a single-React-team app they're usually wrong. Shadow DOM fights global styling, React integration is awkward, server rendering support is uneven, and the ecosystem is thinner.",
+            "keyTakeaway": "Web Components fit framework-agnostic, cross-team component sharing; single-framework apps rarely need them.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Where Web Components fit",
+                "columns": [
+                    "Good fit",
+                    "Poor fit"
+                ],
+                "rows": [
+                    {
+                        "label": "Context",
+                        "values": [
+                            "Design system across frameworks",
+                            "Single-React-team app"
+                        ]
+                    },
+                    {
+                        "label": "Also",
+                        "values": [
+                            "Embeddable widgets",
+                            "Needs SSR, global styling"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "front-end-q18",
+            "difficulty": "advanced",
+            "tags": [
+                "css",
+                "architecture",
+                "cascade-layers",
+                "container-queries"
+            ],
+            "question": "How do you keep CSS predictable in a codebase with hundreds of components?",
+            "answer": "I cap specificity with one class per element, via utilities or scoped modules, plus cascade layers for explicit precedence. A reset in a low layer never beats a component in a higher layer. Container queries let a card style itself from its container width instead of the viewport, so the same component works in a sidebar, a grid, and a modal. I ban important outside utilities, nested selectors deeper than two, and stylesheet imports ordered by luck.",
+            "keyTakeaway": "Cascade layers and container queries make component styling local, explicit, and viewport-independent.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Predictable CSS at scale",
+                "rows": [
+                    {
+                        "label": "Specificity cap",
+                        "note": "One class per element"
+                    },
+                    {
+                        "label": "Cascade layers",
+                        "note": "Explicit precedence, reset lowest"
+                    },
+                    {
+                        "label": "Container queries",
+                        "note": "Style from container width"
+                    },
+                    {
+                        "label": "Banned",
+                        "note": "important, deep nesting, lucky import order"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "front-end-q19",
+            "difficulty": "advanced",
+            "tags": [
+                "performance",
+                "bundling",
+                "code-splitting",
+                "ci"
+            ],
+            "question": "How do you set and enforce a JavaScript bundle budget, and what gets split first?",
+            "answer": "I start by measuring current sizes and the performance target on real devices. Then I set hard limits per route and per shared chunk, not one global number that hides a bloated page behind a tiny marketing one. I enforce them in CI with size-limit or bundler budget checks, and the build fails. I split by route first. Heavy dependencies such as editors, charts, and date libraries go behind dynamic imports loaded on interaction.",
+            "keyTakeaway": "Budget per route, enforce in CI, split routes first and heavy libraries behind dynamic imports.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Enforcing a bundle budget",
+                "steps": [
+                    {
+                        "label": "Measure",
+                        "note": "sizes on real devices"
+                    },
+                    {
+                        "label": "Set limits",
+                        "note": "per route and chunk"
+                    },
+                    {
+                        "label": "Enforce in CI",
+                        "note": "build fails over budget"
+                    },
+                    {
+                        "label": "Split",
+                        "note": "routes first, then heavy deps"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "front-end-q20",
+            "difficulty": "advanced",
+            "tags": [
+                "web-workers",
+                "performance",
+                "concurrency"
+            ],
+            "question": "When is a Web Worker the right answer, and what are its limits?",
+            "answer": "The main thread owns layout, paint, and input, so JavaScript running over roughly fifty milliseconds shows up as jank. I use a worker when the computation can't shrink: parsing large files, image processing, cryptography. Workers have a separate thread and no DOM access. They communicate by structured-cloned messages or transferable ArrayBuffers, which move large buffers without copying. SharedArrayBuffer with Atomics gives shared memory but has security restrictions.",
+            "keyTakeaway": "Move pure CPU-heavy computation to workers; they have no DOM and talk by message passing.",
+            "code": {
+                "language": "typescript",
+                "snippet": "const worker = new Worker(new URL('./search.worker.ts', import.meta.url));\nworker.onmessage = (e: MessageEvent<SearchResult[]>) => setHits(e.data);\nfunction runSearch(query: string, corpus: ArrayBuffer) {\n  worker.postMessage({ query, corpus }, [corpus]); // transferred, not copied\n}"
+            },
+            "diagram": {
+                "kind": "sequence",
+                "title": "Off-main-thread work",
+                "actors": [
+                    "User",
+                    "Main thread",
+                    "Worker"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Scrolls, types, taps"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Post heavy task"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "Result transferred, not copied"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "UI stays responsive"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "front-end-q21",
+            "difficulty": "advanced",
+            "tags": [
+                "security",
+                "csp",
+                "headers",
+                "xss"
+            ],
+            "question": "What does a Content Security Policy actually protect a front-end from, and why is unsafe-inline a red flag?",
+            "answer": "CSP is a browser-enforced allowlist of what the page may load and execute, set by header. Its value is that it turns XSS into a blocked request, because injected inline scripts don't run. The strength lives in the script directive, where nonce- or hash-based sources permit known scripts only. unsafe-inline largely surrenders the protection, so I review that flag. I roll out in report-only mode, watch violations, and tighten iteratively, because a broken policy silently kills analytics, fonts, and embeds.",
+            "keyTakeaway": "Ship nonce-based script-src, roll out report-only first, and treat unsafe-inline as a review blocker.",
+            "diagram": {
+                "kind": "branch",
+                "title": "CSP rollout",
+                "condition": "Violation reports arriving?",
+                "yes": {
+                    "label": "Tighten allowlist",
+                    "note": "fix sources, stay report-only"
+                },
+                "no": {
+                    "label": "Switch to enforce",
+                    "note": "drop report-only mode"
+                }
+            }
+        },
+        {
+            "id": "front-end-q22",
+            "difficulty": "advanced",
+            "tags": [
+                "feature-flags",
+                "release-management",
+                "architecture"
+            ],
+            "question": "How should feature flags be handled in client code without wrecking performance or code hygiene?",
+            "answer": "Flags decouple deploy from release. I evaluate them early, at the edge or bootstrap, so the client downloads one variant's code and not all of it behind a runtime switch. Flagged code goes behind an abstraction that reads one config snapshot, and I never scatter flag checks through components. Hygiene is the real discipline. Every flag gets an owner, an expiry, and a removal ticket on day one, because dead flags are unreached code paths that still get tested and styled.",
+            "keyTakeaway": "Evaluate flags early, give each an owner and expiry, and delete them the day they resolve.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Client-side feature flags",
+                "steps": [
+                    {
+                        "label": "Evaluate early",
+                        "note": "edge or bootstrap"
+                    },
+                    {
+                        "label": "Ship one variant",
+                        "note": "not all code"
+                    },
+                    {
+                        "label": "Read one snapshot",
+                        "note": "behind an abstraction"
+                    },
+                    {
+                        "label": "Remove the flag",
+                        "note": "owner and expiry"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "front-end-q23",
+            "difficulty": "advanced",
+            "tags": [
+                "bundling",
+                "tree-shaking",
+                "performance",
+                "esm"
+            ],
+            "question": "Why doesn't tree-shaking always remove dead code, and what breaks it?",
+            "answer": "Tree-shaking is static reachability analysis over ES module exports, and the bundler keeps only what the entry reaches. Side effects break it, so top-level statements, polyfills, and CSS imports must be assumed needed. CommonJS interop defeats it. The sideEffects field in package.json and pure annotations mark what's droppable. Barrel files often drag everything in. I verify with a bundle analyzer, since one named export from a barrel can ship a whole library.",
+            "keyTakeaway": "Side effects and CommonJS defeat tree-shaking; verify with an analyzer and prefer honest ESM packages.",
+            "diagram": {
+                "kind": "compare",
+                "title": "What breaks tree-shaking",
+                "columns": [
+                    "Shakes well",
+                    "Breaks it"
+                ],
+                "rows": [
+                    {
+                        "label": "Module format",
+                        "values": [
+                            "ES modules",
+                            "CommonJS interop"
+                        ]
+                    },
+                    {
+                        "label": "Code",
+                        "values": [
+                            "Pure, no side effects",
+                            "Top-level side effects"
+                        ]
+                    },
+                    {
+                        "label": "Imports",
+                        "values": [
+                            "Direct named exports",
+                            "Barrel files"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "front-end-q24",
+            "difficulty": "advanced",
+            "tags": [
+                "design-tokens",
+                "theming",
+                "css",
+                "accessibility"
+            ],
+            "question": "How do you implement design tokens and theming so adding dark mode is not a rewrite?",
+            "answer": "Design tokens are named decisions for color, spacing, and type scale, compiled into CSS custom properties. Components reference var(--color-surface) and never raw hex. Primitive tokens define the palette, and semantic tokens like surface or danger map primitives per theme. A theme switch swaps only the semantic layer, usually via a data attribute on the root. I keep one source owned jointly with design and generated output, with no hand-edited CSS values.",
+            "keyTakeaway": "Components consume semantic tokens only; a theme swap rebinds those tokens at the root.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Token architecture",
+                "rows": [
+                    {
+                        "label": "Primitives",
+                        "note": "raw palette, spacing scale"
+                    },
+                    {
+                        "label": "Semantic tokens",
+                        "note": "surface, danger per theme"
+                    },
+                    {
+                        "label": "Theme binding",
+                        "note": "root attribute swaps mapping"
+                    },
+                    {
+                        "label": "Components",
+                        "note": "read semantics, never hex"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "front-end-q25",
+            "difficulty": "advanced",
+            "tags": [
+                "hydration",
+                "ssr",
+                "performance",
+                "architecture"
+            ],
+            "question": "What problem does hydration solve, and when do islands or resumability beat it?",
+            "answer": "Server HTML arrives inert. Hydration attaches handlers and state by re-executing components on the client, so the whole tree's JavaScript has to download and run before anything responds. Full hydration pays that for every component, so content-heavy pages look fast and feel slow. Islands hydrate only the interactive fragments, such as a carousel or search box. Resumability, as Qwik frames it, skips re-execution by serializing state and handler references into the HTML. A dashboard justifies full hydration, and a docs site with few widgets doesn't.",
+            "keyTakeaway": "Match hydration strategy to interactivity density: full for dashboards, islands for mostly-static pages.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Hydration strategies",
+                "columns": [
+                    "Full hydration",
+                    "Islands",
+                    "Resumability"
+                ],
+                "rows": [
+                    {
+                        "label": "Client JS",
+                        "values": [
+                            "entire tree",
+                            "islands only",
+                            "minimal runtime"
+                        ]
+                    },
+                    {
+                        "label": "Interactive when",
+                        "values": [
+                            "after full run",
+                            "per island",
+                            "immediately"
+                        ]
+                    },
+                    {
+                        "label": "Best for",
+                        "values": [
+                            "dashboards, apps",
+                            "content plus widgets",
+                            "huge content pages"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "front-end-q26",
+            "difficulty": "advanced",
+            "tags": [
+                "memory",
+                "performance",
+                "spa",
+                "debugging"
+            ],
+            "question": "What causes memory leaks in a long-lived single-page app, and how do you hunt them down?",
+            "answer": "Leaks come from anything that outlives its purpose: listeners on document or window that are never removed, intervals and subscriptions without effect cleanup, closures captured by caches, and detached DOM nodes held by arrays or module-level maps. I take Chrome heap snapshots before and after repeating an action, look for growing detached nodes and retainer chains, and fix the owner, not the symptom. With AbortController, I pass its signal to addEventListener and fetch, and one abort tears them all down.",
+            "keyTakeaway": "Heap snapshots around a repeated action reveal leaks; clean up listeners, timers, and subscriptions on unmount.",
+            "code": {
+                "language": "typescript",
+                "snippet": "useEffect(() => {\n  const controller = new AbortController();\n  window.addEventListener('resize', onResize, { signal: controller.signal });\n  fetch('/api/data', { signal: controller.signal });\n  return () => controller.abort(); // removes listener, cancels fetch\n}, []);"
+            },
+            "diagram": {
+                "kind": "flow",
+                "title": "Hunting an SPA memory leak",
+                "steps": [
+                    {
+                        "label": "Snapshot before",
+                        "note": "Chrome heap"
+                    },
+                    {
+                        "label": "Repeat the action"
+                    },
+                    {
+                        "label": "Snapshot after",
+                        "note": "detached nodes grow"
+                    },
+                    {
+                        "label": "Fix the owner",
+                        "note": "cleanup, AbortController"
+                    }
+                ]
+            }
+        }
+    ]
 }

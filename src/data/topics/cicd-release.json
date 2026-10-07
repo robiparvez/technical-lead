@@ -1,84 +1,1013 @@
 {
-  "slug": "cicd-release",
-  "title": "CI/CD & Release Planning",
-  "requirement": "Oversee release planning, integration, CI/CD across multi-environment infrastructure.",
-  "questions": [
-    {
-      "id": "cicd-release-q1",
-      "difficulty": "basic",
-      "tags": ["ci", "cd", "fundamentals"],
-      "question": "What do CI and CD actually mean, and what do people get wrong about them?",
-      "answer": "Continuous integration means every change merges to main frequently and is built and tested automatically, keeping the branch releasable. Continuous delivery means the pipeline produces a deployable artifact and can release it to production on demand with one approval; continuous deployment goes further and releases every green build without a human gate. The common failure is calling a build server CI while teams sit on long-lived branches and merge weekly with conflicts. If main cannot ship at any time, you have a build chain, not CI.",
-      "keyTakeaway": "CI keeps main releasable; CD makes releasing a non-event, not a quarterly project.",
-      "diagram": "ci-cd-pipeline"
-    },
-    {
-      "id": "cicd-release-q2",
-      "difficulty": "basic",
-      "tags": ["pipeline", "stages", "yaml"],
-      "question": "Walk through the stages of a healthy pipeline for a web service.",
-      "answer": "Fast feedback first: lint and unit tests in minutes on every commit, then an artifact build once, then integration and end-to-end tests against that immutable artifact. After tests, publish and deploy to a staging environment that mirrors production, run smoke tests, and gate production behind approval or automated promotion. Security scans, dependency audits, and image scans run in parallel rather than in series where they slow every commit. Each stage fails loudly with a clear log, and nothing manual happens between commit and staging.",
-      "keyTakeaway": "Fast gates first, one artifact promoted through environments, nothing manual before staging.",
-      "code": {
-        "language": "yaml",
-        "snippet": "stages:\n  - lint-unit      # minutes: typecheck, lint, unit tests on every commit\n  - build          # one immutable artifact, tagged with the commit sha\n  - integration    # contract + API tests against the artifact\n  - staging        # auto-deploy, smoke tests, security scans in parallel\n  - production     # manual approval or automated canary promotion"
-      }
-    },
-    {
-      "id": "cicd-release-q3",
-      "difficulty": "intermediate",
-      "tags": ["branching", "trunk-based", "git"],
-      "question": "Trunk-based development or feature branches with pull requests?",
-      "answer": "Trunk-based development merges small changes to main behind feature flags, integrating within a day or two, which keeps integration pain proportional to change size and pairs naturally with CI. Long-lived feature branches isolate work for weeks, and the merge becomes a mini-integration project with conflicts and semantic clashes no diff shows. Pull requests still exist in trunk-based teams, but they stay small and short-lived. The workable middle ground is short branches with a strict merge-within-days rule and stacked changes for bigger features; the failure mode to kill is the two-week branch.",
-      "keyTakeaway": "Integrate daily in small slices; hide unfinished work with flags, not branches."
-    },
-    {
-      "id": "cicd-release-q4",
-      "difficulty": "intermediate",
-      "tags": ["testing", "test-pyramid", "quality-gates"],
-      "question": "Which tests gate the pipeline, and which run elsewhere?",
-      "answer": "The pipeline gates on the fast and deterministic layers: unit tests, contract tests, and a thin set of critical-path end-to-end tests, because a flaky gate trains people to retry instead of read. The slow, broad UI suites and exploratory testing run nightly or on demand, reporting into the same dashboards without blocking merges. Every gate must have an owner and an on-call fix expectation, or flakiness accumulates. When a defect escapes, add the cheapest test that would have caught it at the earliest layer, not another end-to-end case.",
-      "keyTakeaway": "Gate on fast deterministic tests; run slow breadth out-of-band; fix flakiness like production debt."
-    },
-    {
-      "id": "cicd-release-q5",
-      "difficulty": "intermediate",
-      "tags": ["deployment", "blue-green", "canary"],
-      "question": "Compare rolling, blue-green, and canary deployments.",
-      "answer": "Rolling replaces instances gradually, needs no extra capacity beyond surge, and mixes versions briefly, which breaks schemas that change incompatibly. Blue-green stands up a full second environment and switches traffic at once, making rollback a switch flip, at double the infrastructure cost during release. Canary sends a small slice of real traffic to the new version, watches errors and latency, and auto-promotes or backs out, which is the safest way to catch rare production-only failures. Choose by blast radius and cost: internal tools roll, money paths canary.",
-      "keyTakeaway": "Rolling is cheap, blue-green flips back instantly, canary proves with real traffic first."
-    },
-    {
-      "id": "cicd-release-q6",
-      "difficulty": "advanced",
-      "tags": ["release-planning", "rollback", "multi-environment"],
-      "question": "How do you plan a release across dev, staging, and production when three teams contribute?",
-      "answer": "Freeze the release content by what has passed staging, not by calendar aspiration, and cut a release branch or tag from that proven commit. Sequence dependencies explicitly: database migrations ship backward-compatible first, services that tolerate both versions second, cleanup last, so a rollback never strands data. Each team owns its service's readiness checklist and sign-off, while one release owner tracks the train, the environment state, and the abort criteria. Communicate the window, the expected errors, and the rollback plan in writing before touching production.",
-      "keyTakeaway": "Release what staging proved; sequence migrations for rollback; one owner, written abort criteria."
-    },
-    {
-      "id": "cicd-release-q7",
-      "difficulty": "advanced",
-      "tags": ["security", "secrets", "supply-chain"],
-      "question": "How do you secure a CI/CD pipeline itself?",
-      "answer": "Treat the pipeline as production: least-privilege credentials per environment, injected at deploy time from a secret manager, never checked into the repo or echoed into logs. Pin dependencies and base images by digest, verify signatures, and scan artifacts so a compromised upstream package cannot walk into production. Restrict who can change pipeline definitions and require review on those files exactly like application code, because a pipeline edit is a key to production. Audit who deployed what, when, and from which commit, and alert on out-of-band deployments.",
-      "keyTakeaway": "Least-privilege deploy credentials, pinned and scanned supply chain, reviewed pipeline changes."
-    },
-    {
-      "id": "cicd-release-q8",
-      "difficulty": "advanced",
-      "tags": ["metrics", "dora", "process"],
-      "question": "Which delivery metrics do you watch to know the pipeline is healthy?",
-      "answer": "Lead time from commit to production shows flow, deployment frequency shows batch size, change failure rate shows quality, and time to restore shows resilience; together they are the DORA set. Rising lead time with falling failure rate means fear is accumulating, and frequent failed deploys mean the gates are weak or the tests lie. Pair them with pipeline-specific signals: stage duration, flake rate, queue time, and rollback rate. Use trends as conversation starters with the team, never as individual performance scores, or the numbers get gamed.",
-      "keyTakeaway": "Watch lead time, frequency, failure rate, and restore time as trends, never as blame."
-    },
-    {
-      "id": "cicd-release-q9",
-      "difficulty": "advanced",
-      "tags": ["observability", "time-series", "alerting"],
-      "question": "How would you design the metrics monitoring and alerting pipeline for a large infrastructure?",
-      "answer": "Five stages: agents collect metrics from sources, a transport layer ships them, a time-series store persists them, an alerting layer evaluates rules over the stream, and dashboards visualize. The data model is a time series identified by metric name plus labels, each point a timestamp and a value, and the access pattern is write-heavy with bursty reads during incidents, which is why general-purpose databases fit poorly and time-series stores win. Roll data up to survive retention: raw resolution for days, one-minute for a month, one-hour for a year, trading resolution for storage. Alert rules run against the stream or rollups and route through channels like email, phone, and pager services, with grouping and suppression so alert fatigue does not bury a real incident. The monitoring stack must be more available than what it watches, so run it out-of-band with its own failure alerts, or the outage takes its own telemetry with it.",
-      "keyTakeaway": "Collect, ship, store as time series with rollups, alert with grouping, out-of-band from production."
-    }
-  ]
+    "slug": "cicd-release",
+    "title": "CI/CD & Release Planning",
+    "requirement": "Oversee release planning, integration, CI/CD across multi-environment infrastructure.",
+    "questions": [
+        {
+            "id": "cicd-release-q1",
+            "difficulty": "basic",
+            "tags": [
+                "ci",
+                "cd",
+                "fundamentals"
+            ],
+            "question": "What do CI and CD actually mean, and what do people get wrong about them?",
+            "answer": "In CI, changes merge to main often and get built and tested automatically, so main stays releasable. Continuous delivery means the pipeline always produces a deployable artifact you can release on demand with one approval. Continuous deployment releases every green build with no human gate. The common mistake is calling a build server CI while teams sit on long-lived branches and merge weekly with conflicts. If main can't ship at any time, what you have is a build chain, not CI.",
+            "keyTakeaway": "CI keeps main releasable; CD makes releasing a non-event, not a quarterly project.",
+            "diagram": "ci-cd-pipeline"
+        },
+        {
+            "id": "cicd-release-q2",
+            "difficulty": "basic",
+            "tags": [
+                "pipeline",
+                "stages",
+                "yaml"
+            ],
+            "question": "Walk through the stages of a healthy pipeline for a web service.",
+            "answer": "I put fast feedback first: lint and unit tests on every commit. I build the artifact once, then run integration and end-to-end tests against that immutable artifact. After that it deploys to a production-like staging, smoke tests run, and production sits behind an approval gate. Scans run in parallel. Nothing manual happens before staging.",
+            "keyTakeaway": "Fast gates first, one artifact promoted through environments, nothing manual before staging.",
+            "code": {
+                "language": "yaml",
+                "snippet": "stages:\n  - lint-unit      # minutes: typecheck, lint, unit tests on every commit\n  - build          # one immutable artifact, tagged with the commit sha\n  - integration    # contract + API tests against the artifact\n  - staging        # auto-deploy, smoke tests, security scans in parallel\n  - production     # manual approval or automated canary promotion"
+            },
+            "diagram": {
+                "kind": "flow",
+                "title": "Healthy pipeline stages",
+                "steps": [
+                    {
+                        "label": "Lint and unit",
+                        "note": "Minutes, every commit"
+                    },
+                    {
+                        "label": "Build artifact",
+                        "note": "Once, tagged with SHA"
+                    },
+                    {
+                        "label": "Integration tests",
+                        "note": "Against that artifact"
+                    },
+                    {
+                        "label": "Deploy to staging",
+                        "note": "Smoke tests, parallel scans"
+                    },
+                    {
+                        "label": "Production gate",
+                        "note": "Approval or canary promotion"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cicd-release-q3",
+            "difficulty": "intermediate",
+            "tags": [
+                "branching",
+                "trunk-based",
+                "git"
+            ],
+            "question": "Trunk-based development or feature branches with pull requests?",
+            "answer": "I go trunk-based: small changes merge to main behind feature flags within a day or two, so integration pain stays proportional to the size of the change. Long-lived branches merge weeks of semantic clashes that no diff shows. Pull requests stay, but small and short-lived. The middle ground is short branches with a strict rule to merge within days.",
+            "keyTakeaway": "Integrate daily in small slices; hide unfinished work with flags, not branches.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Integration strategies",
+                "columns": [
+                    "Trunk-based",
+                    "Long-lived branches"
+                ],
+                "rows": [
+                    {
+                        "label": "Integration",
+                        "values": [
+                            "Daily, small slices",
+                            "Weekly merge project"
+                        ]
+                    },
+                    {
+                        "label": "Conflicts",
+                        "values": [
+                            "Trivial and continuous",
+                            "Stacked and semantic"
+                        ]
+                    },
+                    {
+                        "label": "Unfinished work",
+                        "values": [
+                            "Hidden by flags",
+                            "Hidden by branches"
+                        ]
+                    },
+                    {
+                        "label": "Pull requests",
+                        "values": [
+                            "Small and short-lived",
+                            "Large and slow"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cicd-release-q4",
+            "difficulty": "intermediate",
+            "tags": [
+                "testing",
+                "test-pyramid",
+                "quality-gates"
+            ],
+            "question": "Which tests gate the pipeline, and which run elsewhere?",
+            "answer": "I gate on fast, deterministic layers: unit tests, contract tests, and a thin set of critical-path end-to-end tests. A flaky gate trains people to retry instead of read. Slow UI suites and exploratory testing run nightly and don't block merges. After an escaped defect, I add the cheapest test at the earliest layer, not another end-to-end case.",
+            "keyTakeaway": "Gate on fast deterministic tests; run slow breadth out-of-band; fix flakiness like production debt.",
+            "diagram": {
+                "kind": "layers",
+                "title": "What gates what",
+                "rows": [
+                    {
+                        "label": "Unit tests",
+                        "note": "Gate every commit"
+                    },
+                    {
+                        "label": "Contract tests",
+                        "note": "Gate service boundaries"
+                    },
+                    {
+                        "label": "Critical end-to-end",
+                        "note": "Thin set, gates merge"
+                    },
+                    {
+                        "label": "Broad UI suites",
+                        "note": "Nightly, non-blocking"
+                    },
+                    {
+                        "label": "Exploratory testing",
+                        "note": "On demand, reported"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cicd-release-q5",
+            "difficulty": "intermediate",
+            "tags": [
+                "deployment",
+                "blue-green",
+                "canary"
+            ],
+            "question": "Compare rolling, blue-green, and canary deployments.",
+            "answer": "Rolling replaces instances gradually, so versions mix briefly and incompatible schema changes break. Blue-green switches traffic to a full second environment, so rollback is a switch flip, but you pay double during the release. Canary sends a small slice of real traffic to the new version and watches errors and latency. I'd roll internal tools and canary the money paths.",
+            "keyTakeaway": "Rolling is cheap, blue-green flips back instantly, canary proves with real traffic first.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Deployment strategies",
+                "columns": [
+                    "Rolling",
+                    "Blue-green",
+                    "Canary"
+                ],
+                "rows": [
+                    {
+                        "label": "Blast radius",
+                        "values": [
+                            "Mixed versions briefly",
+                            "All at once",
+                            "Small traffic slice"
+                        ]
+                    },
+                    {
+                        "label": "Rollback",
+                        "values": [
+                            "Roll forward or back",
+                            "Flip traffic back",
+                            "Automatic on signals"
+                        ]
+                    },
+                    {
+                        "label": "Cost",
+                        "values": [
+                            "Surge capacity only",
+                            "Double during release",
+                            "Fractional overhead"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cicd-release-q6",
+            "difficulty": "advanced",
+            "tags": [
+                "release-planning",
+                "rollback",
+                "multi-environment"
+            ],
+            "question": "How do you plan a release across dev, staging, and production when three teams contribute?",
+            "answer": "I freeze the content by what passed staging and tag the release from that commit. The sequence is backward-compatible migrations first, services that tolerate both versions second, and cleanup last, so rollback never strands data. Each team owns its readiness checklist, and one release owner tracks abort criteria. Before anything starts, we write down the window, the expected errors, and the rollback plan.",
+            "keyTakeaway": "Release what staging proved; sequence migrations for rollback; one owner, written abort criteria.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Coordinated release train",
+                "actors": [
+                    "Release owner",
+                    "CI/CD",
+                    "Staging",
+                    "Production"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Freeze proven commit"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Deploy release candidate"
+                    },
+                    {
+                        "from": 2,
+                        "to": 0,
+                        "label": "Smoke tests reported"
+                    },
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Green-light production"
+                    },
+                    {
+                        "from": 1,
+                        "to": 3,
+                        "label": "Promote same artifact"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cicd-release-q7",
+            "difficulty": "advanced",
+            "tags": [
+                "security",
+                "secrets",
+                "supply-chain"
+            ],
+            "question": "How do you secure a CI/CD pipeline itself?",
+            "answer": "I treat the pipeline as production. Least-privilege credentials are injected per environment from a secret manager at deploy time, never in the repo or logs. I pin dependencies and base images by digest, verify signatures, and scan artifacts. Changes to the pipeline definition get reviewed like application code. We audit who deployed what from which commit, and alert on out-of-band deployments.",
+            "keyTakeaway": "Least-privilege deploy credentials, pinned and scanned supply chain, reviewed pipeline changes.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Pipeline defense in depth",
+                "rows": [
+                    {
+                        "label": "Reviewed pipeline code",
+                        "note": "Changes like application code"
+                    },
+                    {
+                        "label": "Federated credentials",
+                        "note": "OIDC, short-lived, scoped"
+                    },
+                    {
+                        "label": "Pinned supply chain",
+                        "note": "Digests, signatures, scans"
+                    },
+                    {
+                        "label": "Least-privilege deploys",
+                        "note": "Secrets injected at deploy"
+                    },
+                    {
+                        "label": "Full audit trail",
+                        "note": "Who deployed what, when"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cicd-release-q8",
+            "difficulty": "advanced",
+            "tags": [
+                "metrics",
+                "dora",
+                "process"
+            ],
+            "question": "Which delivery metrics do you watch to know the pipeline is healthy?",
+            "answer": "Lead time shows flow, deployment frequency shows batch size, change failure rate shows quality, and time to restore shows resilience. Those are the DORA set. Rising lead time with a falling failure rate means fear is accumulating. I'd add stage duration, flake rate, and queue time. Never use the trends as individual scores, or the numbers get gamed.",
+            "keyTakeaway": "Watch lead time, frequency, failure rate, and restore time as trends, never as blame.",
+            "diagram": {
+                "kind": "layers",
+                "title": "DORA metrics",
+                "rows": [
+                    {
+                        "label": "Lead time",
+                        "note": "Shows flow"
+                    },
+                    {
+                        "label": "Deployment frequency",
+                        "note": "Shows batch size"
+                    },
+                    {
+                        "label": "Change failure rate",
+                        "note": "Shows quality"
+                    },
+                    {
+                        "label": "Time to restore",
+                        "note": "Shows resilience"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cicd-release-q9",
+            "difficulty": "advanced",
+            "tags": [
+                "observability",
+                "time-series",
+                "alerting"
+            ],
+            "question": "How would you design the metrics monitoring and alerting pipeline for a large infrastructure?",
+            "answer": "There are five stages: agents collect metrics, transport ships them, a time-series store persists them, alerting evaluates rules, and dashboards visualize. A series is identified by metric name plus labels, and each point is a timestamp and a value. The load is write-heavy with bursty reads during incidents, so time-series stores beat general databases. I roll up data: raw for days, one-minute for a month, one-hour for a year. Alerts get grouped and suppressed against fatigue. Monitoring runs out-of-band with its own failure alerts, or an outage takes its telemetry down too.",
+            "keyTakeaway": "Collect, ship, store as time series with rollups, alert with grouping, out-of-band from production.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Metrics monitoring pipeline",
+                "steps": [
+                    {
+                        "label": "Agents",
+                        "note": "collect metrics"
+                    },
+                    {
+                        "label": "Transport",
+                        "note": "ships the data"
+                    },
+                    {
+                        "label": "Time-series store",
+                        "note": "persists and rolls up"
+                    },
+                    {
+                        "label": "Alerting",
+                        "note": "grouped, suppressed"
+                    },
+                    {
+                        "label": "Dashboards",
+                        "note": "visualize"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cicd-release-q10",
+            "difficulty": "intermediate",
+            "tags": [
+                "monorepo",
+                "ci",
+                "affected-graph"
+            ],
+            "question": "How do you keep CI fast in a monorepo where one commit touches dozens of packages?",
+            "answer": "I build a dependency graph, compute the affected set from the files a commit touches, and run only those packages' jobs. Nx, Turborepo, and Bazel do this. Remote caching restores packages whose inputs hash identically. The failure mode is a stale graph silently skipping affected code, so I test the graph like migrations and keep a nightly full build as a safety net. Queue time drops by an order of magnitude when a docs change stops triggering forty container builds.",
+            "keyTakeaway": "In a monorepo, build only what the dependency graph says changed; everything else rides the cache.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Monorepo affected-graph CI",
+                "steps": [
+                    {
+                        "label": "List changed files",
+                        "note": "From the commit diff"
+                    },
+                    {
+                        "label": "Compute affected graph",
+                        "note": "Packages depending on changes"
+                    },
+                    {
+                        "label": "Schedule affected jobs",
+                        "note": "Everything else skipped"
+                    },
+                    {
+                        "label": "Restore remote cache",
+                        "note": "Hash inputs, reuse outputs"
+                    },
+                    {
+                        "label": "Nightly full build",
+                        "note": "Safety net for graph drift"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cicd-release-q11",
+            "difficulty": "intermediate",
+            "tags": [
+                "testing",
+                "flaky-tests",
+                "quarantine",
+                "ci"
+            ],
+            "question": "What is your policy for flaky tests in CI?",
+            "answer": "A flaky gate is worse than no gate, because people hit retry without reading. Any test that fails without a code change gets quarantined immediately, out of the gating job. We auto-file a ticket, assign an owner, and set a one-week fix-or-delete deadline. Retries only confirm flakiness and never pass the gate. Forty unowned quarantined tests means the suite has stopped describing the system.",
+            "keyTakeaway": "Quarantine a flaky test with a tracked ticket and a deadline, or delete it — never normalize retries.",
+            "code": {
+                "language": "yaml",
+                "snippet": "unit-gate:\n  script:\n    - pytest tests/ -m \"not quarantine\"      # flaky tests never gate here\nquarantine:\n  script:\n    - pytest tests/ -m quarantine --maxfail=1\n  rules:\n    - if: $CI_PIPELINE_SOURCE == \"schedule\"\n# each quarantined test carries an owner and a one-week fix-or-delete ticket"
+            },
+            "diagram": {
+                "kind": "branch",
+                "title": "Flaky test policy",
+                "condition": "Fails without a code change?",
+                "yes": {
+                    "label": "Quarantine with ticket",
+                    "note": "One-week fix-or-delete deadline"
+                },
+                "no": {
+                    "label": "Fix or revert now",
+                    "note": "Red gate blocks the merge"
+                }
+            }
+        },
+        {
+            "id": "cicd-release-q12",
+            "difficulty": "intermediate",
+            "tags": [
+                "artifacts",
+                "promotion",
+                "immutability"
+            ],
+            "question": "Why build once and promote the same artifact through environments?",
+            "answer": "If staging tests artifact A and production deploys B, the green tests were theater. So I build exactly once, tag immutably with the commit digest, and publish to the registry. Every promotion references the digest, never a moving tag like latest. Only injected configuration and secrets differ per environment. Rebuilding per environment reintroduces drift in dependencies, base images, and compiler flags. The exception is multi-architecture targets, which come from one build matrix.",
+            "keyTakeaway": "Test the digest you deploy; rebuilding anywhere in the chain voids every upstream result.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Build once, promote the digest",
+                "actors": [
+                    "CI",
+                    "Artifact store",
+                    "Staging",
+                    "Production"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Publish immutable digest"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Promote with staging config"
+                    },
+                    {
+                        "from": 2,
+                        "to": 3,
+                        "label": "Approval promotes forward"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cicd-release-q13",
+            "difficulty": "intermediate",
+            "tags": [
+                "environment-parity",
+                "configuration",
+                "staging"
+            ],
+            "question": "How do you keep staging honest when production is a hundred containers and staging is three?",
+            "answer": "I think of parity as a budget. I spend it on the axes that already bit us: orchestration primitives, service mesh, config mechanism, and database engine and version. Use fewer replicas and smaller data, but never diverge topology. Configuration is injected at deploy time and never baked into the image, so one artifact runs everywhere. For data I use synthetic or anonymized production-shaped data, not empty fixtures or full copies, which usually end in a compliance incident. When a bug reproduces only in production, I record which parity axis failed.",
+            "keyTakeaway": "Staging should be production shrunk, not production simplified; inject config, never bake it.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Staging parity",
+                "columns": [
+                    "Keep the same",
+                    "Allowed to shrink"
+                ],
+                "rows": [
+                    {
+                        "label": "Topology",
+                        "values": [
+                            "Orchestration, mesh, DB engine",
+                            "Replica count"
+                        ]
+                    },
+                    {
+                        "label": "Config",
+                        "values": [
+                            "Injected at deploy time",
+                            "Never baked into image"
+                        ]
+                    },
+                    {
+                        "label": "Data",
+                        "values": [
+                            "Production-shaped",
+                            "Smaller, anonymized"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cicd-release-q14",
+            "difficulty": "intermediate",
+            "tags": [
+                "database",
+                "migrations",
+                "expand-contract",
+                "deployment"
+            ],
+            "question": "How do you ship a database schema change without taking the table offline?",
+            "answer": "Expand and contract. First deploy the backward-compatible expansion: a nullable column, a throttled batch backfill, and dual-write if semantics changed. Then ship code that reads and writes the new shape while tolerating the old. Old and new versions run side by side during rollout. Only after no old version remains do we contract: drop the old column and remove the dual-write. Each step is its own release. I never weld a migration to an application deploy.",
+            "keyTakeaway": "Expand first, migrate in place, contract last — every deploy step stays reversible.",
+            "code": {
+                "language": "yaml",
+                "snippet": "pre_deploy:\n  script:\n    - ./migrate up --target \"expand-$CI_COMMIT_SHORT_SHA\"   # additive, backward-compatible only\n    - ./migrate verify --compatible-with previous-release\ndeploy:\n  script:\n    - ./release app --strategy rolling --wait-healthy\n# contract steps (drop old column) ride a later release train"
+            },
+            "diagram": {
+                "kind": "sequence",
+                "title": "Expand-contract migration",
+                "actors": [
+                    "Pipeline",
+                    "Database",
+                    "App v1",
+                    "App v2"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Expand: additive schema"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "Reads old columns"
+                    },
+                    {
+                        "from": 3,
+                        "to": 1,
+                        "label": "Writes new columns"
+                    },
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Contract: drop old"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cicd-release-q15",
+            "difficulty": "intermediate",
+            "tags": [
+                "feature-flags",
+                "release-decoupling",
+                "progressive-delivery"
+            ],
+            "question": "How do feature flags change the way you release software?",
+            "answer": "Flags separate deploy from release. Code ships dark, and exposure is a configuration change that applies and reverts in seconds, faster than a rollback pipeline. I expose gradually: internal dogfood, a percentage of sessions, then everyone. A kill switch beats a redeploy. The cost is debt, so every flag gets an owner, an expiry ticket at creation, and a scheduled removal. If the flag service goes down, we fail closed to last-known defaults.",
+            "keyTakeaway": "Feature flags turn release into a configuration change, decoupling who sees code from when it deploys.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Gradual release with a flag",
+                "steps": [
+                    {
+                        "label": "Deploy dark",
+                        "note": "code ships off"
+                    },
+                    {
+                        "label": "Internal dogfood"
+                    },
+                    {
+                        "label": "Percentage of sessions"
+                    },
+                    {
+                        "label": "Everyone",
+                        "note": "then remove flag"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cicd-release-q16",
+            "difficulty": "intermediate",
+            "tags": [
+                "deployment-freeze",
+                "change-management",
+                "governance"
+            ],
+            "question": "How do you handle deployment freezes and change-approval bureaucracy without killing velocity?",
+            "answer": "I treat a freeze as a scoped risk decision. Name the period, the systems in scope, and an exception lane. Customer-impacting fixes and security patches stay allowed. I push change-control evidence into automation: the pipeline proves tests ran, scans passed, and the diff was reviewed. That recorded trail satisfies most change advisory boards. Reversible standard changes get auto-approved, and risky ones need one human sign-off tied to a ticket.",
+            "keyTakeaway": "A freeze is a scoped risk decision with a documented exception lane; tier routine changes by risk, not by meeting.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Change approval routing",
+                "condition": "Reversible and low risk?",
+                "yes": {
+                    "label": "Auto-approve on evidence",
+                    "note": "Pipeline record attaches to ticket"
+                },
+                "no": {
+                    "label": "CAB reviews rollout plan",
+                    "note": "Documented window and abort criteria"
+                }
+            }
+        },
+        {
+            "id": "cicd-release-q17",
+            "difficulty": "intermediate",
+            "tags": [
+                "caching",
+                "docker",
+                "build-performance"
+            ],
+            "question": "Where do caches actually pay off in a pipeline, and how do you keep them honest?",
+            "answer": "Dependency caches keyed on the lockfile hash skip reinstalling an unchanged tree. Docker layer caches rebuild only the changed layers. Remote build caches like Turborepo, sccache, and Gradle cover compiler outputs. Key on the exact input hash, never a bare branch name, and scope caches per branch so a pull request can't inherit another branch's poison. A cache miss must degrade to a full passing build. The costly failure is a stale cache turning the pipeline green.",
+            "keyTakeaway": "Cache by exact input hash, scope per branch, and treat a stale-cache green build as a first-class failure mode.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Pipeline cache layers",
+                "rows": [
+                    {
+                        "label": "Dependency cache",
+                        "note": "Keyed on lockfile hash"
+                    },
+                    {
+                        "label": "Docker layer cache",
+                        "note": "One key per instruction"
+                    },
+                    {
+                        "label": "Remote build cache",
+                        "note": "Outputs by input hash"
+                    },
+                    {
+                        "label": "Branch scoping",
+                        "note": "PRs never inherit poison"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cicd-release-q18",
+            "difficulty": "intermediate",
+            "tags": [
+                "release-notes",
+                "semantic-versioning",
+                "conventional-commits"
+            ],
+            "question": "How would you automate release notes and versioning instead of hand-writing changelogs?",
+            "answer": "I derive both from the merged history. Conventional commits feed a release tool that computes the semantic version: a breaking change bumps major, a feature bumps minor, a fix bumps patch. The tool drafts notes grouped by change type with linked pull requests. Humans edit the narrative but never the facts. Hand-written notes rot. I lint commit messages in CI so malformed ones fail the build.",
+            "keyTakeaway": "Generate versions and notes from merged commits so the changelog describes what actually shipped.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Automated versioning and notes",
+                "steps": [
+                    {
+                        "label": "Conventional commits",
+                        "note": "linted in CI"
+                    },
+                    {
+                        "label": "Release tool",
+                        "note": "computes semver bump"
+                    },
+                    {
+                        "label": "Draft notes",
+                        "note": "grouped, linked PRs"
+                    },
+                    {
+                        "label": "Human edits narrative"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cicd-release-q19",
+            "difficulty": "advanced",
+            "tags": [
+                "rollback",
+                "automation",
+                "incident-response"
+            ],
+            "question": "When should rollback happen without a human, and how do you automate it safely?",
+            "answer": "I automate the retreat on objective signals. If error rate, latency, or saturation breaches a threshold within an observation window after deploy, rollback triggers faster than people can convene, and the CD system flips traffic back to the last known-good artifact. The signal has to be specific to the new version, and I add a cooldown against flapping. Humans get paged with the trigger evidence, with no permission step. Minutes of broken traffic at three in the morning cost more than an occasional false positive.",
+            "keyTakeaway": "Automate the rollback trigger on objective signals; humans handle the fix, not the retreat.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Automated rollback trigger",
+                "condition": "Errors breach threshold in window?",
+                "yes": {
+                    "label": "Roll back automatically",
+                    "note": "Flip to last known-good"
+                },
+                "no": {
+                    "label": "Keep observing",
+                    "note": "Page if trend worsens"
+                }
+            }
+        },
+        {
+            "id": "cicd-release-q20",
+            "difficulty": "advanced",
+            "tags": [
+                "oidc",
+                "security",
+                "cloud",
+                "federation"
+            ],
+            "question": "How do you get cloud credentials into CI without long-lived keys?",
+            "answer": "Federate with OIDC. The CI job requests a short-lived signed token carrying claims like repository, branch, and job. The cloud STS exchanges it for credentials scoped to one role and valid for minutes. The IAM policy trusts the exact issuer and subject, so only the real pipeline of the real repository on the real ref can assume the deploy role. A fork, a mirror, or a stolen runner key gets nothing. This deletes the static cloud key that outlives the rotation policy and the departed employee.",
+            "keyTakeaway": "Federate CI to clouds with short-lived OIDC tokens; a compromised runner should yield nothing durable.",
+            "code": {
+                "language": "yaml",
+                "snippet": "permissions:\n  id-token: write    # mint OIDC token; no stored cloud keys\n  contents: read\nsteps:\n  - uses: aws-actions/configure-aws-credentials@v4\n    with:\n      role-to-assume: arn:aws:iam::123456789012:role/pipeline-deploy\n      aws-region: us-east-1"
+            },
+            "diagram": {
+                "kind": "sequence",
+                "title": "OIDC federation flow",
+                "actors": [
+                    "CI job",
+                    "Identity provider",
+                    "Cloud IAM",
+                    "Deploy target"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Request short-lived token"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "JWT with job claims"
+                    },
+                    {
+                        "from": 0,
+                        "to": 2,
+                        "label": "Exchange for scoped role"
+                    },
+                    {
+                        "from": 2,
+                        "to": 3,
+                        "label": "Grant expiring access"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cicd-release-q21",
+            "difficulty": "advanced",
+            "tags": [
+                "sbom",
+                "provenance",
+                "supply-chain"
+            ],
+            "question": "What do SBOMs and provenance attestations actually buy you?",
+            "answer": "An SBOM is a machine-readable list of every direct and transitive dependency with versions and licenses. On the next Log4j day, you query a database instead of forty repositories. Provenance records how an artifact was built: commit, builder, and pipeline run, signed by the build platform. Together they enable deploy-time enforcement, where an admission controller verifies the signature and attestation and refuses unsigned artifacts. Generate both inside the build. An SBOM written after deployment is documentation, not evidence.",
+            "keyTakeaway": "Sign the artifact with its SBOM and provenance, and enforce verification as a deploy-time gate.",
+            "code": {
+                "language": "bash",
+                "snippet": "syft packages -o spdx-json \"app:$SHA\" > sbom.spdx.json\ncosign attest --key \"$KMS_KEY\" --predicate sbom.spdx.json \"app:$SHA\"\ncosign sign --key \"$KMS_KEY\" \"app:$SHA\"\ncosign verify-attestation --key \"$COSIGN_PUB\" \"app:$SHA\" || exit 1"
+            },
+            "diagram": {
+                "kind": "flow",
+                "title": "Signed artifact chain",
+                "steps": [
+                    {
+                        "label": "Build once",
+                        "note": "One digest for everything"
+                    },
+                    {
+                        "label": "Generate SBOM",
+                        "note": "Dependencies, versions, licenses"
+                    },
+                    {
+                        "label": "Sign and attest",
+                        "note": "Provenance bound to builder"
+                    },
+                    {
+                        "label": "Verify at deploy",
+                        "note": "Admission rejects unsigned images"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cicd-release-q22",
+            "difficulty": "advanced",
+            "tags": [
+                "hotfix",
+                "incident-response",
+                "process"
+            ],
+            "question": "Design the hotfix path from production outage to fix deployed — what can it skip?",
+            "answer": "Nothing, really. It only runs faster with a priority bump. A hotfix branches from the exact production tag, carries a minimal change, and enters the same pipeline. What changes is queue priority, a trimmed test selection that still covers the blast radius, and a pre-approved expedited sign-off recorded in the incident channel. We never skip the artifact build, migration safety checks, or post-deploy verification. The fix merges back to main immediately. A busy hotfix lane is a design smell.",
+            "keyTakeaway": "The hotfix lane runs the same gates faster, never fewer.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Hotfix path",
+                "steps": [
+                    {
+                        "label": "Branch from prod tag",
+                        "note": "minimal change"
+                    },
+                    {
+                        "label": "Same pipeline",
+                        "note": "priority queue"
+                    },
+                    {
+                        "label": "Expedited sign-off",
+                        "note": "logged in incident"
+                    },
+                    {
+                        "label": "Verify and merge back"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cicd-release-q23",
+            "difficulty": "advanced",
+            "tags": [
+                "preview-environments",
+                "cost-control",
+                "automation"
+            ],
+            "question": "Preview environments per pull request sound great — how do you keep them from bankrupting you?",
+            "answer": "It's worth it only with a lifecycle owner, because preview namespaces outlive pull requests by weeks. I automate it: create on first push, update in place, destroy on merge or close, plus a TTL reaper for orphans. To cut cost I share add-ons, use a small database per namespace or schemas on a shared instance, and put stateless parts on spot capacity. A weekly per-preview cost report visible to the team helps, because attributed spend gets cleaned up.",
+            "keyTakeaway": "Preview environments win on isolation only if an automated lifecycle reaper wins on cost.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Preview environment lifecycle",
+                "steps": [
+                    {
+                        "label": "Create",
+                        "note": "on first push"
+                    },
+                    {
+                        "label": "Update in place"
+                    },
+                    {
+                        "label": "Destroy",
+                        "note": "on merge or close"
+                    },
+                    {
+                        "label": "TTL reaper",
+                        "note": "cleans orphans"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cicd-release-q24",
+            "difficulty": "advanced",
+            "tags": [
+                "runners",
+                "scaling",
+                "cost"
+            ],
+            "question": "CI jobs are queuing for twenty minutes at peak — how do you approach runner capacity?",
+            "answer": "I measure queue time per stage first, because the cure differs. A morning spike wants warm capacity, and a release-time spike wants per-team concurrency limits. Self-hosted runners are cattle: ephemeral VMs or containers from a pre-baked image, destroyed after exactly one job, so there's no state, drift, or lingering credentials. Autoscale on queue depth with a small warm pool. Price it against hosted runners, which are cheaper below a certain scale. Treat third-party concurrency caps as a budget line.",
+            "keyTakeaway": "Runners should be ephemeral, pre-baked cattle scaled by queue depth, not hand-maintained pets.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Runner capacity approach",
+                "steps": [
+                    {
+                        "label": "Measure queue time",
+                        "note": "per stage"
+                    },
+                    {
+                        "label": "Ephemeral runners",
+                        "note": "one job each"
+                    },
+                    {
+                        "label": "Autoscale",
+                        "note": "on queue depth"
+                    },
+                    {
+                        "label": "Compare cost",
+                        "note": "vs hosted runners"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cicd-release-q25",
+            "difficulty": "advanced",
+            "tags": [
+                "merge-queue",
+                "ci",
+                "main-branch"
+            ],
+            "question": "Main keeps breaking even though every pull request was green before merge — what is the fix?",
+            "answer": "The problem is stale validation: each pull request passed against a main that no longer exists at merge time, so two green changes combined are untested. A merge queue stacks pending pull requests on main's head and runs the gating suite on the combined result before landing. A failure triggers automatic bisection, so one guilty pull request doesn't punish the others. A broken main becomes a queue position with a predictable wait. The cost is added latency per pull request.",
+            "keyTakeaway": "A merge queue tests pull requests combined against main's head, so main is always exactly what passed.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Merge queue",
+                "actors": [
+                    "Pull request",
+                    "Queue",
+                    "CI",
+                    "Main"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Join the queue"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Test batch on head"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "Verdict per change"
+                    },
+                    {
+                        "from": 1,
+                        "to": 3,
+                        "label": "Merge green batch"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "Red: retest solo"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "cicd-release-q26",
+            "difficulty": "advanced",
+            "tags": [
+                "canary",
+                "progressive-delivery",
+                "automation"
+            ],
+            "question": "How do you decide a canary is healthy without staring at dashboards?",
+            "answer": "I formalize it as automated analysis. Define the metrics before rollout: error rate, tail latency, saturation, and a business signal like conversion. Compare the canary against a stable baseline over a fixed statistical window. Flagger or Argo Rollouts step traffic up, compare at each step, and promote or abort. Pick metrics that detect the regression class you fear, because blind metrics promote the bug. Control for time-of-day confounds. A canary nobody analyzes is a slow outage.",
+            "keyTakeaway": "Let objective canary metrics promote or roll back automatically; humans only choose and tune the metrics.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Canary analysis",
+                "condition": "Canary metrics beat baseline?",
+                "yes": {
+                    "label": "Ramp to next step",
+                    "note": "Promote after each window"
+                },
+                "no": {
+                    "label": "Abort and roll back",
+                    "note": "Page with metric evidence"
+                }
+            }
+        },
+        {
+            "id": "cicd-release-q27",
+            "difficulty": "advanced",
+            "tags": [
+                "infrastructure-as-code",
+                "terraform",
+                "policy-as-code"
+            ],
+            "question": "How should infrastructure changes flow through the same CI/CD discipline as application code?",
+            "answer": "The pipeline is the only door. A pull request runs plan against real state and posts the rendered diff, so reviewers approve a described change. Merge executes the same plan with credentials no human holds. State is remote with locking so applies can't race, and scheduled drift detection opens a ticket when reality diverges. Policy-as-code in CI (no public buckets, no oversized instances, mandatory tags) encodes the checklist humans stop reading. Review intent on the pull request, execute deterministically on merge.",
+            "keyTakeaway": "Every infrastructure change flows through plan on the pull request and gated apply on merge — no console changes.",
+            "code": {
+                "language": "yaml",
+                "snippet": "plan:   # on pull requests — rendered diff posted for review\n  script:\n    - terraform plan -out=tfplan -detailed-exitcode\n  artifacts: [tfplan]\napply:  # on merge — same plan hash, credentials no human holds\n  script:\n    - terraform apply tfplan"
+            },
+            "diagram": {
+                "kind": "sequence",
+                "title": "Infrastructure change through CI/CD",
+                "actors": [
+                    "Author",
+                    "Pull request",
+                    "Reviewer",
+                    "Pipeline"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Open pull request"
+                    },
+                    {
+                        "from": 3,
+                        "to": 1,
+                        "label": "Post plan and policy results"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "Approve the described diff"
+                    },
+                    {
+                        "from": 1,
+                        "to": 3,
+                        "label": "Merge triggers apply"
+                    }
+                ]
+            }
+        }
+    ]
 }

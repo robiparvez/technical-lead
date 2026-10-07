@@ -1,55 +1,712 @@
 {
-  "slug": "agile-teams",
-  "title": "Agile & Distributed Teams",
-  "requirement": "Led distributed/cross-functional engineering teams in agile environments.",
-  "questions": [
-    {
-      "id": "agile-teams-q1",
-      "difficulty": "basic",
-      "tags": ["agile", "ceremonies", "fundamentals"],
-      "question": "Which agile ceremonies do you keep valuable, and how do they change for distributed teams?",
-      "answer": "Planning sets a shared goal and an honest scope, standups surface blockers cheaply, reviews close the loop with stakeholders, and retrospectives fix process; those four carry the value. Distributed teams need them shorter and more structured, agendas in advance, cameras on, one conversation at a time, because silence over video hides the disengagement you would catch in a room. The async substitutes matter more than the meetings: a written standup and a recorded demo serve time zones that cannot attend live. A ceremony that produces no decision or artifact gets shortened or dropped; ritual without output is cost.",
-      "keyTakeaway": "Keep the four ceremonies short and decision-focused; cover time zones with async artifacts."
-    },
-    {
-      "id": "agile-teams-q2",
-      "difficulty": "basic",
-      "tags": ["estimation", "sizing", "process"],
-      "question": "How do you run estimation with a distributed cross-functional team?",
-      "answer": "Estimate in relative units, story points or t-shirt sizes, against a shared reference story, because hours invite false precision across skill levels. Async-first: stories are written and refined in the tracker before the session, so the meeting debates open questions instead of reading requirements aloud for the first time. Split anything the team cannot size in the room, because an unsizable story is an undefined story. Use the velocity trend for planning conversations only, never individual speed comparisons, or the numbers inflate instantly.",
-      "keyTakeaway": "Relative sizes against a reference, refinement before the meeting, split what cannot be sized."
-    },
-    {
-      "id": "agile-teams-q3",
-      "difficulty": "intermediate",
-      "tags": ["distributed", "timezones", "collaboration", "behavioral"],
-      "question": "How do you keep a team effective when it spans multiple time zones?",
-      "answer": "Make written work the primary artifact: decisions, designs, and status live in documents and the tracker, so no one needs a meeting to be informed. Protect a small overlap window for the synchronous things that genuinely need it, decisions and unblocks, and let everything else run async with explicit response-time expectations. Rotate meeting times so the same region does not always take the 10 PM call, and record the decision meetings for the other half. Watch handoff quality, work handed across zones should arrive with context and acceptance criteria, or you buy rework with the time-zone savings.",
-      "keyTakeaway": "Documents over meetings, one protected overlap hour, fair rotation, context-rich handoffs."
-    },
-    {
-      "id": "agile-teams-q4",
-      "difficulty": "intermediate",
-      "tags": ["velocity", "metrics", "process"],
-      "question": "Velocity is down two sprints in a row. What do you do?",
-      "answer": "First look for cause, not blame: unplanned interrupt work, underestimated stories, review latency, on-call load, or a genuine staffing change each need different fixes. Pull the data, interrupt tickets, cycle time by stage, scope changes mid-sprint, and put it in front of the team, because the team usually knows the cause before the chart does. Fix the flow problem, protect focus time, kill a recurring interrupt source, tighten review turnaround, and let velocity recover on its own. What I never do is set velocity as a target, because teams will meet the number by inflating estimates and splitting nothing.",
-      "keyTakeaway": "Diagnose flow, not people; fix the interrupt source; never target the velocity number."
-    },
-    {
-      "id": "agile-teams-q5",
-      "difficulty": "advanced",
-      "tags": ["retrospective", "improvement", "process"],
-      "question": "Retrospectives keep happening but nothing changes. How do you fix that?",
-      "answer": "Cap the action list at one or two items, each with an owner and a due date, and start the next retro by reviewing those items before collecting new ones, which is the discipline most teams skip. Prefer process changes that are structural and cheap to keep, a new refinement checklist, an interrupt rotation, over promises that need willpower every day. Give changes two sprints before judging, and kill the ones that do not pay for their overhead, so the process stays honest. If actions keep dying because no one has time, the real retro topic is why the team has no slack.",
-      "keyTakeaway": "One owned action at a time, review it before new topics, and question the missing slack."
-    },
-    {
-      "id": "agile-teams-q6",
-      "difficulty": "advanced",
-      "tags": ["cross-functional", "dependencies", "escalation", "behavioral"],
-      "question": "A cross-functional dependency, design, data, or another team, blocks your sprint. How do you handle it?",
-      "answer": "Surface the dependency at planning with a name and a date, not a hope, because blockers discovered mid-sprint are planning failures. Work the interface directly: agree a contract or mock with the other team so both sides can build in parallel instead of waiting for the finished artifact. If the date slips twice, escalate with facts, what is blocked, the cost of the delay, the ask, to someone who can re-prioritize, and record the decision. Between sprints, feed the pattern back, chronic dependencies mean the team boundaries or the roadmap sequencing need redesign, not another escalation.",
-      "keyTakeaway": "Contract to unblock in parallel, escalate with cost and ask, then fix the boundary."
-    }
-  ]
+    "slug": "agile-teams",
+    "title": "Agile & Distributed Teams",
+    "requirement": "Led distributed/cross-functional engineering teams in agile environments.",
+    "questions": [
+        {
+            "id": "agile-teams-q1",
+            "difficulty": "basic",
+            "tags": [
+                "agile",
+                "ceremonies",
+                "fundamentals"
+            ],
+            "question": "Which agile ceremonies do you keep valuable, and how do they change for distributed teams?",
+            "answer": "Four ceremonies carry real value. Planning sets the goal and scope, standups surface blockers, reviews close the loop with stakeholders, and retrospectives fix the process. For distributed teams I keep them shorter, send agendas in advance, and run one conversation at a time. I prefer async substitutes where they work, like a written standup or a recorded demo. If a ceremony produces no decision or artifact, I drop it.",
+            "keyTakeaway": "Keep the four ceremonies short and decision-focused; cover time zones with async artifacts.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Ceremony loop, distributed",
+                "actors": [
+                    "Team",
+                    "Product owner",
+                    "Stakeholders"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Refines and sizes backlog"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "Sets the sprint goal"
+                    },
+                    {
+                        "from": 0,
+                        "to": 2,
+                        "label": "Demos working increment"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "Feedback enters backlog"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "Adjusts next sprint scope"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "agile-teams-q2",
+            "difficulty": "basic",
+            "tags": [
+                "estimation",
+                "sizing",
+                "process"
+            ],
+            "question": "How do you run estimation with a distributed cross-functional team?",
+            "answer": "I estimate in relative units, story points or t-shirt sizes, against a reference story. Hours invite false precision. We refine stories async in the tracker first, so the session only debates open questions. Any story the team can't size in the room gets split. I use velocity for planning only and never compare individual speed.",
+            "keyTakeaway": "Relative sizes against a reference, refinement before the meeting, split what cannot be sized.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Async estimation flow",
+                "steps": [
+                    {
+                        "label": "Write stories in tracker",
+                        "note": "Refinement before the meeting"
+                    },
+                    {
+                        "label": "Pick a reference story",
+                        "note": "Shared anchor for sizing"
+                    },
+                    {
+                        "label": "Size in relative points",
+                        "note": "Never hours across skills"
+                    },
+                    {
+                        "label": "Split unsizable stories",
+                        "note": "Unsizable means undefined"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "agile-teams-q3",
+            "difficulty": "intermediate",
+            "tags": [
+                "distributed",
+                "timezones",
+                "collaboration",
+                "behavioral"
+            ],
+            "question": "How do you keep a team effective when it spans multiple time zones?",
+            "answer": "I make written work primary, so decisions and status live in documents and the tracker. We keep a small overlap window for decisions and unblocks only, and run everything else async with clear response-time expectations. I rotate meeting times so one region doesn't always take the 10 PM call, and I record decision meetings. Handoffs need context and acceptance criteria, or the rework eats whatever time-zone savings you got.",
+            "keyTakeaway": "Documents over meetings, one protected overlap hour, fair rotation, context-rich handoffs.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Async first, sync selective",
+                "columns": [
+                    "Async default",
+                    "Sync overlap"
+                ],
+                "rows": [
+                    {
+                        "label": "Status",
+                        "values": [
+                            "Written daily updates",
+                            "No mandatory call"
+                        ]
+                    },
+                    {
+                        "label": "Decisions",
+                        "values": [
+                            "Docs with deadlines",
+                            "Protected overlap hour"
+                        ]
+                    },
+                    {
+                        "label": "Unblocking",
+                        "values": [
+                            "Response-time expectations",
+                            "Live when stuck"
+                        ]
+                    },
+                    {
+                        "label": "Meeting times",
+                        "values": [
+                            "Rotated fairly",
+                            "Recorded always"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "agile-teams-q4",
+            "difficulty": "intermediate",
+            "tags": [
+                "velocity",
+                "metrics",
+                "process"
+            ],
+            "question": "Velocity is down two sprints in a row. What do you do?",
+            "answer": "I look for the cause, not someone to blame. Interrupts, underestimated stories, review latency, on-call load, and staffing changes each need a different fix. I pull data (interrupt tickets, cycle time by stage, mid-sprint scope changes) and show the team. Then I fix flow: protect focus time, kill the recurring interrupt source, tighten review turnaround. I never target velocity, because teams inflate estimates.",
+            "keyTakeaway": "Diagnose flow, not people; fix the interrupt source; never target the velocity number.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Responding to falling velocity",
+                "steps": [
+                    {
+                        "label": "Pull the flow data",
+                        "note": "Interrupts, cycle stages, churn"
+                    },
+                    {
+                        "label": "Name the biggest cause",
+                        "note": "With the team, not at them"
+                    },
+                    {
+                        "label": "Fix the flow problem",
+                        "note": "Protect focus, kill interrupts"
+                    },
+                    {
+                        "label": "Let recovery show",
+                        "note": "Never target the number"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "agile-teams-q5",
+            "difficulty": "advanced",
+            "tags": [
+                "retrospective",
+                "improvement",
+                "process"
+            ],
+            "question": "Retrospectives keep happening but nothing changes. How do you fix that?",
+            "answer": "I cap actions at one or two, each with an owner and a due date, and we review them at the start of the next retro. I prefer cheap structural changes, like a refinement checklist or an interrupt rotation, over promises that need daily willpower. We judge a change after two sprints and kill the ones that don't pay for their overhead. If actions keep dying for lack of time, the real topic is that the team has no slack.",
+            "keyTakeaway": "One owned action at a time, review it before new topics, and question the missing slack.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Retro action discipline",
+                "condition": "Did the last action ship?",
+                "yesLabel": "Shipped",
+                "noLabel": "Died",
+                "yes": {
+                    "label": "Pick one new action",
+                    "note": "Owned, dated, structural"
+                },
+                "no": {
+                    "label": "Diagnose why it died",
+                    "note": "Usually missing slack"
+                }
+            }
+        },
+        {
+            "id": "agile-teams-q6",
+            "difficulty": "advanced",
+            "tags": [
+                "cross-functional",
+                "dependencies",
+                "escalation",
+                "behavioral"
+            ],
+            "question": "A cross-functional dependency, design, data, or another team, blocks your sprint. How do you handle it?",
+            "answer": "I surface the dependency at planning, with a name and a date, because a mid-sprint blocker is really a planning failure. I agree on a contract or a mock with the other team so both sides can build in parallel. If the date slips twice, I escalate to someone who can re-prioritize, and I bring facts: what's blocked, the cost of delay, and the ask. If a dependency is chronic, the fix is redesigning team boundaries or the roadmap sequencing.",
+            "keyTakeaway": "Contract to unblock in parallel, escalate with cost and ask, then fix the boundary.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Handling a blocking dependency",
+                "steps": [
+                    {
+                        "label": "Surface at planning",
+                        "note": "name and date"
+                    },
+                    {
+                        "label": "Agree a contract",
+                        "note": "or a mock, build in parallel"
+                    },
+                    {
+                        "label": "Escalate",
+                        "note": "after two slips, with facts"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "agile-teams-q7",
+            "difficulty": "intermediate",
+            "tags": [
+                "sprint",
+                "scope",
+                "planning",
+                "process"
+            ],
+            "question": "Scope keeps creeping into the sprint after it starts. How do you handle mid-sprint additions?",
+            "answer": "A sprint is a contract around a goal. For every mid-sprint ask, something of equal size comes out, and the product owner decides based on the sprint goal. Only interrupt work, like production issues and real emergencies, gets pulled in without question. I cap committed capacity near eighty percent so interrupts have room. Everything else waits for the next planning, with a date. If new work shows up every sprint, intake or the buffer is broken.",
+            "keyTakeaway": "Trade mid-sprint asks for equal scope and fix chronic creep by planning a real interrupt buffer.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Mid-sprint addition",
+                "condition": "Is it a production issue or a real emergency?",
+                "yesLabel": "Yes",
+                "noLabel": "No",
+                "yes": {
+                    "label": "Pull it in",
+                    "note": "Capacity buffer absorbs it"
+                },
+                "no": {
+                    "label": "Swap equal size out",
+                    "note": "Product owner decides by sprint goal"
+                }
+            }
+        },
+        {
+            "id": "agile-teams-q8",
+            "difficulty": "intermediate",
+            "tags": [
+                "stories",
+                "splitting",
+                "flow"
+            ],
+            "question": "The same three stories keep spilling across sprints. What is going on and what do you change?",
+            "answer": "Spilling once is estimation noise. Spilling every sprint is a defect in the story, so I find where it waits: the review queue, a missing environment, an unanswered dependency. Then I split along an acceptance-criteria seam, and the first slice has to be demoable, not foundation work. A story that needs another team before it can start is a dependency, not a story. I never roll over automatically. I re-size and re-prioritize against the current backlog.",
+            "keyTakeaway": "Re-split spilling stories along acceptance criteria and expose their hidden dependencies instead of rolling them.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Rescuing a spilling story",
+                "steps": [
+                    {
+                        "label": "Instrument the story stages",
+                        "note": "Where does it wait?"
+                    },
+                    {
+                        "label": "Find the queue",
+                        "note": "Review, env, or dependency"
+                    },
+                    {
+                        "label": "Split at acceptance seam",
+                        "note": "First slice must demo"
+                    },
+                    {
+                        "label": "Ship the demoable slice",
+                        "note": "Learning lands this sprint"
+                    },
+                    {
+                        "label": "Re-size the remainder",
+                        "note": "Never roll it untouched"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "agile-teams-q9",
+            "difficulty": "intermediate",
+            "tags": [
+                "tech-debt",
+                "planning",
+                "prioritization"
+            ],
+            "question": "How do you get real tech-debt work into a sprint plan that management wants full of features?",
+            "answer": "I price debt in product terms: slower feature delivery, pages it caused, last quarter's incident. I reserve a standing twenty percent of capacity for debt and bugs so there's no per-sprint negotiation, and I pay down debt when a feature touches a rotten module. I show leadership the bug backlog trend and toil hours. If the answer is still no, I name the risk in writing with the expected cost of deferral.",
+            "keyTakeaway": "Reserve a standing debt ratio, price debt in delay and incidents, and pay it opportunistically."
+        },
+        {
+            "id": "agile-teams-q10",
+            "difficulty": "intermediate",
+            "tags": [
+                "process",
+                "culture",
+                "anti-patterns"
+            ],
+            "question": "What signals tell you a team is doing agile theater rather than being agile?",
+            "answer": "The tells: standups report status to a manager instead of replanning, velocity gets reported upward as a performance number, demos are cancelled near deadlines, retro actions never ship, and stories are called done when nobody can deploy them. My test is whether a review or metric changes what gets built next sprint. Cargo-cult teams hold every ceremony and change nothing. I fix one ceremony at a time, starting with the retro. Until done means deployable, everything upstream is theater.",
+            "keyTakeaway": "Agile theater is ritual without decisions; real agility changes what gets built based on what was learned."
+        },
+        {
+            "id": "agile-teams-q11",
+            "difficulty": "intermediate",
+            "tags": [
+                "team-formation",
+                "jelling",
+                "behavioral"
+            ],
+            "question": "You have just formed a brand-new team. How do you get it jelled and productive fast?",
+            "answer": "I plan the first sprints for learning, not output, and I tell stakeholders that. A new team's velocity lags for three or four sprints, and judging it early creates fear. In week one we write working agreements: definition of done, review turnaround, meeting norms, and the decision process. I pair people and rotate work so knowledge spreads, and I land a small shipped increment early. When the storming phase arrives I name it, because the friction is data about working styles, not a hiring mistake.",
+            "keyTakeaway": "New teams need explicit working agreements, deliberate pairing, and an early shipped win, not velocity judgment."
+        },
+        {
+            "id": "agile-teams-q12",
+            "difficulty": "intermediate",
+            "tags": [
+                "retrospective",
+                "facilitation",
+                "behavioral"
+            ],
+            "question": "One strong personality dominates every retrospective. How do you get the rest of the room talking?",
+            "answer": "I change the format, not the person. I start with silent writing: two minutes to put concerns on notes or in a doc before anyone speaks, which removes the loudest voice's advantage. Then we cluster and do a round-robin read-out so every item gets airtime. I give the dominant person a channel, like scribe or data presenter, and hold a private one-to-one. If the loud voice is the manager, I remove them from the room, because retro safety can't survive rank.",
+            "keyTakeaway": "Written-first, round-robin retros neutralize a dominant voice; rank never belongs in the room.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Retro with a dominant voice",
+                "steps": [
+                    {
+                        "label": "Silent writing",
+                        "note": "two minutes"
+                    },
+                    {
+                        "label": "Cluster notes"
+                    },
+                    {
+                        "label": "Round-robin read-out",
+                        "note": "every item gets airtime"
+                    },
+                    {
+                        "label": "Give a role",
+                        "note": "scribe or data presenter"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "agile-teams-q13",
+            "difficulty": "intermediate",
+            "tags": [
+                "wip-limits",
+                "flow",
+                "kanban"
+            ],
+            "question": "How do work-in-progress limits change a team's delivery, and where do you set them?",
+            "answer": "WIP limits turn starting into finishing, and cycle time drops as context switching drops. I set the limit near half the people per stage, then tune by where items queue. A stage that's always full means the upstream limit is too high, and one that's always empty means a hidden bottleneck. I add a pull rule: when you're blocked, finish something or help someone, never start something new. Then I measure flow efficiency, active time against elapsed time. A team at WIP two typically finds half its cycle time was queueing.",
+            "keyTakeaway": "Cap WIP near half the team per stage and pair it with a finish-or-help rule.",
+            "diagram": {
+                "kind": "compare",
+                "title": "WIP limits versus uncapped flow",
+                "columns": [
+                    "WIP limited",
+                    "Uncapped"
+                ],
+                "rows": [
+                    {
+                        "label": "Cycle time",
+                        "values": [
+                            "Days",
+                            "Weeks"
+                        ]
+                    },
+                    {
+                        "label": "Context switching",
+                        "values": [
+                            "Rare",
+                            "Constant"
+                        ]
+                    },
+                    {
+                        "label": "Finish rate",
+                        "values": [
+                            "High",
+                            "Low"
+                        ]
+                    },
+                    {
+                        "label": "Hidden blockers",
+                        "values": [
+                            "Surface fast",
+                            "Pile up"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "agile-teams-q14",
+            "difficulty": "intermediate",
+            "tags": [
+                "definition-of-done",
+                "quality",
+                "process"
+            ],
+            "question": "Stories keep getting called done without tests or docs. How do you enforce the definition of done?",
+            "answer": "First I make the definition of done honest: write down what the team actually does every time, then grow it. I enforce it mechanically, with a short checklist on every card, CI gates that block merge without tests, and a review template that references the DoD. Cards that miss it go back to in progress, publicly but without blame. I never let a demo deadline redefine done, so an unfinished story stays unfinished and the sprint report says so. If the DoD is skipped every sprint, it's too big, so I shrink it until it's true.",
+            "keyTakeaway": "Enforce done mechanically with CI gates and honest rejection; shrink the DoD until it is true.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Definition of done gate",
+                "condition": "Does the story meet done?",
+                "yesLabel": "Releasable",
+                "noLabel": "Back to work",
+                "yes": {
+                    "label": "Demo and close",
+                    "note": "Counts toward the sprint"
+                },
+                "no": {
+                    "label": "Reject at review",
+                    "note": "Public, honest, no blame"
+                }
+            }
+        },
+        {
+            "id": "agile-teams-q15",
+            "difficulty": "intermediate",
+            "tags": [
+                "planning",
+                "requirements",
+                "refinement"
+            ],
+            "question": "Requirements arrive from the business late or half-formed. How do you still plan?",
+            "answer": "I plan on outcomes, not specifications: the sprint commits to a problem and a measurable result, and we refine the solution with the product owner inside the sprint. I keep the refinement pipeline one to two sprints deep, and I budget timeboxed discovery spikes, with a decision date, for unknown territory. Where business latency is chronic, I run a rolling horizon: the next sprint is committed and the one after is tentative. I also surface the pattern, that late requirements cost quality or date, and the business picks, in writing.",
+            "keyTakeaway": "Plan on outcomes with a rolling horizon, and make the business price its late requirements."
+        },
+        {
+            "id": "agile-teams-q16",
+            "difficulty": "advanced",
+            "tags": [
+                "conways-law",
+                "team-topology",
+                "architecture",
+                "behavioral"
+            ],
+            "question": "How has Conway's law shaped the way you draw team boundaries?",
+            "answer": "Teams ship their org chart. Communication paths become coupling, so I treat team boundaries and architecture boundaries as one decision. I draw teams around value streams they own end to end, small enough to feed with two pizzas, and a platform team owns shared infrastructure. Where the org can't match the target architecture, I invert Conway: reteam first, and the architecture follows within a few quarters. Chronic cross-team dependencies, unowned shared code, and merge wars mean the boundary is wrong, and no ceremony fixes that.",
+            "keyTakeaway": "Treat team boundaries and architecture as one decision; chronic dependencies mean the boundary is wrong.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Team topology for flow",
+                "rows": [
+                    {
+                        "label": "Stream-aligned squads",
+                        "note": "Own value end to end"
+                    },
+                    {
+                        "label": "Platform team",
+                        "note": "Internalizes shared infrastructure"
+                    },
+                    {
+                        "label": "Enabling team",
+                        "note": "Spreads skills, then leaves"
+                    },
+                    {
+                        "label": "Complicated-subsystem team",
+                        "note": "Owns deep specialist parts"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "agile-teams-q17",
+            "difficulty": "advanced",
+            "tags": [
+                "capacity",
+                "on-call",
+                "planning",
+                "behavioral"
+            ],
+            "question": "How do you plan sprint capacity when on-call and support keep eating the sprint?",
+            "answer": "I measure one sprint: count interrupt tickets, support hours, and who absorbed them. Then I budget a fixed share of capacity, often twenty percent, as an explicit rotation, so the load lands on the rota and not on whoever feels responsible. I separate genuine on-call escalations from chaos caused by quality debt, because only the second is fixable. When interrupts overrun the buffer, stopping roadmap work is a visible decision made with the product owner. Silent absorption hides the true cost.",
+            "keyTakeaway": "Measure interrupt load, staff it as a rotation, and make overflow a visible roadmap decision.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Capacity with an interrupt budget",
+                "columns": [
+                    "Budgeted rotation",
+                    "Silent absorption"
+                ],
+                "rows": [
+                    {
+                        "label": "Predictability",
+                        "values": [
+                            "Stable",
+                            "Random"
+                        ]
+                    },
+                    {
+                        "label": "On-call burden",
+                        "values": [
+                            "Shared fairly",
+                            "Loudest engineer"
+                        ]
+                    },
+                    {
+                        "label": "Quality debt",
+                        "values": [
+                            "Tracked down",
+                            "Grows quietly"
+                        ]
+                    },
+                    {
+                        "label": "Roadmap impact",
+                        "values": [
+                            "Explicit trade",
+                            "Silent slippage"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "agile-teams-q18",
+            "difficulty": "advanced",
+            "tags": [
+                "portfolio",
+                "governance",
+                "scaling"
+            ],
+            "question": "Teams run agile fine but the portfolio above them does not. Where does that break and what do you do?",
+            "answer": "The failure point is the layer that owns money and sequencing: teams sprint inside annual budgets, and the roadmap was frozen a year earlier. I'd fix what the portfolio funds, which is stable teams and long-lived products, not temporary projects. I'd cap work in progress at the portfolio level too, because five half-done bets deliver nothing. Sequencing and dependency mapping move to a quarterly bet review driven by outcomes, since that's where the authority sits. No team can fix this from below. The layer above has to change what it measures.",
+            "keyTakeaway": "Agility stops at teams when annual project funding and frozen roadmaps override quarterly outcome bets."
+        },
+        {
+            "id": "agile-teams-q19",
+            "difficulty": "advanced",
+            "tags": [
+                "stakeholders",
+                "prioritization",
+                "behavioral"
+            ],
+            "question": "A senior executive asks mid-sprint for something urgent and the team disagrees. What do you do?",
+            "answer": "First I establish whether it's an emergency or a priority. I ask who is blocked, what five days of delay costs, and what breaks if it waits. Most exec asks are priorities, so I give a date in the next sprint, no panic. If it's truly urgent, I make the trade visible: the product owner chooses what comes out of the sprint, and the decision is written down with its cost. I shield the team from pressure, never from reality. If routine asks bypass planning, leadership has too little visibility or control, so I fix that forum.",
+            "keyTakeaway": "Verify real urgency, trade scope visibly in writing, and fix the planning gap that caused the bypass.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Mid-sprint executive ask",
+                "condition": "Genuinely urgent this sprint?",
+                "yesLabel": "Real emergency",
+                "noLabel": "Priority, not emergency",
+                "yes": {
+                    "label": "Trade equal scope out",
+                    "note": "Written, product owner signs"
+                },
+                "no": {
+                    "label": "Queue for next sprint",
+                    "note": "Explain the cost of now"
+                }
+            }
+        },
+        {
+            "id": "agile-teams-q20",
+            "difficulty": "advanced",
+            "tags": [
+                "dependencies",
+                "cross-team",
+                "planning"
+            ],
+            "question": "How do you map and manage dependencies across squads before they derail a quarter?",
+            "answer": "I map dependencies at planning, while a missed one is still just a note. Every item needing another squad gets a name and a date on a board every squad sees. I convert the worst ones into contracts (agreed interfaces, mocks, stubs) so both sides build in parallel, and I sequence the roadmap so dependencies point one direction. We review the board weekly at the cross-team sync. A chronic dependency is a team boundary problem, so it goes to the re-org conversation.",
+            "keyTakeaway": "Name every dependency with owner and date, contract the critical ones, and review the map weekly.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Dependency contract between squads",
+                "actors": [
+                    "Consuming squad",
+                    "Providing squad",
+                    "Delivery lead"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Flags dependency at planning"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "Agrees contract and date"
+                    },
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Builds against the mock"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "Ships the real interface"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Escalates slip with cost"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "agile-teams-q21",
+            "difficulty": "advanced",
+            "tags": [
+                "tooling",
+                "overhead",
+                "process"
+            ],
+            "question": "The tracker, boards, and reporting have become admin theater. How do you cut the tooling overhead?",
+            "answer": "I audit tooling like meetings: who consumes this, and what decision does it feed? I cut any field or report with no consumer. Manager roll-ups get generated from the board, so leadership reads one generated view while teams keep granular boards. Dual entry between systems gets integrated or dropped. If board updates take more than a few minutes a day, the workflow is wrong, not the team. A tool has to cost less coordination than it replaces.",
+            "keyTakeaway": "Keep only tooling that feeds a decision; generate reports automatically and never dual-enter."
+        },
+        {
+            "id": "agile-teams-q22",
+            "difficulty": "advanced",
+            "tags": [
+                "sprint-goal",
+                "replanning",
+                "focus"
+            ],
+            "question": "Mid-sprint the sprint goal is at risk while individual tickets look fine. How do you react?",
+            "answer": "The sprint goal is the deliverable, and tickets only decompose it. When the goal is at risk, I replan around it and move people to the critical story, even if that means abandoning in-flight tickets. I cut the periphery first: a goal met at eighty percent of stories beats five complete stories and no goal. I trigger the mid-sprint replan with the product owner, instead of letting quiet slippage show up at review. If the goal is at risk every sprint, we're over-committing or the goal story is unrefined.",
+            "keyTakeaway": "Replan around the sprint goal mid-sprint, cut periphery scope, and name the risk while options remain.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Sprint goal at risk",
+                "steps": [
+                    {
+                        "label": "Spot the risk",
+                        "note": "tickets look fine"
+                    },
+                    {
+                        "label": "Replan around the goal"
+                    },
+                    {
+                        "label": "Cut the periphery",
+                        "note": "move people to critical story"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "agile-teams-q23",
+            "difficulty": "advanced",
+            "tags": [
+                "metrics",
+                "team-health",
+                "flow"
+            ],
+            "question": "Beyond velocity, what signals tell you a team is actually healthy?",
+            "answer": "I start with flow metrics: cycle time trend, work in progress, and flow efficiency. They show whether work moves or waits, which velocity can't. Then sustainability: interrupt ratio, after-hours commits, scope churn. Then quality: escaped defects, change failure rate, and rework on finished stories. The behavioral tells matter most to me. People argue hard about ideas and still pair afterward, juniors ship real work, and a two-week vacation causes no heroics.",
+            "keyTakeaway": "Read cycle time, interrupt ratio, rework, and behavioral tells; velocity alone measures volume, not health."
+        },
+        {
+            "id": "agile-teams-q24",
+            "difficulty": "advanced",
+            "tags": [
+                "epics",
+                "splitting",
+                "incremental-delivery"
+            ],
+            "question": "How do you split a big epic into slices that actually deliver value every sprint?",
+            "answer": "I split epics by user outcome, never by architectural layer. A frontend sprint followed by a backend sprint delivers nothing until the last one. The first slice is a walking skeleton, thin but end to end, and demoable in one sprint. Each later slice adds a workflow step, business rule, data set, or interface. I reject infrastructure-only slices, and I pair an unavoidable enabler with a user-visible slice. Each slice ships to real users for feedback. If I can't demo it to the product owner, it isn't a slice.",
+            "keyTakeaway": "Slice epics by demoable user outcome along a walking skeleton, never by architectural layer.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Slicing an epic",
+                "steps": [
+                    {
+                        "label": "Walking skeleton",
+                        "note": "thin, end to end, demoable"
+                    },
+                    {
+                        "label": "Add a slice",
+                        "note": "workflow step, rule, data"
+                    },
+                    {
+                        "label": "Demo each sprint",
+                        "note": "never split by layer"
+                    }
+                ]
+            }
+        }
+    ]
 }

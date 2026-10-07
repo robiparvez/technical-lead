@@ -1,8 +1,8 @@
-import SearchResults from '@/components/SearchResults';
+import { Suspense } from 'react';
+import SearchResults, { Results } from '@/components/SearchResults';
 import { getSearchIndex, TOPICS } from '@/data';
 
-export default async function Home({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-    const { q } = await searchParams;
+export default function Home() {
     const topics = TOPICS.map((t) => ({
         slug: t.slug,
         title: t.title,
@@ -10,5 +10,11 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ q
         questionIds: t.questions.map((question) => question.id),
     }));
 
-    return <SearchResults topics={topics} index={getSearchIndex()} query={q ?? ''} />;
+    // The ?q= query is read in the browser (static export has no request);
+    // the prerendered fallback is the topic index, which needs no search index.
+    return (
+        <Suspense fallback={<Results topics={topics} index={[]} query='' />}>
+            <SearchResults topics={topics} index={getSearchIndex()} />
+        </Suspense>
+    );
 }

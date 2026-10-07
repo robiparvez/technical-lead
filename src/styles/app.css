@@ -130,7 +130,60 @@ main {
     display: none;
 }
 
+/* desktop header: search and theme switch, centered, sticky at the top of
+   the content column; its row lines up with the sidebar head beside it.
+   Its canvas-colored backdrop lives in reset.css. */
+.site-header {
+    display: none;
+}
+.app-main {
+    min-width: 0;
+}
+
 @media (min-width: 60rem) {
+    :root {
+        /* one 44px control row plus padding and the bottom hairline */
+        --header-h: calc(44px + 2 * var(--space-xs) + var(--border-width-1));
+        /* in-page jumps land below the sticky header, not under it */
+        scroll-padding-top: var(--header-h);
+    }
+    .site-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-md);
+        position: sticky;
+        top: 0;
+        z-index: 4;
+        height: var(--header-h);
+        padding: var(--space-xs) calc(44px + var(--space-md));
+        border-bottom: var(--border-width-1) solid var(--color-border-subtle);
+    }
+    .site-header .search {
+        flex: 0 1 28rem;
+        margin-bottom: 0;
+    }
+    .site-header .theme-switch {
+        display: flex;
+        align-items: center;
+        gap: var(--space-xs);
+        margin-top: 0;
+        padding-inline: 0;
+    }
+    .site-header .theme-switch .label {
+        margin-bottom: 0;
+    }
+    /* the sidebar version stretches buttons to fill; here they size to their label */
+    .site-header .theme-options .btn {
+        flex: none;
+        padding-inline: var(--space-xs);
+    }
+    .site-header .theme-options .btn[aria-pressed='true'] {
+        padding-inline-start: calc(var(--space-xs) - 1px);
+    }
+    .site-header .theme-options .btn:active {
+        padding-inline: calc(var(--space-xs) - 1px);
+    }
     .app {
         grid-template-columns: 20rem minmax(0, 1fr);
     }
@@ -312,6 +365,10 @@ main {
     display: flex;
     justify-content: space-between;
     margin: 0 0 var(--space-2xs);
+    padding-inline: var(--space-xs);
+}
+.nav-group {
+    margin: var(--space-xs) 0 0;
     padding-inline: var(--space-xs);
 }
 .nav-link + .nav-heading {

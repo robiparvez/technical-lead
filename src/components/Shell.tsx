@@ -8,18 +8,23 @@ import { FOCUS_SEARCH_EVENT, REVEAL_SEARCH_EVENT } from '@/components/SearchBox'
 const DESKTOP_QUERY = '(min-width: 60rem)';
 
 /**
- * App shell. Desktop: collapsible sticky sidebar with brand, search, and nav;
- * a hamburger toggles it, floating top-left when collapsed.
- * Phone: top bar with hamburger and search buttons opening in-flow panels.
+ * App shell. Desktop: a full-height collapsible sticky sidebar with brand and
+ * nav, beside a content column topped by a sticky header with search and
+ * theme centered; the two top rows line up. A hamburger or
+ * Ctrl/Cmd+B toggles the sidebar, and the hamburger floats top-left when it
+ * is collapsed. Phone: top bar with hamburger and search buttons opening
+ * in-flow panels; the theme switch sits in the menu panel.
  * "/" reveals the search for the current layout and focuses it.
  */
 export default function Shell({
     nav,
     search,
+    theme,
     children,
 }: {
     nav: React.ReactNode;
     search: React.ReactNode;
+    theme: React.ReactNode;
     children: React.ReactNode;
 }) {
     const [panel, setPanel] = useState<'none' | 'menu' | 'search'>('none');
@@ -44,12 +49,9 @@ export default function Shell({
 
     useEffect(() => {
         const reveal = () => {
-            if (window.matchMedia(DESKTOP_QUERY).matches) {
-                setSidebarOpen(true);
-            } else {
-                setPanel('search');
-            }
-            // focus once React has committed the revealed sidebar or panel
+            // the desktop header search is always visible; only phone needs a panel
+            if (!window.matchMedia(DESKTOP_QUERY).matches) setPanel('search');
+            // focus once React has committed the revealed panel
             requestAnimationFrame(() => window.dispatchEvent(new Event(FOCUS_SEARCH_EVENT)));
         };
         const onKey = (e: KeyboardEvent) => {
@@ -62,6 +64,22 @@ export default function Shell({
                 e.preventDefault();
                 reveal();
             }
+            // Ctrl+B (Cmd+B on macOS) toggles the desktop sidebar from anywhere
+            // except rich-text editors, where it means bold
+            const toggleKey =
+                (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'b';
+            if (toggleKey && !target.isContentEditable && window.matchMedia(DESKTOP_QUERY).matches) {
+                e.preventDefault();
+                if (sidebarOpen) {
+                    // focus would be lost with the unmounted sidebar; hand it to the floating toggle
+                    if (document.getElementById('sidebar')?.contains(document.activeElement)) {
+                        pendingFocus.current = 'floating';
+                    }
+                    setSidebarOpen(false);
+                } else {
+                    setSidebarOpen(true);
+                }
+            }
         };
         window.addEventListener('keydown', onKey);
         window.addEventListener(REVEAL_SEARCH_EVENT, reveal);
@@ -69,7 +87,7 @@ export default function Shell({
             window.removeEventListener('keydown', onKey);
             window.removeEventListener(REVEAL_SEARCH_EVENT, reveal);
         };
-    }, []);
+    }, [sidebarOpen]);
 
     useEffect(() => {
         if (pendingFocus.current === 'inline') inlineToggleRef.current?.focus();
@@ -114,6 +132,7 @@ export default function Shell({
                 }}
             >
                 {nav}
+                {theme}
             </div>
             <div id='phone-search' className='phone-panel' data-open={panel === 'search'}>
                 {search}
@@ -128,6 +147,8 @@ export default function Shell({
                         aria-label='Show navigation'
                         aria-expanded='false'
                         aria-controls='sidebar'
+                        aria-keyshortcuts='Control+B Meta+B'
+                        title='Show navigation (Ctrl+B)'
                         onClick={showSidebar}
                     >
                         <HamburgerIcon />
@@ -146,18 +167,25 @@ export default function Shell({
                                 aria-label='Hide navigation'
                                 aria-expanded='true'
                                 aria-controls='sidebar'
+                                aria-keyshortcuts='Control+B Meta+B'
+                                title='Hide navigation (Ctrl+B)'
                                 onClick={hideSidebar}
                             >
                                 <HamburgerIcon />
                             </button>
                         </div>
-                        {search}
                         {nav}
                     </aside>
                 )}
-                <main id='main'>
-                    <div className='content'>{children}</div>
-                </main>
+                <div className='app-main'>
+                    <header className='site-header'>
+                        {search}
+                        {theme}
+                    </header>
+                    <main id='main'>
+                        <div className='content'>{children}</div>
+                    </main>
+                </div>
             </div>
         </>
     );

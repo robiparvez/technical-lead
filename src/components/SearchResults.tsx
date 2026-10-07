@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import type { SearchEntry } from '@/data';
 import { useKnownQuestions } from '@/lib/progress';
 import { clearSearch } from '@/components/SearchBox';
@@ -12,8 +13,14 @@ interface TopicSummary {
     questionIds: string[];
 }
 
+/** Home index driven by the ?q= query in the URL; needs a Suspense boundary. */
+export default function SearchResults(props: { topics: TopicSummary[]; index: SearchEntry[] }) {
+    const query = useSearchParams().get('q') ?? '';
+    return <Results {...props} query={query} />;
+}
+
 /** Home index: topic cards, or live search results across questions. */
-export default function SearchResults({
+export function Results({
     topics,
     index,
     query,

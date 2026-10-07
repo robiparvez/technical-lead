@@ -1,0 +1,1119 @@
+{
+    "slug": "backend-runtime",
+    "title": "Backend Runtimes: Node.js, Python & Java",
+    "requirement": "Strong hands-on experience with one or more back-end languages: Node.js, Python, or Java.",
+    "questions": [
+        {
+            "id": "backend-q1",
+            "difficulty": "basic",
+            "tags": [
+                "node",
+                "event-loop",
+                "fundamentals",
+                "async"
+            ],
+            "question": "How does the Node.js event loop work, and why does one slow request hurt every other request?",
+            "answer": "Node runs your JavaScript single-threaded on an event loop, and I/O goes to the OS or libuv's thread pool. That keeps thousands of concurrent connections cheap, since there's no thread per connection. But long synchronous work, like a big JSON.parse or a crypto hash, blocks the whole loop and queues every request. The fix is worker threads, streaming and chunking large payloads, or pushing batch jobs to a queue.",
+            "keyTakeaway": "One thread serves everyone: I/O is cheap, synchronous CPU work blocks the whole service.",
+            "diagram": {
+                "kind": "flow",
+                "title": "One loop serves every request",
+                "steps": [
+                    {
+                        "label": "Request arrives",
+                        "note": "Callback queued on loop"
+                    },
+                    {
+                        "label": "Async I/O handed off",
+                        "note": "OS or libuv pool"
+                    },
+                    {
+                        "label": "Loop keeps serving",
+                        "note": "Never waits inline"
+                    },
+                    {
+                        "label": "Completion callback runs",
+                        "note": "Sync work blocks everyone"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "backend-q2",
+            "difficulty": "basic",
+            "tags": [
+                "async",
+                "promises",
+                "error-handling",
+                "fundamentals"
+            ],
+            "question": "How do async/await and Promises work, and where do async errors silently disappear?",
+            "answer": "async/await writes Promise chains as sequential code, yielding between awaits so the thread can serve other work. Errors propagate by rejection, so an await inside try/catch catches them. Unobserved rejections come from fire-and-forget calls, .then chains without .catch, and async functions that are never awaited. In Node they can crash the process on unhandledRejection. So I attach catch handlers to every promise. I use Promise.allSettled when partial failure is acceptable and Promise.all for fail-fast.",
+            "keyTakeaway": "Every promise needs an observer; un-awaited rejections are silent data-loss bugs.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Promise.all versus Promise.allSettled",
+                "columns": [
+                    "Promise.all",
+                    "Promise.allSettled"
+                ],
+                "rows": [
+                    {
+                        "label": "On one rejection",
+                        "values": [
+                            "Rejects immediately",
+                            "Waits for every result"
+                        ]
+                    },
+                    {
+                        "label": "Use when",
+                        "values": [
+                            "Fail-fast is right",
+                            "Partial failure is fine"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "backend-q3",
+            "difficulty": "basic",
+            "tags": [
+                "node",
+                "python",
+                "java",
+                "decision"
+            ],
+            "question": "How do you choose between Node.js, Python, and Java for a new backend service?",
+            "answer": "I start from the workload and the team, not language loyalty. Node fits I/O-bound APIs and real-time services, and gives you one language across full-stack TypeScript. It's weak on CPU-bound work. Python dominates data work, ML integration, scripting, and prototyping, but needs care around the GIL. Java and the modern JVM win on long-running, high-throughput, strictly typed enterprise services. My default is to stay in the team's ecosystem unless the workload demands otherwise.",
+            "keyTakeaway": "Match the workload: Node for I/O-heavy full-stack TS, Python for data/ML, JVM for high-throughput services.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Choosing a backend runtime",
+                "columns": [
+                    "Node.js",
+                    "Python",
+                    "Java"
+                ],
+                "rows": [
+                    {
+                        "label": "Strong at",
+                        "values": [
+                            "I/O-bound, real-time",
+                            "Data, ML, scripting",
+                            "High-throughput services"
+                        ]
+                    },
+                    {
+                        "label": "Watch for",
+                        "values": [
+                            "CPU-bound work",
+                            "The GIL",
+                            "Startup and footprint"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "backend-q4",
+            "difficulty": "intermediate",
+            "tags": [
+                "node",
+                "worker-threads",
+                "cpu-bound",
+                "concurrency"
+            ],
+            "question": "How do you handle CPU-bound work in a Node.js service?",
+            "answer": "I move it off the main event loop. worker_threads run separate V8 instances, each with its own event loop, and talk through messages or SharedArrayBuffer. I pool workers instead of spawning one per task, because startup costs memory and time, and I transfer or share ArrayBuffers for large payloads. But I diagnose first. node --cpu-prof or a flame graph often shows an O(n²) algorithm or a synchronous library call, and a better library beats threading.",
+            "keyTakeaway": "Pool worker threads for CPU work, stream the data, but first check the algorithm isn't just wrong.",
+            "diagram": {
+                "kind": "branch",
+                "title": "CPU-bound work in Node",
+                "condition": "Does profiling show a fixable algorithm or sync call?",
+                "yesLabel": "Yes",
+                "noLabel": "No",
+                "yes": {
+                    "label": "Fix the code",
+                    "note": "Better algorithm or library"
+                },
+                "no": {
+                    "label": "Worker thread pool",
+                    "note": "Off the main event loop"
+                }
+            }
+        },
+        {
+            "id": "backend-q5",
+            "difficulty": "intermediate",
+            "tags": [
+                "node",
+                "memory",
+                "leaks",
+                "debugging"
+            ],
+            "question": "How do you find a memory leak in a production Node.js service?",
+            "answer": "First I confirm it: RSS or heap ratchets upward across GC cycles instead of sawtoothing. Then I take two heap snapshots with the inspector and diff them in Chrome DevTools for the object type that grows monotonically. The usual suspects are unremoved event listeners, closures capturing large scopes, module-level caches or Maps without eviction, and timers. For defense, I cap every in-process cache with TTL or LRU, alert on heap trend, and load-test before release.",
+            "keyTakeaway": "Diff two heap snapshots, follow the retention path, and cap every cache you ever build.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Finding a memory leak",
+                "steps": [
+                    {
+                        "label": "Confirm",
+                        "note": "heap ratchets up"
+                    },
+                    {
+                        "label": "Two heap snapshots"
+                    },
+                    {
+                        "label": "Diff in DevTools",
+                        "note": "type that grows"
+                    },
+                    {
+                        "label": "Fix suspect",
+                        "note": "listeners, caches, timers"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "backend-q6",
+            "difficulty": "intermediate",
+            "tags": [
+                "node",
+                "streams",
+                "backpressure",
+                "io"
+            ],
+            "question": "What are Node.js streams and backpressure, and when do you need them?",
+            "answer": "Streams process data in chunks instead of buffering it whole, so reading a 10 GB file or proxying an upload with a stream uses constant memory. Backpressure stops a fast source from drowning a slow consumer. When the writable buffer fills, stream.write returns false, and pipe or pipeline pauses the readable until the drain event. Raw write and on('data') loops skip this. I use stream.pipeline, because it propagates errors and cleans up.",
+            "keyTakeaway": "Streams keep memory flat; pipeline() gives you backpressure and error cleanup for free.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Backpressure through pipeline()",
+                "actors": [
+                    "Readable",
+                    "Writable"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "write(chunk) queued"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "Buffer full: false"
+                    },
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Paused until drain"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "Drain: resume writes"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "backend-q7",
+            "difficulty": "intermediate",
+            "tags": [
+                "pooling",
+                "database",
+                "resources",
+                "performance"
+            ],
+            "question": "Why does connection pooling matter, and what actually happens during pool exhaustion?",
+            "answer": "Connections cost a TCP and TLS handshake, so pools keep a bounded set and lend them per operation. Exhaustion happens when concurrency exceeds pool size. Requests queue, latency climbs, and callers with no timeout hang the service while the database is healthy. I size the pool against database capacity: pool size times instance count versus max_connections. I set checkout timeouts so overload fails fast. In serverless, each instance has its own pool, so cap it low or use PgBouncer or RDS Proxy.",
+            "keyTakeaway": "Pool size times instances must fit the database; checkout timeouts and wait-time metrics catch exhaustion early.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Connection checkout lifecycle",
+                "steps": [
+                    {
+                        "label": "Request checks out",
+                        "note": "Waits if pool empty"
+                    },
+                    {
+                        "label": "Query runs on socket",
+                        "note": "Hold time is latency risk"
+                    },
+                    {
+                        "label": "Returned to pool",
+                        "note": "Leaks starve everyone"
+                    },
+                    {
+                        "label": "Exhausted: queue + timeout",
+                        "note": "Fail fast, alert waits"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "backend-q8",
+            "difficulty": "advanced",
+            "tags": [
+                "java",
+                "concurrency",
+                "virtual-threads",
+                "threading"
+            ],
+            "question": "How has Java's concurrency model evolved, and when are virtual threads the right choice?",
+            "answer": "Classic Java maps each request to a memory-heavy platform thread, and thread pools cap throughput. Virtual threads, stable since Java 21, are scheduled by the JVM and park cheaply on I/O. You write plain blocking code, one virtual thread per request, and scale to millions of tasks. There are caveats. CPU-bound work still needs platform thread pools. Pinning occurs when synchronized blocks or native calls hold a virtual thread while it blocks, so I prefer ReentrantLock. And connection pools stay the real bottleneck.",
+            "keyTakeaway": "Virtual threads give blocking-code simplicity at reactive-framework scale; watch pinning and keep pools sized.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Platform vs virtual threads",
+                "columns": [
+                    "Platform thread",
+                    "Virtual thread"
+                ],
+                "rows": [
+                    {
+                        "label": "Memory cost",
+                        "values": [
+                            "~1 MB stack each",
+                            "Kilobytes, JVM scheduled"
+                        ]
+                    },
+                    {
+                        "label": "Blocking I/O",
+                        "values": [
+                            "Holds an OS thread",
+                            "Parks cheaply"
+                        ]
+                    },
+                    {
+                        "label": "Best for",
+                        "values": [
+                            "CPU-bound work",
+                            "Massive I/O fan-out"
+                        ]
+                    },
+                    {
+                        "label": "Watch for",
+                        "values": [
+                            "Pool sizing",
+                            "Pinning in synchronized"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "backend-q9",
+            "difficulty": "advanced",
+            "tags": [
+                "graceful-shutdown",
+                "deployment",
+                "lifecycle",
+                "reliability"
+            ],
+            "question": "How do you implement graceful shutdown so deploys do not drop in-flight requests?",
+            "answer": "The platform sends SIGTERM, then SIGKILL after a grace period. I stop accepting new work immediately: close the HTTP listener, mark the instance unready in the load balancer or Kubernetes readiness probe, and finish or fail in-flight requests within the window. Then I drain background work. Consumers finish the current batch and commit offsets, and database and Redis pools close. Idempotent handlers plus a queue make stragglers safe to retry. I test it by killing the process under load in staging and asserting zero 5xx and zero lost messages.",
+            "keyTakeaway": "SIGTERM means stop intake, drain in-flight work, flush, close pools, and rehearse it under load.",
+            "diagram": {
+                "kind": "flow",
+                "title": "SIGTERM drain sequence",
+                "steps": [
+                    {
+                        "label": "SIGTERM received",
+                        "note": "Grace period starts"
+                    },
+                    {
+                        "label": "Stop accepting new work",
+                        "note": "Close listener, mark unready"
+                    },
+                    {
+                        "label": "Drain in-flight requests",
+                        "note": "Finish or fail fast"
+                    },
+                    {
+                        "label": "Flush and close pools",
+                        "note": "Logs, metrics, connections"
+                    },
+                    {
+                        "label": "Exit before SIGKILL",
+                        "note": "Rehearse under load"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "backend-q10",
+            "difficulty": "advanced",
+            "tags": [
+                "profiling",
+                "observability",
+                "performance",
+                "production"
+            ],
+            "question": "A service is slow in production but fast locally: how do you find the cause?",
+            "answer": "I compare environments first, since production slowness comes from data volume, concurrency, network topology, or cold caches. Then I use distributed traces to find the span consuming the latency: a database query, a downstream call, queue wait, or my own handler. Percentiles matter. A p99 of two seconds with a fast p50 points to a specific cohort, such as cache misses. Then I profile the span. Flame graphs show CPU, lock contention, or GC, and slow query logs and plan analysis catch N+1s and missing indexes.",
+            "keyTakeaway": "Trace to the slow span, profile inside it, and remember p99 tells the story the average hides.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Slow in production only",
+                "steps": [
+                    {
+                        "label": "Compare environments",
+                        "note": "data, concurrency"
+                    },
+                    {
+                        "label": "Trace",
+                        "note": "find the slow span"
+                    },
+                    {
+                        "label": "Read percentiles",
+                        "note": "p99 vs p50"
+                    },
+                    {
+                        "label": "Profile the span",
+                        "note": "flame graph, query plan"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "backend-q11",
+            "difficulty": "intermediate",
+            "tags": [
+                "http",
+                "keep-alive",
+                "connections",
+                "performance"
+            ],
+            "question": "What is HTTP keep-alive, and why does ignoring connection reuse quietly tax your latency?",
+            "answer": "Keep-alive is the HTTP/1.1 default. The TCP connection stays open after a response, so later requests skip the TCP and TLS handshakes and the slow-start ramp. Reuse needs every hop to agree. Hand-rolled clients, a short server keepAliveTimeout, or a load balancer closing idle connections first all force a fresh handshake per request, which is a constant tens-of-milliseconds tax in every trace. I set the server idle timeout above the balancer's.",
+            "keyTakeaway": "Keep-alive saves a full handshake per request, but only if client, server, and load balancer idle timeouts line up.",
+            "code": {
+                "language": "typescript",
+                "snippet": "import https from 'node:https';\n\nconst agent = new https.Agent({ keepAlive: true, maxSockets: 50 });\nhttps.request({ host: 'orders.internal', path: '/orders', agent }, (res) => {\n    res.resume(); // drain so the socket returns to the pool\n}).end();"
+            },
+            "diagram": {
+                "kind": "sequence",
+                "title": "Connection reuse across calls",
+                "actors": [
+                    "Client",
+                    "Service",
+                    "Upstream"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "First request"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "TCP + TLS handshake"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Reuse open socket"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "Response, keep-alive"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Next call: no handshake"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "backend-q12",
+            "difficulty": "intermediate",
+            "tags": [
+                "tls",
+                "networking",
+                "security",
+                "load-balancing"
+            ],
+            "question": "Where should TLS terminate in a backend architecture, and what are the trade-offs of each placement?",
+            "answer": "The choice is to terminate at the edge load balancer, at an ingress or mesh sidecar, or in the application. The balancer is cheapest, with central certificate rotation, but traffic to the pods is plaintext. That's acceptable in a strictly controlled private network and risky in zero-trust environments. Mesh mTLS protects internal traffic and gives workload identity, at the cost of latency and complexity. Most teams terminate at the edge, then add mesh mTLS when compliance demands it.",
+            "keyTakeaway": "Terminate TLS at the edge for simplicity, and add mesh mTLS internally when the network itself cannot be trusted.",
+            "diagram": {
+                "kind": "layers",
+                "title": "TLS termination placements",
+                "rows": [
+                    {
+                        "label": "Edge LB terminates",
+                        "note": "Central certs, plaintext inside"
+                    },
+                    {
+                        "label": "Ingress re-encrypts",
+                        "note": "Hops protected, extra latency"
+                    },
+                    {
+                        "label": "Mesh mTLS sidecars",
+                        "note": "Workload identity, zero trust"
+                    },
+                    {
+                        "label": "App terminates itself",
+                        "note": "End-to-end, heavy operations"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "backend-q13",
+            "difficulty": "intermediate",
+            "tags": [
+                "health-checks",
+                "kubernetes",
+                "reliability",
+                "deployment"
+            ],
+            "question": "How do you design health checks: what belongs in liveness versus readiness versus startup probes?",
+            "answer": "Mixing up the probes causes outages. Liveness asks whether the process is wedged so that a restart would cure it. I fail it only for a deadlock or stuck event loop, never for a slow dependency, because a liveness check on downstreams restarts every pod in a cascade. Readiness asks whether this instance should receive traffic right now. It may fail on a cold cache, a lost database connection, or draining, which removes the pod from the load balancer without killing it.",
+            "keyTakeaway": "Liveness should only fail when a restart helps; readiness controls traffic and may safely fail on dependencies.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Readiness versus liveness",
+                "condition": "Dependency down?",
+                "yes": {
+                    "label": "Fail readiness only",
+                    "note": "Pod lives, traffic drains"
+                },
+                "no": {
+                    "label": "Serve traffic",
+                    "note": "Liveness stays green"
+                }
+            }
+        },
+        {
+            "id": "backend-q14",
+            "difficulty": "intermediate",
+            "tags": [
+                "logging",
+                "observability",
+                "sampling",
+                "structured-logs"
+            ],
+            "question": "Why does structured logging matter in production, and when should you sample logs instead of keeping everything?",
+            "answer": "Structured logs are events with fields: a JSON line with user_id, request_id, and latency_ms, not a sentence you have to regex. I put the request ID in every line. At thousands of requests per second, info logs are mostly repetition. Head sampling keeps every Nth request. Tail sampling is the better default: keep all errors and slow requests, drop routine successes. Never sample errors. And watch cardinality, because unbounded user IDs sink your log index.",
+            "keyTakeaway": "Log structured events, keep every error, and sample the routine success traffic, never the failures.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Log pipeline with sampling",
+                "steps": [
+                    {
+                        "label": "Emit structured event",
+                        "note": "JSON with request ID"
+                    },
+                    {
+                        "label": "Enrich and route by level",
+                        "note": "Errors always kept"
+                    },
+                    {
+                        "label": "Sample routine successes",
+                        "note": "Keep every Nth"
+                    },
+                    {
+                        "label": "Ship to log store",
+                        "note": "Index cost bounded"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "backend-q15",
+            "difficulty": "intermediate",
+            "tags": [
+                "caching",
+                "http-headers",
+                "performance",
+                "ttl"
+            ],
+            "question": "When should caching live in HTTP headers versus an in-process cache inside the service?",
+            "answer": "HTTP caching (Cache-Control and ETags, used by browsers, CDNs, and proxies) moves work off your service entirely. It fits only responses that are safe to reuse per URL and viewer, not personalized or highly dynamic endpoints. An in-process cache, a bounded LRU with TTL, serves hot data in nanoseconds with arbitrary keys. But each instance fills it separately, deploys mean cold caches, and you own staleness. I use Redis only when coherence across instances matters.",
+            "keyTakeaway": "Cache at the edge for reusable responses, in-process for hot per-instance reads, and Redis only when cross-instance coherence matters.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Header cache vs in-process",
+                "columns": [
+                    "HTTP caching",
+                    "In-process cache"
+                ],
+                "rows": [
+                    {
+                        "label": "Scope",
+                        "values": [
+                            "Shared, offloads service",
+                            "Per instance"
+                        ]
+                    },
+                    {
+                        "label": "Key space",
+                        "values": [
+                            "URL and headers",
+                            "Any key you like"
+                        ]
+                    },
+                    {
+                        "label": "Invalidation",
+                        "values": [
+                            "TTL and revalidation",
+                            "Manual, you own it"
+                        ]
+                    },
+                    {
+                        "label": "Best for",
+                        "values": [
+                            "Cacheable GETs",
+                            "Hot config and reads"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "backend-q16",
+            "difficulty": "intermediate",
+            "tags": [
+                "rate-limiting",
+                "gateway",
+                "resilience",
+                "api"
+            ],
+            "question": "Should rate limiting live at the gateway or inside each service, and how do you combine both?",
+            "answer": "The gateway enforces coarse, cheap limits before any of your capacity is spent: per-IP and per-API-key limits and global quotas. It can't see per-tenant fairness. Business limits belong in the service, with Redis or a database for a cluster-wide count. I layer them: generous gateway limits for abuse, and service-level token buckets for fairness and expensive operations. I also decide whether each limiter fails open or closed, because a limiter outage that rejects everyone is its own incident.",
+            "keyTakeaway": "Limit coarsely at the gateway to shed abuse, limit precisely inside services for per-tenant fairness, and layer both.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Where a limit is enforced",
+                "condition": "Breach visible at the edge?",
+                "yes": {
+                    "label": "429 at the gateway",
+                    "note": "Zero service capacity spent"
+                },
+                "no": {
+                    "label": "Service token bucket",
+                    "note": "Per-user count in Redis"
+                }
+            }
+        },
+        {
+            "id": "backend-q17",
+            "difficulty": "intermediate",
+            "tags": [
+                "scheduling",
+                "cron",
+                "distributed-systems",
+                "idempotency"
+            ],
+            "question": "How do you run cron-style scheduled jobs in a service with ten horizontally scaled instances?",
+            "answer": "A naive cron inside the image fires on every instance, so you get ten duplicate emails and corrupted shared state. The baseline fix is a leader lock, using a database advisory lock, a lease row with heartbeat, or your queue's scheduler. The lock must expire so a dead leader can't stall the schedule. Better is to push scheduling out to Kubernetes CronJobs, a cloud scheduler, or delayed queue messages that deliver the trigger once. I make the job idempotent regardless, because retries and overlapping runs happen.",
+            "keyTakeaway": "Never let every instance run its own cron: elect one leader with a lock, or externalize the trigger and make handlers idempotent.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Scheduled jobs across instances",
+                "columns": [
+                    "Cron in every image",
+                    "Leader lock",
+                    "External scheduler"
+                ],
+                "rows": [
+                    {
+                        "label": "Runs",
+                        "values": [
+                            "On every instance",
+                            "On the lock holder",
+                            "Delivered once"
+                        ]
+                    },
+                    {
+                        "label": "Risk",
+                        "values": [
+                            "Duplicate side effects",
+                            "Lock must expire",
+                            "Least moving parts"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "backend-q18",
+            "difficulty": "intermediate",
+            "tags": [
+                "feature-flags",
+                "release-management",
+                "configuration",
+                "deployment"
+            ],
+            "question": "How should feature flags be evaluated server-side, and what keeps them from rotting into technical debt?",
+            "answer": "I evaluate close to the decision. The service either polls the flag system for a snapshot and evaluates locally with an SDK, or receives pushed updates over a streaming connection. I never branch on a flag through a per-request network call, since that's a self-built synchronous dependency. I decide per flag whether it fails open or closed, based on feature risk. Hygiene is the real work: every flag gets an owner, an expiry date, and a documented kill path.",
+            "keyTakeaway": "Evaluate flags locally against a synced snapshot, and give every flag an owner, an expiry, and a removal task.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Server-side flag evaluation",
+                "steps": [
+                    {
+                        "label": "Snapshot or stream",
+                        "note": "from flag system"
+                    },
+                    {
+                        "label": "Evaluate locally",
+                        "note": "no per-request call"
+                    },
+                    {
+                        "label": "Fail open or closed",
+                        "note": "chosen per flag"
+                    },
+                    {
+                        "label": "Owner and expiry",
+                        "note": "documented kill path"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "backend-q19",
+            "difficulty": "intermediate",
+            "tags": [
+                "thread-pools",
+                "concurrency",
+                "debugging",
+                "java"
+            ],
+            "question": "What does thread pool starvation look like from the outside, and how do you diagnose it?",
+            "answer": "Starvation is when work queues while every thread is blocked and CPU sits idle. The classic cause is a blocking call inside an async or shared context, like a synchronous JDBC query on an event-loop-style pool or a nested .get() on the caller's own pool. I diagnose it with a thread dump under load, where dozens of threads are parked in the same WAITING frame. The fix is separate pools for fast and slow work, bounded downstream timeouts, and sizing against blocking time, not CPU count.",
+            "keyTakeaway": "Queues grow while CPU idles: take a thread dump under load and find the blocking call every parked thread shares.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Diagnosing thread pool starvation",
+                "steps": [
+                    {
+                        "label": "Symptom",
+                        "note": "queue grows, CPU idle"
+                    },
+                    {
+                        "label": "Thread dump",
+                        "note": "under load"
+                    },
+                    {
+                        "label": "Same WAITING frame",
+                        "note": "blocking call found"
+                    },
+                    {
+                        "label": "Separate pools",
+                        "note": "plus bounded timeouts"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "backend-q20",
+            "difficulty": "advanced",
+            "tags": [
+                "python",
+                "gil",
+                "free-threading",
+                "concurrency"
+            ],
+            "question": "How does the GIL shape Python concurrency today, and is free-threading ready to change that?",
+            "answer": "The GIL lets only one thread execute Python bytecode at a time. Threads help I/O-bound work but don't parallelize CPU-bound work. The escape hatches are multiprocessing and GIL-releasing native extensions like NumPy. Free-threaded Python, the no-GIL build shipped as experimental in 3.13 and improving through 3.14, runs threads in parallel. The costs are slower single-threaded performance initially, a thread-safety audit of C extensions, and immature tooling. It's a trial technology, not a default.",
+            "keyTakeaway": "Threads parallelize I/O but not CPU under the GIL; free-threaded builds change that but are still early for production.",
+            "code": {
+                "language": "python",
+                "snippet": "import sys\n\nprint(sys._is_gil_enabled())  # False on a free-threaded build\n\n# threads then run Python bytecode truly in parallel"
+            },
+            "diagram": {
+                "kind": "compare",
+                "title": "Python parallelism options",
+                "columns": [
+                    "GIL threads",
+                    "Free-threaded",
+                    "Multiprocessing"
+                ],
+                "rows": [
+                    {
+                        "label": "CPU parallelism",
+                        "values": [
+                            "None",
+                            "True",
+                            "True, separate cores"
+                        ]
+                    },
+                    {
+                        "label": "Overhead",
+                        "values": [
+                            "Low",
+                            "Low-medium",
+                            "High, pickling"
+                        ]
+                    },
+                    {
+                        "label": "Ecosystem risk",
+                        "values": [
+                            "None",
+                            "Extension audit needed",
+                            "Mostly safe"
+                        ]
+                    },
+                    {
+                        "label": "Best for",
+                        "values": [
+                            "I/O-bound",
+                            "Early adoption",
+                            "Batch CPU today"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "backend-q21",
+            "difficulty": "advanced",
+            "tags": [
+                "java",
+                "garbage-collection",
+                "jvm",
+                "tuning"
+            ],
+            "question": "How do you choose between G1 and ZGC for a JVM service, and which signals say it is time to switch?",
+            "answer": "G1, the default since Java 9, is a region-based collector that balances throughput and pause time. It handles heaps of tens of gigabytes with pauses in the tens of milliseconds. ZGC with generational mode, production-ready in JDK 21, targets sub-millisecond pauses regardless of heap size. I switch based on my own metrics: GC pauses in the p99 budget, allocation-rate storms, and humongous allocations. I fix allocation churn first, then enable ZGC and verify the pause histograms.",
+            "keyTakeaway": "Stay on G1 by default; move to generational ZGC when GC pauses measurably eat your p99 budget at large heaps.",
+            "code": {
+                "language": "bash",
+                "snippet": "java -XX:+UseZGC \\\n    -XX:MaxRAMPercentage=75.0 \\\n    -XX:+ExitOnOutOfMemoryError \\\n    -jar service.jar\n# verify pause histograms in GC logs under real load"
+            },
+            "diagram": {
+                "kind": "compare",
+                "title": "G1 versus ZGC",
+                "columns": [
+                    "G1",
+                    "Generational ZGC"
+                ],
+                "rows": [
+                    {
+                        "label": "Pause target",
+                        "values": [
+                            "Tens of milliseconds",
+                            "Sub-millisecond"
+                        ]
+                    },
+                    {
+                        "label": "Status",
+                        "values": [
+                            "Default since Java 9",
+                            "Production-ready in JDK 21"
+                        ]
+                    },
+                    {
+                        "label": "Switch when",
+                        "values": [
+                            "Pauses fit p99 budget",
+                            "Pauses break p99 budget"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "backend-q22",
+            "difficulty": "advanced",
+            "tags": [
+                "java",
+                "jit",
+                "warmup",
+                "performance"
+            ],
+            "question": "Why does a JVM service serve slow p99s right after deploy, and how do you manage JIT warmup?",
+            "answer": "The JVM starts in the interpreter, and the JIT promotes hot methods through tiered compilation: C1 for fast code, C2 for fully optimized code. An endpoint can run several times slower in its first minutes than at steady state, so rolling deploys skew every percentile. I keep instances out of the load balancer until they're warm. If startup cost is architectural, I use Application Class Data Sharing, CRaC checkpoints, or native image. And I never draw load test conclusions from an unwarmed instance.",
+            "keyTakeaway": "Gate deploys on a warmed JVM: tiered JIT makes the early minutes slow, so keep cold instances out of the pool.",
+            "diagram": {
+                "kind": "layers",
+                "title": "JIT tiered compilation",
+                "rows": [
+                    {
+                        "label": "Interpreter",
+                        "note": "Bytecode, slowest start"
+                    },
+                    {
+                        "label": "C1 compiles hot spots",
+                        "note": "Quick, modest optimization"
+                    },
+                    {
+                        "label": "C2 full optimization",
+                        "note": "Inlined, steady-state speed"
+                    },
+                    {
+                        "label": "Warm instance",
+                        "note": "Ready for the balancer"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "backend-q23",
+            "difficulty": "advanced",
+            "tags": [
+                "grpc",
+                "streaming",
+                "java",
+                "http2"
+            ],
+            "question": "How does gRPC server streaming work in Java or Node, and where do implementations usually go wrong?",
+            "answer": "Server streaming sends one request and a sequence of responses over a single HTTP/2 call. It fits feeds, exports, and watch-style APIs where REST would force pagination or websockets. The mistakes are materializing the whole result set before streaming instead of writing as the cursor reads, ignoring flow control so a slow client and fast producer balloon buffers, and ignoring client cancellation. The handler must observe cancellation and stop querying. Backpressure pauses writes when the client window fills.",
+            "keyTakeaway": "Stream from the source as it produces, observe client cancellation and deadlines, and never buffer the whole result first.",
+            "code": {
+                "language": "java",
+                "snippet": "public void listOrders(Request req,\n        StreamObserver<Order> response) {\n    orders.findByCustomer(req.customerId())\n        .forEach(response::onNext); // write as the cursor reads\n    response.onCompleted(); // closes the stream cleanly\n}"
+            },
+            "diagram": {
+                "kind": "sequence",
+                "title": "gRPC server streaming",
+                "actors": [
+                    "Client",
+                    "Service"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "One request opens stream"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "Messages sent as ready"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "Client window fills: pause"
+                    },
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Cancel mid-stream"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "Handler observes, stops"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "backend-q24",
+            "difficulty": "advanced",
+            "tags": [
+                "serialization",
+                "protobuf",
+                "validation",
+                "performance"
+            ],
+            "question": "When does JSON serialization become a real cost, and where should schema validation sit in the request path?",
+            "answer": "JSON is text, so field names travel on every request. At high request rates or with large payloads, serialization costs measurable CPU. Binary schemas like Protobuf or Avro carry field numbers instead of names, so they encode smaller and parse faster. JSON stays right for public APIs, where debuggability and broad client support win. I validate at the trust boundary, rejecting malformed payloads at ingress with a schema check, and re-validate internally only when I distrust the caller.",
+            "keyTakeaway": "Binary schemas cut CPU and payload size on internal paths; validate against a schema at the trust boundary, once.",
+            "diagram": {
+                "kind": "compare",
+                "title": "JSON versus binary schemas",
+                "columns": [
+                    "JSON",
+                    "Protobuf, Avro"
+                ],
+                "rows": [
+                    {
+                        "label": "Field names",
+                        "values": [
+                            "Sent on every request",
+                            "Field numbers only"
+                        ]
+                    },
+                    {
+                        "label": "Size and parse",
+                        "values": [
+                            "Larger, slower",
+                            "Smaller, faster"
+                        ]
+                    },
+                    {
+                        "label": "Best for",
+                        "values": [
+                            "Public APIs",
+                            "High-rate internal calls"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "backend-q25",
+            "difficulty": "advanced",
+            "tags": [
+                "database",
+                "migrations",
+                "zero-downtime",
+                "deployment"
+            ],
+            "question": "How do you coordinate schema migrations with code deploys so neither version ever breaks?",
+            "answer": "Every schema change has to work with both old and new code, because a rolling deploy runs both and rollback must survive. I use expand and contract. Add the nullable column or new table, then deploy code that writes both shapes and reads the new one. Backfill in batches outside the request path, flip reads, and drop the old column last. Adds must be nullable or defaulted, since NOT NULL on a large table locks it. And I never ship a destructive change in the same release as the behavior depending on it.",
+            "keyTakeaway": "Expand the schema, migrate the code and data, contract last: every intermediate state must serve both versions.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Expand and contract deploy",
+                "steps": [
+                    {
+                        "label": "Expand schema",
+                        "note": "Additive, nullable, online"
+                    },
+                    {
+                        "label": "Deploy dual-write code",
+                        "note": "Old and new versions safe"
+                    },
+                    {
+                        "label": "Backfill in batches",
+                        "note": "Off the request path"
+                    },
+                    {
+                        "label": "Flip reads, contract",
+                        "note": "Drop old column last"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "backend-q26",
+            "difficulty": "advanced",
+            "tags": [
+                "memory",
+                "containers",
+                "kubernetes",
+                "jvm"
+            ],
+            "question": "Why do JVM and Node services get OOMKilled in containers with plenty of heap still free, and how do you prevent it?",
+            "answer": "The kernel kills the container when total RSS exceeds the cgroup limit. RSS is heap plus metaspace, thread stacks, code cache, direct ByteBuffers, and native allocations the garbage collector never sees. So a JVM can sit far below -Xmx and still die. I prefer MaxRAMPercentage over a fixed Xmx and leave a quarter to a third of the limit as non-heap headroom. Exit code 137 means a kernel kill. I add -XX:+ExitOnOutOfMemoryError so a broken heap restarts fast.",
+            "keyTakeaway": "OOMKilled means total native plus heap memory breached the cgroup limit, so size with headroom and watch RSS, not heap.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Container memory beyond the heap",
+                "rows": [
+                    {
+                        "label": "cgroup limit",
+                        "note": "Kernel kills on total RSS, exit 137"
+                    },
+                    {
+                        "label": "Heap",
+                        "note": "MaxRAMPercentage, not fixed Xmx"
+                    },
+                    {
+                        "label": "Non-heap",
+                        "note": "Metaspace, stacks, code cache"
+                    },
+                    {
+                        "label": "Native",
+                        "note": "Direct buffers, GC never sees them"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "backend-q27",
+            "difficulty": "advanced",
+            "tags": [
+                "java",
+                "graalvm",
+                "native-image",
+                "startup"
+            ],
+            "question": "When is ahead-of-time native compilation, like GraalVM native image, worth it over the traditional JIT JVM?",
+            "answer": "Native image trades peak throughput for instant startup and a small footprint. Compilation happens at build time, so there's no JIT and no warmup. You get millisecond starts and tens of megabytes of RSS. The costs: peak performance is typically below a warmed JIT, builds take minutes and gigabytes, and some libraries don't work. My rule is that a long-running steady service wins on plain JVM, while a service that starts often, idles, or scales to zero in seconds earns native's build complexity.",
+            "keyTakeaway": "Native image buys instant startup at some peak throughput; long-running warm services usually still belong on the JIT.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Native image versus JIT JVM",
+                "columns": [
+                    "Native image",
+                    "JIT JVM"
+                ],
+                "rows": [
+                    {
+                        "label": "Startup",
+                        "values": [
+                            "Milliseconds",
+                            "Needs warmup"
+                        ]
+                    },
+                    {
+                        "label": "Peak throughput",
+                        "values": [
+                            "Lower",
+                            "Higher once warm"
+                        ]
+                    },
+                    {
+                        "label": "Fits",
+                        "values": [
+                            "Scale to zero, short-lived",
+                            "Long-running steady service"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "backend-q28",
+            "difficulty": "advanced",
+            "tags": [
+                "websockets",
+                "scaling",
+                "real-time",
+                "fan-out"
+            ],
+            "question": "How do you scale WebSocket connections across multiple instances without losing messages?",
+            "answer": "WebSocket is a stateful, pinned connection, so the socket lives on one instance. With an in-memory channel map, a message published on instance A never reaches a user on instance B. The standard architecture is sticky sessions or layer-7 balancer support for the upgrade handshake, plus a cross-instance fan-out bus such as Redis pub/sub. Any instance publishes, and every instance delivers to its own clients. Balancer idle timeouts demand application-level heartbeats, and reconnects need message cursors or idempotent events to fill the gap.",
+            "keyTakeaway": "Sockets pin to one instance, so stick the session and fan out events through a shared bus like Redis pub/sub.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "WebSocket fan-out across instances",
+                "actors": [
+                    "Sender",
+                    "Instance A",
+                    "Redis pub/sub",
+                    "Instance B",
+                    "Receiver"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Send message"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Publish"
+                    },
+                    {
+                        "from": 2,
+                        "to": 3,
+                        "label": "Fan out"
+                    },
+                    {
+                        "from": 3,
+                        "to": 4,
+                        "label": "Deliver"
+                    }
+                ]
+            }
+        }
+    ]
+}

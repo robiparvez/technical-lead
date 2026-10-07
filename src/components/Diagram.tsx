@@ -2,18 +2,25 @@
 
 import { Component, ComponentType, Suspense, lazy, useEffect, useState } from 'react';
 import type { PlayerRef } from '@remotion/player';
+import type { DiagramSpec } from '@/data/types';
 import RequestFlow from '@/components/diagrams/RequestFlow';
 import SagaFlow from '@/components/diagrams/SagaFlow';
 import CiCdFlow from '@/components/diagrams/CiCdFlow';
+import SpecDiagram, { specDescription, specFrames, specHeight } from '@/components/diagrams/SpecDiagram';
 import { RestVsGraphQL, BTreeIndex, ContainerDeploy } from '@/components/diagrams/StaticDiagrams';
 
 const LazyPlayer = lazy(() => import('@remotion/player').then((m) => ({ default: m.Player })));
 
 interface AnimatedDef {
-    component: ComponentType;
+    component: ComponentType | ComponentType<{ spec: DiagramSpec }>;
     label: string;
     durationInFrames: number;
     fps: number;
+    /** Composition height in px; width is always 720. Defaults to 400. */
+    height?: number;
+    /** Longer text alternative for the figure; defaults to `label`. */
+    description?: string;
+    inputProps?: { spec: DiagramSpec };
 }
 
 const ANIMATED: Record<string, AnimatedDef> = {
@@ -35,37 +42,58 @@ const ANIMATED: Record<string, AnimatedDef> = {
         durationInFrames: 330,
         fps: 30,
     },
-};
-
-const STATIC: Record<string, { component: ComponentType; label: string }> = {
     'rest-vs-graphql': {
         component: RestVsGraphQL,
         label: 'REST fixed payloads vs one GraphQL request',
+        description:
+            'REST serves three endpoints with fixed payloads; GraphQL serves one endpoint returning exactly the requested fields',
+        durationInFrames: 240,
+        fps: 30,
+        height: 300,
     },
-    'b-tree-index': { component: BTreeIndex, label: 'B-tree descent for key 28' },
+    'b-tree-index': {
+        component: BTreeIndex,
+        label: 'B-tree descent for key 28',
+        description:
+            'B-tree index: searching key 28 descends from the root through one internal page to one leaf page, three page reads',
+        durationInFrames: 180,
+        fps: 30,
+        height: 340,
+    },
     'container-deploy': {
         component: ContainerDeploy,
         label: 'Image to registry to scheduled pods behind a load balancer',
+        description:
+            'Container deployment: a CI build pushes a versioned image to a registry, an orchestrator schedules pod replicas across three nodes, and a load balancer spreads user traffic across pods',
+        durationInFrames: 270,
+        fps: 30,
+        height: 300,
     },
 };
 
-/** Renders a diagram by id: static SVG inline, animated ones through Remotion. */
-export default function Diagram({ id }: { id: string }) {
-    const animated = ANIMATED[id];
-    const statik = STATIC[id];
-
-    if (statik) {
-        const Comp = statik.component;
+/**
+ * Renders a question's diagram as a looping Remotion animation: a string id
+ * resolves against the hand-built registry above; a DiagramSpec object plays
+ * through the generic SpecDiagram composition.
+ */
+export default function Diagram({ diagram }: { diagram: string | DiagramSpec }) {
+    if (typeof diagram !== 'string') {
         return (
-            <figure className='diagram'>
-                <figcaption className='diagram-label'>{statik.label}</figcaption>
-                <div className='player-frame'>
-                    <Comp />
-                </div>
-            </figure>
+            <AnimatedDiagram
+                def={{
+                    component: SpecDiagram,
+                    label: diagram.title,
+                    description: specDescription(diagram),
+                    durationInFrames: specFrames(diagram),
+                    fps: 30,
+                    height: specHeight(diagram),
+                    inputProps: { spec: diagram },
+                }}
+            />
         );
     }
 
+    const animated = ANIMATED[diagram];
     if (!animated) return null;
     return <AnimatedDiagram def={animated} />;
 }
@@ -74,13 +102,16 @@ function AnimatedDiagram({ def }: { def: AnimatedDef }) {
     const [player, setPlayer] = useState<PlayerRef | null>(null);
     const [failed, setFailed] = useState(false);
     const [playing, setPlaying] = useState(false);
-    const [frame, setFrame] = useState(0);
+    // Whole seconds only: React skips same-value updates, so the readout
+    // re-renders once a second instead of on every frame.
+    const [seconds, setSeconds] = useState(0);
+    const fps = def.fps;
 
     useEffect(() => {
         if (!player) return;
         const onPlay = () => setPlaying(true);
         const onPause = () => setPlaying(false);
-        const onFrame = (e: { detail: { frame: number } }) => setFrame(e.detail.frame);
+        const onFrame = (e: { detail: { frame: number } }) => setSeconds(Math.floor(e.detail.frame / fps));
         player.addEventListener('play', onPlay);
         player.addEventListener('pause', onPause);
         player.addEventListener('frameupdate', onFrame as never);
@@ -89,7 +120,7 @@ function AnimatedDiagram({ def }: { def: AnimatedDef }) {
             player.removeEventListener('pause', onPause);
             player.removeEventListener('frameupdate', onFrame as never);
         };
-    }, [player]);
+    }, [player, fps]);
 
     if (failed) {
         return (
@@ -103,11 +134,10 @@ function AnimatedDiagram({ def }: { def: AnimatedDef }) {
         );
     }
 
-    const seconds = Math.floor(frame / def.fps);
     const total = def.durationInFrames / def.fps;
 
     return (
-        <figure className='diagram' role='group' aria-label={def.label}>
+        <figure className='diagram' role='group' aria-label={def.description ?? def.label}>
             <figcaption className='diagram-label'>{def.label}</figcaption>
             <div className='player-frame'>
                 <DiagramBoundary onError={() => setFailed(true)}>
@@ -122,10 +152,11 @@ function AnimatedDiagram({ def }: { def: AnimatedDef }) {
                         <LazyPlayer
                             ref={setPlayer}
                             component={def.component as never}
+                            inputProps={def.inputProps}
                             durationInFrames={def.durationInFrames}
                             fps={def.fps}
                             compositionWidth={720}
-                            compositionHeight={400}
+                            compositionHeight={def.height ?? 400}
                             controls={false}
                             autoPlay={false}
                             loop
@@ -138,6 +169,7 @@ function AnimatedDiagram({ def }: { def: AnimatedDef }) {
                     <button
                         type='button'
                         className='btn'
+                        disabled={!player}
                         aria-label={playing ? 'Pause diagram' : 'Play diagram'}
                         onClick={() => {
                             if (playing) {
@@ -152,6 +184,7 @@ function AnimatedDiagram({ def }: { def: AnimatedDef }) {
                     <button
                         type='button'
                         className='btn'
+                        disabled={!player}
                         aria-label='Restart diagram'
                         onClick={() => {
                             player?.seekTo(0);
