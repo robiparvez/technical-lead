@@ -12,7 +12,7 @@
                 "fundamentals"
             ],
             "question": "Which agile ceremonies do you keep valuable, and how do they change for distributed teams?",
-            "answer": "Four ceremonies carry real value. Planning sets the goal and scope, standups surface blockers, reviews close the loop with stakeholders, and retrospectives fix the process. For distributed teams I keep them shorter, send agendas in advance, and run one conversation at a time. I prefer async substitutes where they work, like a written standup or a recorded demo. If a ceremony produces no decision or artifact, I drop it.",
+            "answer": "I keep four: planning, standups for blockers, reviews with stakeholders, and retros. For distributed teams I keep them short, send agendas ahead, and use async versions where they work, like a written standup or recorded demo. A ceremony that produces no decision or artifact goes.",
             "keyTakeaway": "Keep the four ceremonies short and decision-focused; cover time zones with async artifacts.",
             "diagram": {
                 "kind": "sequence",
@@ -60,7 +60,7 @@
                 "process"
             ],
             "question": "How do you run estimation with a distributed cross-functional team?",
-            "answer": "I estimate in relative units, story points or t-shirt sizes, against a reference story. Hours invite false precision. We refine stories async in the tracker first, so the session only debates open questions. Any story the team can't size in the room gets split. I use velocity for planning only and never compare individual speed.",
+            "answer": "Relative sizes against a reference story, since hours invite false precision. We refine async first, so the session covers only open questions, and unsizable stories get split. Velocity is for planning, not comparing people.",
             "keyTakeaway": "Relative sizes against a reference, refinement before the meeting, split what cannot be sized.",
             "diagram": {
                 "kind": "flow",
@@ -95,7 +95,7 @@
                 "behavioral"
             ],
             "question": "How do you keep a team effective when it spans multiple time zones?",
-            "answer": "I make written work primary, so decisions and status live in documents and the tracker. We keep a small overlap window for decisions and unblocks only, and run everything else async with clear response-time expectations. I rotate meeting times so one region doesn't always take the 10 PM call, and I record decision meetings. Handoffs need context and acceptance criteria, or the rework eats whatever time-zone savings you got.",
+            "answer": "Written work comes first, so decisions and status live in documents and the tracker. We keep one small overlap window for decisions and unblocks, and everything else is async with clear response-time expectations. I rotate meeting times so one region doesn't always take the 10 PM call.",
             "keyTakeaway": "Documents over meetings, one protected overlap hour, fair rotation, context-rich handoffs.",
             "diagram": {
                 "kind": "compare",
@@ -145,7 +145,7 @@
                 "process"
             ],
             "question": "Velocity is down two sprints in a row. What do you do?",
-            "answer": "I look for the cause, not someone to blame. Interrupts, underestimated stories, review latency, on-call load, and staffing changes each need a different fix. I pull data (interrupt tickets, cycle time by stage, mid-sprint scope changes) and show the team. Then I fix flow: protect focus time, kill the recurring interrupt source, tighten review turnaround. I never target velocity, because teams inflate estimates.",
+            "answer": "I look for the cause, not someone to blame. Interrupts, underestimated stories and review latency each need a different fix, so I pull the data, like interrupt tickets and cycle time by stage. Then I fix flow. I never target velocity, because teams just inflate estimates.",
             "keyTakeaway": "Diagnose flow, not people; fix the interrupt source; never target the velocity number.",
             "diagram": {
                 "kind": "flow",
@@ -179,7 +179,7 @@
                 "process"
             ],
             "question": "Retrospectives keep happening but nothing changes. How do you fix that?",
-            "answer": "I cap actions at one or two, each with an owner and a due date, and we review them at the start of the next retro. I prefer cheap structural changes, like a refinement checklist or an interrupt rotation, over promises that need daily willpower. We judge a change after two sprints and kill the ones that don't pay for their overhead. If actions keep dying for lack of time, the real topic is that the team has no slack.",
+            "answer": "I cap actions at one or two, each with an owner and a due date, and review them at the start of the next retro. I prefer cheap structural changes over promises that need daily willpower. If actions keep dying for lack of time, the real topic is that the team has no slack.",
             "keyTakeaway": "One owned action at a time, review it before new topics, and question the missing slack.",
             "diagram": {
                 "kind": "branch",
@@ -207,7 +207,7 @@
                 "behavioral"
             ],
             "question": "A cross-functional dependency, design, data, or another team, blocks your sprint. How do you handle it?",
-            "answer": "I surface the dependency at planning, with a name and a date, because a mid-sprint blocker is really a planning failure. I agree on a contract or a mock with the other team so both sides can build in parallel. If the date slips twice, I escalate to someone who can re-prioritize, and I bring facts: what's blocked, the cost of delay, and the ask. If a dependency is chronic, the fix is redesigning team boundaries or the roadmap sequencing.",
+            "answer": "I surface the dependency at planning with a name and a date, since a mid-sprint blocker is really a planning failure. I agree a contract or mock so both sides build in parallel. If the date slips twice, I escalate with the cost of delay and the ask. A chronic one means the boundaries are wrong.",
             "keyTakeaway": "Contract to unblock in parallel, escalate with cost and ask, then fix the boundary.",
             "diagram": {
                 "kind": "flow",
@@ -238,7 +238,7 @@
                 "process"
             ],
             "question": "Scope keeps creeping into the sprint after it starts. How do you handle mid-sprint additions?",
-            "answer": "A sprint is a contract around a goal. For every mid-sprint ask, something of equal size comes out, and the product owner decides based on the sprint goal. Only interrupt work, like production issues and real emergencies, gets pulled in without question. I cap committed capacity near eighty percent so interrupts have room. Everything else waits for the next planning, with a date. If new work shows up every sprint, intake or the buffer is broken.",
+            "answer": "A sprint is a contract around a goal. For every mid-sprint ask, something of equal size comes out, and the product owner decides based on the goal. Real emergencies come in without question. I cap committed capacity near eighty percent so interrupts have room.",
             "keyTakeaway": "Trade mid-sprint asks for equal scope and fix chronic creep by planning a real interrupt buffer.",
             "diagram": {
                 "kind": "branch",
@@ -265,7 +265,7 @@
                 "flow"
             ],
             "question": "The same three stories keep spilling across sprints. What is going on and what do you change?",
-            "answer": "Spilling once is estimation noise. Spilling every sprint is a defect in the story, so I find where it waits: the review queue, a missing environment, an unanswered dependency. Then I split along an acceptance-criteria seam, and the first slice has to be demoable, not foundation work. A story that needs another team before it can start is a dependency, not a story. I never roll over automatically. I re-size and re-prioritize against the current backlog.",
+            "answer": "Spilling once is estimation noise. Spilling every sprint is a defect in the story, so I find where it waits, like the review queue or a missing environment. Then I split along an acceptance-criteria seam so the first slice is demoable. I never roll over automatically, I re-size and re-prioritize.",
             "keyTakeaway": "Re-split spilling stories along acceptance criteria and expose their hidden dependencies instead of rolling them.",
             "diagram": {
                 "kind": "flow",
@@ -303,7 +303,7 @@
                 "prioritization"
             ],
             "question": "How do you get real tech-debt work into a sprint plan that management wants full of features?",
-            "answer": "I price debt in product terms: slower feature delivery, pages it caused, last quarter's incident. I reserve a standing twenty percent of capacity for debt and bugs so there's no per-sprint negotiation, and I pay down debt when a feature touches a rotten module. I show leadership the bug backlog trend and toil hours. If the answer is still no, I name the risk in writing with the expected cost of deferral.",
+            "answer": "I price debt in product terms, like slower features and last quarter's incident. I reserve a standing twenty percent of capacity for debt and bugs so there's no per-sprint haggling, and I clean up modules a feature touches. If leadership still says no, I put the risk in writing.",
             "keyTakeaway": "Reserve a standing debt ratio, price debt in delay and incidents, and pay it opportunistically."
         },
         {
@@ -315,7 +315,7 @@
                 "anti-patterns"
             ],
             "question": "What signals tell you a team is doing agile theater rather than being agile?",
-            "answer": "The tells: standups report status to a manager instead of replanning, velocity gets reported upward as a performance number, demos are cancelled near deadlines, retro actions never ship, and stories are called done when nobody can deploy them. My test is whether a review or metric changes what gets built next sprint. Cargo-cult teams hold every ceremony and change nothing. I fix one ceremony at a time, starting with the retro. Until done means deployable, everything upstream is theater.",
+            "answer": "The tells are standups that report status to a manager instead of replanning, velocity reported upward as a performance number, demos cancelled near deadlines, and stories called done that nobody can deploy. My test is whether a review or metric changes what gets built next sprint. I fix one ceremony at a time, starting with the retro.",
             "keyTakeaway": "Agile theater is ritual without decisions; real agility changes what gets built based on what was learned."
         },
         {
@@ -327,7 +327,7 @@
                 "behavioral"
             ],
             "question": "You have just formed a brand-new team. How do you get it jelled and productive fast?",
-            "answer": "I plan the first sprints for learning, not output, and I tell stakeholders that. A new team's velocity lags for three or four sprints, and judging it early creates fear. In week one we write working agreements: definition of done, review turnaround, meeting norms, and the decision process. I pair people and rotate work so knowledge spreads, and I land a small shipped increment early. When the storming phase arrives I name it, because the friction is data about working styles, not a hiring mistake.",
+            "answer": "I plan the first sprints for learning, not output, and tell stakeholders so, since velocity lags for three or four sprints and judging it early creates fear. In week one we write working agreements like definition of done and review turnaround. I land a small shipped win early, and I name friction as normal storming, not a hiring mistake.",
             "keyTakeaway": "New teams need explicit working agreements, deliberate pairing, and an early shipped win, not velocity judgment."
         },
         {
@@ -339,7 +339,7 @@
                 "behavioral"
             ],
             "question": "One strong personality dominates every retrospective. How do you get the rest of the room talking?",
-            "answer": "I change the format, not the person. I start with silent writing: two minutes to put concerns on notes or in a doc before anyone speaks, which removes the loudest voice's advantage. Then we cluster and do a round-robin read-out so every item gets airtime. I give the dominant person a channel, like scribe or data presenter, and hold a private one-to-one. If the loud voice is the manager, I remove them from the room, because retro safety can't survive rank.",
+            "answer": "I change the format, not the person. We start with two minutes of silent writing, which removes the loudest voice's advantage, then round-robin read-outs. I give the dominant person a role like scribe and talk to them privately. If it's the manager, I take them out of the room, because safety can't survive rank.",
             "keyTakeaway": "Written-first, round-robin retros neutralize a dominant voice; rank never belongs in the room.",
             "diagram": {
                 "kind": "flow",
@@ -372,7 +372,7 @@
                 "kanban"
             ],
             "question": "How do work-in-progress limits change a team's delivery, and where do you set them?",
-            "answer": "WIP limits turn starting into finishing, and cycle time drops as context switching drops. I set the limit near half the people per stage, then tune by where items queue. A stage that's always full means the upstream limit is too high, and one that's always empty means a hidden bottleneck. I add a pull rule: when you're blocked, finish something or help someone, never start something new. Then I measure flow efficiency, active time against elapsed time. A team at WIP two typically finds half its cycle time was queueing.",
+            "answer": "WIP limits turn starting into finishing, and cycle time drops as context switching drops. I set the limit near half the people per stage and tune by where items queue. A stage that's always full means the upstream limit is too high. I add a pull rule: when you're blocked, finish something or help someone, never start something new.",
             "keyTakeaway": "Cap WIP near half the team per stage and pair it with a finish-or-help rule.",
             "diagram": {
                 "kind": "compare",
@@ -422,7 +422,7 @@
                 "process"
             ],
             "question": "Stories keep getting called done without tests or docs. How do you enforce the definition of done?",
-            "answer": "First I make the definition of done honest: write down what the team actually does every time, then grow it. I enforce it mechanically, with a short checklist on every card, CI gates that block merge without tests, and a review template that references the DoD. Cards that miss it go back to in progress, publicly but without blame. I never let a demo deadline redefine done, so an unfinished story stays unfinished and the sprint report says so. If the DoD is skipped every sprint, it's too big, so I shrink it until it's true.",
+            "answer": "First I make the definition of done honest: write down what the team actually does every time, then grow it. I enforce it mechanically, with a card checklist and CI gates that block merge without tests. Cards that miss it go back to in progress, without blame. If it's skipped every sprint, it's too big, so I shrink it.",
             "keyTakeaway": "Enforce done mechanically with CI gates and honest rejection; shrink the DoD until it is true.",
             "diagram": {
                 "kind": "branch",
@@ -449,7 +449,7 @@
                 "refinement"
             ],
             "question": "Requirements arrive from the business late or half-formed. How do you still plan?",
-            "answer": "I plan on outcomes, not specifications: the sprint commits to a problem and a measurable result, and we refine the solution with the product owner inside the sprint. I keep the refinement pipeline one to two sprints deep, and I budget timeboxed discovery spikes, with a decision date, for unknown territory. Where business latency is chronic, I run a rolling horizon: the next sprint is committed and the one after is tentative. I also surface the pattern, that late requirements cost quality or date, and the business picks, in writing.",
+            "answer": "I plan on outcomes, not specs: the sprint commits to a problem and a measurable result, and we refine the solution with the product owner inside the sprint. I keep refinement one to two sprints deep and budget timeboxed spikes for unknowns. Where lateness is chronic, I run a rolling horizon, and the business chooses between quality and date, in writing.",
             "keyTakeaway": "Plan on outcomes with a rolling horizon, and make the business price its late requirements."
         },
         {
@@ -462,7 +462,7 @@
                 "behavioral"
             ],
             "question": "How has Conway's law shaped the way you draw team boundaries?",
-            "answer": "Teams ship their org chart. Communication paths become coupling, so I treat team boundaries and architecture boundaries as one decision. I draw teams around value streams they own end to end, small enough to feed with two pizzas, and a platform team owns shared infrastructure. Where the org can't match the target architecture, I invert Conway: reteam first, and the architecture follows within a few quarters. Chronic cross-team dependencies, unowned shared code, and merge wars mean the boundary is wrong, and no ceremony fixes that.",
+            "answer": "Teams ship their org chart, so I treat team and architecture boundaries as one decision. I draw teams around value streams they own end to end. If the org can't match the target architecture, I reteam first and the architecture follows. Chronic cross-team dependencies and merge wars mean the boundary is wrong, and no ceremony fixes that.",
             "keyTakeaway": "Treat team boundaries and architecture as one decision; chronic dependencies mean the boundary is wrong.",
             "diagram": {
                 "kind": "layers",
@@ -497,7 +497,7 @@
                 "behavioral"
             ],
             "question": "How do you plan sprint capacity when on-call and support keep eating the sprint?",
-            "answer": "I measure one sprint: count interrupt tickets, support hours, and who absorbed them. Then I budget a fixed share of capacity, often twenty percent, as an explicit rotation, so the load lands on the rota and not on whoever feels responsible. I separate genuine on-call escalations from chaos caused by quality debt, because only the second is fixable. When interrupts overrun the buffer, stopping roadmap work is a visible decision made with the product owner. Silent absorption hides the true cost.",
+            "answer": "I measure one sprint: interrupt tickets, support hours, and who absorbed them. Then I budget a fixed share of capacity, often twenty percent, as an explicit rotation, so the load lands on the rota, not whoever feels responsible. When interrupts overrun the buffer, stopping roadmap work is a visible decision with the product owner.",
             "keyTakeaway": "Measure interrupt load, staff it as a rotation, and make overflow a visible roadmap decision.",
             "diagram": {
                 "kind": "compare",
@@ -547,7 +547,7 @@
                 "scaling"
             ],
             "question": "Teams run agile fine but the portfolio above them does not. Where does that break and what do you do?",
-            "answer": "The failure point is the layer that owns money and sequencing: teams sprint inside annual budgets, and the roadmap was frozen a year earlier. I'd fix what the portfolio funds, which is stable teams and long-lived products, not temporary projects. I'd cap work in progress at the portfolio level too, because five half-done bets deliver nothing. Sequencing and dependency mapping move to a quarterly bet review driven by outcomes, since that's where the authority sits. No team can fix this from below. The layer above has to change what it measures.",
+            "answer": "It breaks at the layer that owns money and sequencing: teams sprint inside annual budgets and a roadmap frozen a year earlier. I'd have the portfolio fund stable teams and long-lived products, not projects, and cap WIP there too, since five half-done bets deliver nothing. Sequencing moves to a quarterly outcome review. No team can fix this from below.",
             "keyTakeaway": "Agility stops at teams when annual project funding and frozen roadmaps override quarterly outcome bets."
         },
         {
@@ -559,7 +559,7 @@
                 "behavioral"
             ],
             "question": "A senior executive asks mid-sprint for something urgent and the team disagrees. What do you do?",
-            "answer": "First I establish whether it's an emergency or a priority. I ask who is blocked, what five days of delay costs, and what breaks if it waits. Most exec asks are priorities, so I give a date in the next sprint, no panic. If it's truly urgent, I make the trade visible: the product owner chooses what comes out of the sprint, and the decision is written down with its cost. I shield the team from pressure, never from reality. If routine asks bypass planning, leadership has too little visibility or control, so I fix that forum.",
+            "answer": "First I check whether it's an emergency or a priority: who is blocked, what five days of delay costs, what breaks if it waits. Most are priorities, so I give a date in the next sprint. If it's truly urgent, I make the trade visible. The product owner picks what comes out, and it's written down with its cost. I shield the team from pressure, never from reality.",
             "keyTakeaway": "Verify real urgency, trade scope visibly in writing, and fix the planning gap that caused the bypass.",
             "diagram": {
                 "kind": "branch",
@@ -586,7 +586,7 @@
                 "planning"
             ],
             "question": "How do you map and manage dependencies across squads before they derail a quarter?",
-            "answer": "I map dependencies at planning, while a missed one is still just a note. Every item needing another squad gets a name and a date on a board every squad sees. I convert the worst ones into contracts (agreed interfaces, mocks, stubs) so both sides build in parallel, and I sequence the roadmap so dependencies point one direction. We review the board weekly at the cross-team sync. A chronic dependency is a team boundary problem, so it goes to the re-org conversation.",
+            "answer": "I map dependencies at planning, while a miss is still just a note. Every item needing another squad gets a name and a date on a board all squads see. I turn the worst into contracts, like agreed interfaces or mocks, so both sides build in parallel, and we review the board weekly. A chronic one is a team-boundary problem.",
             "keyTakeaway": "Name every dependency with owner and date, contract the critical ones, and review the map weekly.",
             "diagram": {
                 "kind": "sequence",
@@ -634,7 +634,7 @@
                 "process"
             ],
             "question": "The tracker, boards, and reporting have become admin theater. How do you cut the tooling overhead?",
-            "answer": "I audit tooling like meetings: who consumes this, and what decision does it feed? I cut any field or report with no consumer. Manager roll-ups get generated from the board, so leadership reads one generated view while teams keep granular boards. Dual entry between systems gets integrated or dropped. If board updates take more than a few minutes a day, the workflow is wrong, not the team. A tool has to cost less coordination than it replaces.",
+            "answer": "I audit tooling like meetings: who consumes this, and what decision does it feed? I cut any field or report with no consumer. Manager roll-ups get generated from the board, and dual entry gets integrated or dropped. If board updates take more than a few minutes a day, the workflow is wrong, not the team.",
             "keyTakeaway": "Keep only tooling that feeds a decision; generate reports automatically and never dual-enter."
         },
         {
@@ -646,7 +646,7 @@
                 "focus"
             ],
             "question": "Mid-sprint the sprint goal is at risk while individual tickets look fine. How do you react?",
-            "answer": "The sprint goal is the deliverable, and tickets only decompose it. When the goal is at risk, I replan around it and move people to the critical story, even if that means abandoning in-flight tickets. I cut the periphery first: a goal met at eighty percent of stories beats five complete stories and no goal. I trigger the mid-sprint replan with the product owner, instead of letting quiet slippage show up at review. If the goal is at risk every sprint, we're over-committing or the goal story is unrefined.",
+            "answer": "The sprint goal is the deliverable and tickets only decompose it. When it's at risk, I replan with the product owner and move people to the critical story, even if that abandons in-flight tickets. I cut the periphery first, since a goal met with eighty percent of the stories beats five complete stories and no goal.",
             "keyTakeaway": "Replan around the sprint goal mid-sprint, cut periphery scope, and name the risk while options remain.",
             "diagram": {
                 "kind": "flow",
@@ -675,7 +675,7 @@
                 "flow"
             ],
             "question": "Beyond velocity, what signals tell you a team is actually healthy?",
-            "answer": "I start with flow metrics: cycle time trend, work in progress, and flow efficiency. They show whether work moves or waits, which velocity can't. Then sustainability: interrupt ratio, after-hours commits, scope churn. Then quality: escaped defects, change failure rate, and rework on finished stories. The behavioral tells matter most to me. People argue hard about ideas and still pair afterward, juniors ship real work, and a two-week vacation causes no heroics.",
+            "answer": "I start with flow: cycle time trend, WIP, and flow efficiency, which show whether work moves or waits. Then sustainability, like interrupt ratio and after-hours commits, and quality, like escaped defects. The behavioral tells matter most: people argue hard about ideas, and a two-week vacation causes no heroics.",
             "keyTakeaway": "Read cycle time, interrupt ratio, rework, and behavioral tells; velocity alone measures volume, not health."
         },
         {
@@ -687,7 +687,7 @@
                 "incremental-delivery"
             ],
             "question": "How do you split a big epic into slices that actually deliver value every sprint?",
-            "answer": "I split epics by user outcome, never by architectural layer. A frontend sprint followed by a backend sprint delivers nothing until the last one. The first slice is a walking skeleton, thin but end to end, and demoable in one sprint. Each later slice adds a workflow step, business rule, data set, or interface. I reject infrastructure-only slices, and I pair an unavoidable enabler with a user-visible slice. Each slice ships to real users for feedback. If I can't demo it to the product owner, it isn't a slice.",
+            "answer": "I split by user outcome, never by architectural layer, because a frontend sprint then a backend sprint delivers nothing until the last one. The first slice is a walking skeleton, thin but end to end and demoable in one sprint, and each later slice adds a workflow step or rule. I reject infrastructure-only slices.",
             "keyTakeaway": "Slice epics by demoable user outcome along a walking skeleton, never by architectural layer.",
             "diagram": {
                 "kind": "flow",

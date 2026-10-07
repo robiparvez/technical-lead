@@ -13,7 +13,7 @@
                 "exercise"
             ],
             "question": "Design a URL shortener like TinyURL. How do you generate the short keys and handle redirects?",
-            "answer": "Two operations carry the design: shorten (POST a long URL, get a short key) and redirect (GET the key, return the long URL). For keys, hashing the URL and taking a prefix collides and needs resolution. I'd rather take a unique ID from a distributed generator and encode it in base 62, where 7 characters cover about 3.5 trillion URLs. Reads dominate roughly 10 to 1, so I serve mappings from a cache in front of the key-value store. A 301 lets browsers cache and skip us, so I'd use a 302 when we need every click for analytics. I finish with rate limiting on creation and an expiration policy for links.",
+            "answer": "Hashing the URL and taking a prefix collides, so I'd take a unique ID from a distributed generator and base-62 encode it. Seven characters cover about 3.5 trillion URLs. Reads outnumber writes roughly 10 to 1, so I'd cache mappings in front of the key-value store. I'd use a 302 instead of a 301 when we need every click for analytics, since browsers cache a 301.",
             "keyTakeaway": "Base62-encoded unique IDs avoid collisions; cache the read-heavy redirect path.",
             "diagram": {
                 "kind": "sequence",
@@ -62,7 +62,7 @@
                 "exercise"
             ],
             "question": "How do you generate unique, time-ordered 64-bit IDs in a distributed system?",
-            "answer": "Auto-increment with a step of k breaks ordering across data centers. UUIDs are 128 bits, non-numeric and unsorted. A ticket server is a single point of failure. So Snowflake wins: 1 sign bit, 41 bits of millisecond timestamp (roughly 69 years), 5 bits for datacenter, 5 for machine, and a 12-bit sequence, which gives 4096 IDs per machine per millisecond. It needs no coordination, it's time-ordered, and it makes good B-tree keys. I'd sync clocks with NTP, and on sequence overflow the generator waits for the next millisecond.",
+            "answer": "Auto-increment breaks ordering across data centers, UUIDs are 128 bits and unsorted, and a ticket server is a single point of failure. So I'd use Snowflake: a sign bit, 41 bits of millisecond timestamp, 10 bits of datacenter and machine, and a 12-bit sequence. That's 4096 IDs per machine per millisecond with no coordination.",
             "keyTakeaway": "Snowflake: timestamp + machine bits + per-millisecond sequence, no coordination.",
             "diagram": {
                 "kind": "layers",
@@ -97,7 +97,7 @@
                 "exercise"
             ],
             "question": "Design a scalable, polite web crawler.",
-            "answer": "I treat the web as a directed graph and walk it breadth-first. Seed URLs enter the URL frontier. The downloader, with a DNS cache, fetches pages, the parser validates them, a content-hash check drops duplicates, the extractor pulls out new URLs, a filter drops blacklisted ones, and the survivors rejoin the frontier. Politeness is the constraint people miss: one request per host at a time, using per-host FIFO back queues each drained by its own worker with a delay, plus full robots.txt compliance. Front queues set priority, biased toward important or frequently updated pages. I consistent-hash URLs onto the crawl servers, and keep it robust with timeouts, checksums, and monitoring.",
+            "answer": "I walk the web breadth-first from seed URLs through a frontier. Pages get fetched, parsed, and dropped if the content hash is a duplicate. New URLs are extracted, filtered, and rejoin the frontier. The part people miss is politeness. I'd use per-host FIFO back queues, one request per host at a time with a delay, plus robots.txt. Front queues set priority for important or fast-changing pages.",
             "keyTakeaway": "Frontier with per-host back queues for politeness, priority front queues for value, dedupe by content hash.",
             "diagram": {
                 "kind": "flow",
@@ -136,7 +136,7 @@
                 "exercise"
             ],
             "question": "Design a search autocomplete service that returns the top 5 popular completions.",
-            "answer": "For gathering, I aggregate logs into a frequency table on a schedule and rebuild the trie from it. Per-keystroke updates aren't practical, and the top suggestions barely move anyway. For querying, I walk the trie to the prefix node and return the top-k. Storing top-k on every node means no subtree traversal and no sorting. I'd also cap prefix length, cache aggressively and filter harmful suggestions. Staleness is the right trade for speed.",
+            "answer": "I'd aggregate query logs into frequency counts on a schedule and rebuild the trie from them, since per-keystroke updates aren't practical. Each node stores its top-k, so a lookup walks to the prefix and returns, with no sorting. Some staleness is a fair trade for speed.",
             "keyTakeaway": "Trie with cached top-k per node, built offline from logs; serve reads from cache.",
             "diagram": {
                 "kind": "flow",
@@ -174,7 +174,7 @@
                 "exercise"
             ],
             "question": "Design a news feed: do you push posts to followers or pull them at read time?",
-            "answer": "Fan-out on write pushes the post ID into every follower's feed cache at publish time. Reads are instant, but it's wasteful for accounts with millions of followers. Fan-out on read aggregates at request time, which is cheap for inactive users but slow under load. I'd go hybrid: push for normal users, pull for celebrities. Cache lists of post IDs, not hydrated posts, and publish through a message queue so fan-out never blocks the poster.",
+            "answer": "Fan-out on write pushes the post ID into each follower's feed cache, so reads are instant, but it's wasteful for accounts with millions of followers. Fan-out on read is slow under load. I'd go hybrid: push for normal users, pull for celebrities, caching post IDs only.",
             "keyTakeaway": "Hybrid fan-out: push to normal users, pull for celebrities; cache capped ID lists.",
             "diagram": {
                 "kind": "compare",
@@ -230,7 +230,7 @@
                 "exercise"
             ],
             "question": "How do you find all businesses within a radius of a user's location at scale?",
-            "answer": "A lat-between AND long-between scan can't use an index well, because two one-dimensional indexes don't compose into a region query. Fixed grids skew between cities and countryside. The fix is to encode two dimensions into one. Geohash bisects latitude and longitude into a base-32 string where a shared prefix means nearby cells. I query the cells covering the radius plus their neighbors to handle boundary effects. Quadtree, S2 and R-tree use the same idea.",
+            "answer": "Two one-dimensional indexes on lat and long can't answer a region query well. So I'd encode two dimensions into one with geohash, where a shared prefix means nearby. I query the cells covering the radius plus their neighbors to handle boundaries. Quadtree and S2 use the same idea.",
             "keyTakeaway": "Encode 2D into 1D (geohash or quadtree), index it, query covering cells plus neighbors.",
             "diagram": {
                 "kind": "flow",
@@ -269,7 +269,7 @@
                 "exercise"
             ],
             "question": "Design a chat system with reliable delivery, presence, and offline users.",
-            "answer": "Polling wastes requests, and long polling ties up servers. I'd use persistent bidirectional WebSocket connections to stateful chat servers, with service discovery routing each user to their server. If the recipient is online, deliver to their connection; otherwise send a push notification. Ordering only needs per-conversation sequence numbers, not a global generator, so key by (channel_id, message_id). Store history in a key-value store, and get presence from heartbeats.",
+            "answer": "I'd use persistent WebSocket connections to stateful chat servers, with service discovery routing each user to theirs. If the recipient is online, deliver directly, otherwise send a push notification. Ordering only needs per-conversation sequence numbers, so I key messages by (channel_id, message_id) in a key-value store.",
             "keyTakeaway": "Stateful WebSocket servers, per-channel sequence numbers, KV store for the long tail.",
             "diagram": {
                 "kind": "sequence",
@@ -319,7 +319,7 @@
                 "exercise"
             ],
             "question": "Design a video platform like YouTube: upload, transcode, and stream.",
-            "answer": "I separate metadata from bytes: the upload goes to blob storage while the metadata request hits the database in parallel. Transcoding is the compute heart, a directed acyclic graph of tasks (encode each resolution, thumbnails, watermarks, split audio and video), so independent stages run in parallel. Outputs land in transcoded storage and then the CDN, and a completion queue notifies handlers to update metadata and tell the user. Streaming should never touch the origin if the CDN can help: HLS and DASH serve chunked encodings so the player adapts bitrate to the network. Metadata shards by video ID. Bandwidth cost dominates, so edge caching of popular content is economics, not optimization.",
+            "answer": "I separate metadata from bytes: the upload goes to blob storage while metadata goes to the database. Transcoding is a DAG of tasks, encoding each resolution, thumbnails and so on, so independent steps run in parallel. Output goes to the CDN and streams over HLS or DASH so the player adapts bitrate. Bandwidth dominates cost, so edge caching is economics.",
             "keyTakeaway": "Upload to blob plus a DAG transcoding pipeline, stream adaptive bitrate from the CDN.",
             "diagram": {
                 "kind": "flow",
@@ -359,7 +359,7 @@
                 "exercise"
             ],
             "question": "Design the payment backend for an e-commerce platform.",
-            "answer": "Never store card data. I'd delegate capture to a payment service provider (PSP) and stay out of PCI scope. The payment service persists the event and splits it into payment orders, an executor submits each one to the PSP, and the ledger records the movement. Throughput is modest: single-digit to low tens of TPS per million daily transactions. Correctness decides the design: idempotency keys on every order, bounded PSP retries, paired debit and credit legs, and an append-only ledger as the source of truth. Reconcile daily against PSP statements.",
+            "answer": "I'd never store card data. Capture goes to a payment service provider so we stay out of PCI scope. Throughput is modest, so correctness drives the design. I'd put idempotency keys on every payment order, bound the PSP retries, record paired debit and credit legs in an append-only ledger as the source of truth, and reconcile daily against PSP statements.",
             "keyTakeaway": "Idempotent orders, append-only ledger, paired wallet legs, and a reconciliation loop.",
             "diagram": {
                 "kind": "flow",
@@ -402,7 +402,7 @@
                 "exercise"
             ],
             "question": "Design a stock exchange: how do you match orders with strict ordering and low latency?",
-            "answer": "I'd gate orders through risk checks, exposure limits and funds withheld for pending orders. A sequencer assigns one strict global order per symbol, because determinism beats per-request parallelism. A single-threaded matching engine per symbol keeps the order book with price-time priority. That gives cache locality, and it scales by adding symbols, not threads. I treat everything as an event log. Books, balances and market data are derived state that can be rebuilt by replay, which gives fast recovery onto a hot standby fed the same sequence. The target is four nines availability and millisecond 99th-percentile latency.",
+            "answer": "Orders pass risk checks, then a sequencer gives each symbol one strict order, because determinism beats parallelism here. A single-threaded matching engine per symbol keeps the book with price-time priority, and it scales by adding symbols, not threads. Everything is an event log, so state can be rebuilt by replay and a hot standby fed the same sequence recovers fast.",
             "keyTakeaway": "Sequence first, match single-threaded per symbol, event log as the source of truth.",
             "diagram": {
                 "kind": "flow",
@@ -440,7 +440,7 @@
                 "algorithms"
             ],
             "question": "For a rate limiter, how do you choose between fixed window, sliding window, and token bucket?",
-            "answer": "Fixed window fails at the edges: a full quota at second 59 and again at second 61 doubles the limit. Sliding window log is exact, but memory grows with traffic. Sliding window counter weights the previous window's count against the current one, so state is tiny and the error is small. Token bucket is my default because it models bursts: a steady refill into a capped bucket, so a client may spend ten at once but averages the refill rate. I'd use the sliding counter for strict contractual limits.",
+            "answer": "Fixed window fails at the edges, since a full quota at second 59 and again at second 61 doubles the limit. Sliding window log is exact but memory grows with traffic. The sliding window counter is a cheap, close approximation. Token bucket is my default because it allows bursts while holding the average to the refill rate.",
             "keyTakeaway": "Token bucket handles bursts naturally; sliding window counter is the cheap strict-limit approximation.",
             "diagram": {
                 "kind": "compare",
@@ -496,7 +496,7 @@
                 "consistency"
             ],
             "question": "How do you enforce a per-customer API quota accurately when requests land on hundreds of nodes at once?",
-            "answer": "The counter can't live in one place, yet exactness across the fleet costs a round trip per request. Strict accounting needs an atomic decrement in a shared store (Redis with Lua, or DynamoDB conditional writes), at the cost of a hot key and latency. The alternative is two tiers: each node holds a local token allowance, leased in batches from a central counter. Most checks stay in memory, and the total stays honest within the lease granularity. Billing-grade quotas need the atomic path, while abuse protection can tolerate approximation.",
+            "answer": "Exact accounting needs an atomic decrement in a shared store like Redis with Lua, which costs a hot key and a round trip per request. Otherwise each node leases a batch of tokens from a central counter and checks locally, which stays honest within the lease size. Billing needs the atomic path, abuse protection doesn't.",
             "keyTakeaway": "Lease quota batches from a central counter to local nodes; reserve atomic decrements for billing-grade accuracy.",
             "diagram": {
                 "kind": "branch",
@@ -522,7 +522,7 @@
                 "queues"
             ],
             "question": "Design a distributed job scheduler that runs millions of cron jobs across a shared cluster.",
-            "answer": "I separate deciding from executing. Jobs live in a store keyed by next-run time. The scheduler polls for due jobs and enqueues execution tasks, but it never runs anything. Workers pull from the queue, execute and report status, so the fleet scales by adding machines. Double firing is the classic failure, and leader election or time-range leasing gives one scheduler per window. The queue is at-least-once, not exactly-once. I persist run history so we can alert on misses, and I reschedule by updating the next-run time from the cron expression.",
+            "answer": "I separate deciding from executing. Jobs live in a store keyed by next-run time, and the scheduler polls for due jobs and enqueues them but never runs anything. Workers pull from the queue, so the fleet scales by adding machines. To avoid double firing I'd use leader election or time-range leasing, and treat the queue as at-least-once.",
             "keyTakeaway": "Schedulers pick due jobs and enqueue them; workers execute, with leasing to prevent double fire.",
             "diagram": {
                 "kind": "flow",
@@ -561,7 +561,7 @@
                 "distributed-systems"
             ],
             "question": "How do you stop the same scheduled job from running twice when the queue delivers at-least-once?",
-            "answer": "Exactly-once delivery is fiction, so I build idempotent execution. Each run gets a unique run ID. Workers record an intent row before starting, so a later duplicate skips or joins it. Fencing tokens from a lease store such as etcd expire stalled workers: the replacement takes a higher token, and the backing store refuses the dead worker. External calls need idempotency keys. Non-idempotent financial jobs need two-phase commit or a manual gate. A dead-letter queue plus poison-pill detection keeps one crashing job from consuming the fleet.",
+            "answer": "Exactly-once delivery is fiction, so I make execution idempotent. Each run gets a unique ID, and workers record an intent row before starting so duplicates skip. Fencing tokens from a lease store like etcd let the store reject a stalled worker once a replacement takes a higher token. A dead-letter queue stops poison jobs from eating the fleet.",
             "keyTakeaway": "At-least-once delivery plus idempotent execution and fencing tokens beats chasing exactly-once.",
             "diagram": {
                 "kind": "sequence",
@@ -611,7 +611,7 @@
                 "email"
             ],
             "question": "Design a notification service that fans out email, push, and SMS for millions of events a day.",
-            "answer": "Producers never talk to providers. The event lands on a queue, and channel workers consume, render and send, so a slow SMS provider can't back up product events. I normalize to one event schema. A preferences lookup decides channels and honors opt-outs, since sending to an opted-out user is a compliance bug. Dedupe on a notification key. Rate-limit per user so a burst becomes one digest. Retry with provider failover, track delivery receipts and log every attempt.",
+            "answer": "Producers never talk to providers. Events land on a queue and channel workers send, so a slow SMS provider can't back up the product. A preferences lookup honors opt-outs, since messaging an opted-out user is a compliance bug. I'd also dedupe, rate-limit per user, and retry each channel on its own.",
             "keyTakeaway": "Queue the event, resolve preferences and dedupe before render, retry each channel independently.",
             "diagram": {
                 "kind": "flow",
@@ -650,7 +650,7 @@
                 "hot-keys"
             ],
             "question": "How do you stop two users from buying the same seat when thousands hit a popular event at once?",
-            "answer": "Seats are locked while a purchase is in progress and sold after payment. A lock TTL expires abandoned checkouts, typically in five to ten minutes. The lock must be atomic (Redis SET NX with a token, or a database conditional update), so check-and-reserve is one operation with no race. Hot events are a hot-key problem, so shard the seat keys. Overflow goes to a waiting room that admits users at a controlled rate, and the crowd never hits the database. Payments fail after locks are taken, so release is first-class. Idempotent callbacks decide refund or confirm.",
+            "answer": "Seats get locked during checkout and sold after payment, with a TTL of five to ten minutes so abandoned carts expire. The lock must be atomic, like Redis SET NX or a conditional update, so there's no race. Overflow goes to a waiting room so the crowd never hits the database, and releasing on payment failure is first-class.",
             "keyTakeaway": "Atomic check-and-lock per seat with a TTL, plus a waiting room to shed hot-event load.",
             "diagram": {
                 "kind": "sequence",
@@ -705,7 +705,7 @@
                 "realtime"
             ],
             "question": "How does a ride-hailing app match a rider to a driver in under a second across a whole city?",
-            "answer": "Matching is a continuous two-sided market, so the dispatch loop matters more than any lookup. Drivers stream GPS pings every few seconds into an in-memory geo index (geohash or H3 cells). A ride request queries nearby drivers and scores them by ETA, then rating and fairness. The winner gets an offer with a countdown, usually fifteen seconds. A decline or timeout moves to the next candidate. Dispatch is stateful and sharded by city or cell. Surge pricing throttles demand to the matcher's capacity.",
+            "answer": "The dispatch loop matters more than any lookup. Drivers stream GPS pings into an in-memory geo index using geohash or H3 cells. A request finds nearby drivers and scores them by ETA, then rating. The winner gets an offer with a countdown, around fifteen seconds, and a decline or timeout moves to the next candidate.",
             "keyTakeaway": "Warm in-memory geo index of driver pings, scored offers with short timeouts, requeue on decline.",
             "diagram": {
                 "kind": "flow",
@@ -744,7 +744,7 @@
                 "downsampling"
             ],
             "question": "Design a metrics pipeline that ingests millions of time-series points per second for monitoring.",
-            "answer": "The write path is the design. Monitoring traffic is a firehose and must never block or lose product. Stateless collectors fronted by a queue batch thousands of points per write into a columnar time-series store keyed by series name, sorted tags and reversed timestamps. I downsample before storing: one-minute and one-hour aggregates with tiered retention (raw for a day, minute for a week, hourly for a year). Dashboards read pre-aggregated data with a cache. Alerting on recent rollups catches a stalled pipeline.",
+            "answer": "The write path is the design. Stateless collectors behind a queue batch thousands of points per write into a columnar time-series store keyed by series, tags and reversed timestamps. I'd downsample into minute and hour aggregates with tiered retention, and let dashboards read the pre-aggregated data through a cache.",
             "keyTakeaway": "Batch writes through a queue, key by series plus reversed time, tier retention with downsampling.",
             "diagram": {
                 "kind": "layers",
@@ -783,7 +783,7 @@
                 "caching"
             ],
             "question": "How do you build a feature-flag service that serves millions of evaluations per second without becoming a single point of failure?",
-            "answer": "The evaluation path has to survive the death of everything else. SDKs in each service hold a local flag snapshot and evaluate in-process, so there's zero network latency and they degrade to the last known flags in an outage. A message bus or streaming connection delivers changes in milliseconds, with polling as a fallback. The control plane stays boring (a CRUD service, an audit log and a relational store) because the write rate is tiny. The dangers are semantic drift and accumulation, like ten thousand dead flags. I fix those with owners, expiry dates and a deletion budget.",
+            "answer": "Evaluation has to survive everything else dying. Each service's SDK holds a local snapshot of the flags and evaluates in-process, so there's no network hop and it keeps the last known flags during an outage. Changes are pushed over a stream, with polling as backup. The control plane can stay boring since writes are rare.",
             "keyTakeaway": "Evaluate flags in-process from pushed snapshots; the flag store must be able to die safely.",
             "diagram": {
                 "kind": "compare",
@@ -834,7 +834,7 @@
                 "gaming"
             ],
             "question": "How do you build a real-time game leaderboard that returns a player's rank among millions instantly?",
-            "answer": "I'd use a Redis sorted set, which is scored, ordered and rank-queryable in logarithmic time. ZINCRBY applies the delta per game, ZREVRANGE with WITHSCORES returns the top hundred, and ZREVRANK answers where do I stand without scanning. Global sorted sets become hot keys, so rank within a shard first (friend group, region, season) and merge the shard leaders periodically. A season reset swaps in a fresh set atomically. I snapshot to durable storage, because Redis is a cache-grade index, not the system of record.",
+            "answer": "I'd use a Redis sorted set, which ranks in logarithmic time. ZINCRBY updates scores, ZREVRANGE returns the top hundred, and ZREVRANK gives a player's rank without scanning. A single global set becomes a hot key, so I'd shard by region or season. I'd snapshot to durable storage, since Redis isn't the system of record.",
             "keyTakeaway": "One Redis sorted set gives O(log n) rank queries; shard by season or region to dodge hot keys.",
             "code": {
                 "language": "bash",
@@ -869,7 +869,7 @@
                 "async"
             ],
             "question": "Design the image pipeline that turns one upload into a dozen responsive sizes without blocking the upload.",
-            "answer": "The upload carries only the original into blob storage. Variants are derived asynchronously: an object-created event enters a queue, and resize workers write each variant (thumbnail, mobile, desktop, WebP or AVIF alongside JPEG) with deterministic keys so the CDN can serve them forever. Precompute for known, bounded sizes. For unpredictable shapes like OG images, on-demand generation with CDN caching wins, as long as a lock or dedupe key stops a cache stampede. Metadata goes in the database, never the bytes.",
+            "answer": "The upload only carries the original into blob storage. An object-created event goes onto a queue and resize workers write each variant under deterministic keys, so the CDN can cache them forever. For unpredictable shapes like OG images I'd generate on demand behind the CDN, with a lock to prevent a stampede.",
             "keyTakeaway": "Upload once to blob storage, derive variants asynchronously with deterministic keys for CDN immutability.",
             "diagram": {
                 "kind": "flow",
@@ -908,7 +908,7 @@
                 "dead-letter"
             ],
             "question": "Design a webhook delivery service that reaches customer endpoints reliably despite their flaky servers.",
-            "answer": "Each event becomes a delivery task with the endpoint URL, an HMAC-signed payload so customers can verify authenticity, and an attempt counter. Workers post with short timeouts and retry on exponential backoff with jitter: one minute, thirty minutes, two hours, capped near a day, then dead-letter. Never retry forever. I'd make the dead-letter queue visible so customers can replay. Ordering is best-effort, so include the event ID and timestamp and document that receivers should dedupe. Rate-limit per endpoint so one slow customer never delays others.",
+            "answer": "Each event becomes a delivery task with an HMAC-signed payload so customers can verify it. Workers post with short timeouts and retry on exponential backoff with jitter, capped near a day, then dead-letter. I'd never retry forever, and I'd make the dead-letter queue visible so customers can replay. Receivers should dedupe on event ID.",
             "keyTakeaway": "Sign payloads, retry with exponential backoff and jitter, then dead-letter with a visible replay path.",
             "diagram": {
                 "kind": "branch",
@@ -934,7 +934,7 @@
                 "database"
             ],
             "question": "How do you clean up billions of expired sessions and tokens without locking your database?",
-            "answer": "Where possible I make expiration the database's problem: Redis TTLs evict lazily with background sampling, and DynamoDB or MongoDB TTL monitors delete for you. For relational rows, avoid a nightly DELETE, since one giant transaction bloats the log and locks the table. Sweep in small batches by an indexed expiry column while watching replication lag. Better still, partition by time and drop whole expired partitions. The read path treats expired-but-present rows as nonexistent, so cleanup can lag.",
+            "answer": "Where I can, I let the database do it, like Redis TTLs or DynamoDB and MongoDB TTL monitors. For relational rows I'd skip one giant nightly DELETE, which bloats the log and locks the table. I'd delete small batches by an indexed expiry column, or partition by time and drop whole partitions. Reads treat expired rows as gone.",
             "keyTakeaway": "Prefer TTL engines and time-partition drops; batch small indexed deletes and tolerate laggy cleanup.",
             "diagram": {
                 "kind": "compare",
@@ -978,7 +978,7 @@
                 "realtime"
             ],
             "question": "How do collaborative editors like Google Docs keep concurrent edits consistent across clients?",
-            "answer": "Concurrent operations aren't commutative, so you either transform them or use a commutative representation. OT (the Google Docs lineage) sends each operation to a central server that serializes it and transforms it against concurrent ops. It's compact and good for text, but the transform algebra is notoriously hard. CRDTs make merges commute, so there's no central serializer and editing is offline-first, at the cost of metadata overhead and tombstone growth. Both use a WebSocket session, per-document op logs, and cursors as ephemeral presence, not persisted operations.",
+            "answer": "Concurrent operations don't commute, so you either transform them or use a representation that does. OT, the Google Docs approach, has a central server serialize operations and transform them against concurrent ones. It's compact but hard to get right. CRDTs make merges commute, so no central serializer and offline editing works, at the cost of metadata and tombstone growth.",
             "keyTakeaway": "OT transforms ops against a serialized history; CRDTs converge via commutative merges without a central serializer.",
             "diagram": {
                 "kind": "sequence",
@@ -1032,7 +1032,7 @@
                 "ranking"
             ],
             "question": "How do you design an online voting system where each user votes once but attackers retry constantly?",
-            "answer": "Uniqueness is enforcement, and fraud is economics. Don't confuse them. I enforce one-vote with an idempotent write (a unique key on user and item, or a Redis set-membership check). To make fraud expensive, I add velocity limits per account, IP and device fingerprint. I never update the score in place on the hot path. Votes get appended to a stream and ranking is recomputed periodically, so votes from accounts later convicted of fraud can be discounted retroactively. Delayed publication and randomized display order blunt manipulation.",
+            "answer": "I'd separate enforcement from fraud. One vote per user is an idempotent write, like a unique key on user and item. To make fraud expensive I add velocity limits per account, IP and device. Votes get appended to a stream and rankings recomputed, so votes from accounts later convicted of fraud can be discounted retroactively.",
             "keyTakeaway": "Idempotent one-vote keys absorb retries; append votes and recompute so convicted fraud is revocable.",
             "diagram": {
                 "kind": "flow",
@@ -1070,7 +1070,7 @@
                 "lsh"
             ],
             "question": "How do you detect near-duplicate documents at a scale of billions, where exact hashes all differ?",
-            "answer": "Exact hashing is useless here, because one changed comma flips the whole hash. I'd use locality-sensitive hashing. SimHash compresses weighted token features into a 64-bit fingerprint, and near-duplicates have a Hamming distance under a few bits. Split the fingerprint into four 16-bit bands indexed separately, so candidates must match at least one band exactly. MinHash with LSH estimates Jaccard similarity over shingles, which is better when you need a score, not a boolean. Verify candidates with a real similarity check, then cluster.",
+            "answer": "Exact hashes are useless here, since one changed comma flips the whole hash, so I'd use locality-sensitive hashing. SimHash compresses weighted token features into a 64-bit fingerprint where near-duplicates differ by a few bits. I split it into four 16-bit bands, so candidates must match at least one band exactly. Then I verify with a real similarity check.",
             "keyTakeaway": "LSH fingerprints like SimHash or MinHash find candidates by shared bands; verify with full similarity.",
             "code": {
                 "language": "typescript",
@@ -1113,7 +1113,7 @@
                 "engagement"
             ],
             "question": "How do you stop a notification service with a million senders from training users to ignore it?",
-            "answer": "Throughput was the easy part. The hard problem is limited user attention. I give every event a priority class. Transactional events (password reset) send immediately. Promotional traffic queues behind them and is shed first under load. Frequency capping sits before rendering, with per-user budgets per channel per day. Low-priority overflow collapses into a digest instead of being silently dropped. For fallback, a push left unread for an hour escalates to email, SMS is used only where the cost is justified, and quiet hours defer sends. I feed open and dismiss rates back into priority scoring.",
+            "answer": "Throughput is the easy part. The hard problem is limited user attention. I'd give every event a priority class, so password resets go out immediately and promotional traffic queues behind and is shed first. Frequency caps sit before rendering with per-user daily budgets per channel. Overflow collapses into a digest instead of being dropped, and an unread push escalates to email after an hour.",
             "keyTakeaway": "Classify event priority, cap per-user frequency, downgrade overflow to digests, escalate channels deliberately.",
             "diagram": {
                 "kind": "flow",
@@ -1151,7 +1151,7 @@
                 "out-of-order"
             ],
             "question": "Your metrics database melts down every time a team adds a user-ID label to a metric, so what actually broke?",
-            "answer": "Every unique user ID label turns one metric into millions of time series. Cardinality, not traffic, kills time-series databases, because indexes, memory and query planning all scale with series count. I'd cap cardinality at ingestion with a budget per tenant and a hard limit per metric, then reject or remap excess labels. Bucket user IDs into coarse segments like plan tier. Out-of-order data is the second tax, since late events force backfills. Bound it with event-time watermarks and accept a small accuracy loss. Alert on cardinality growth.",
+            "answer": "Each unique user ID label turns one metric into millions of time series. Cardinality, not traffic, kills time-series databases, because indexes, memory and query planning all scale with series count. I'd cap it at ingestion with a per-tenant budget and a hard limit per metric, and remap user IDs to coarse buckets like plan tier.",
             "keyTakeaway": "Cardinality from high-unique labels, not request volume, kills TSDBs; budget and remap labels at ingestion.",
             "diagram": {
                 "kind": "branch",

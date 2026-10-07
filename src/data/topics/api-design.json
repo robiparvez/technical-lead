@@ -12,7 +12,7 @@
                 "http"
             ],
             "question": "What are the core constraints that make an API RESTful?",
-            "answer": "REST is an architectural style: uniform resource identification, standard HTTP verbs with their semantics, and representations, usually JSON. It's stateless, so each request carries all its context and scaling is horizontal. It's also cacheable, layered, and, in the strict form, hypermedia. In practice I emphasize resource modeling and correct verb and status-code usage over purism.",
+            "answer": "REST means resources, standard HTTP verbs used with their real semantics, and representations like JSON. It's stateless, so scaling is horizontal, and it's cacheable. In practice I care more about good resource modeling and correct status codes than purism.",
             "keyTakeaway": "Model resources, not actions; let HTTP verbs and status codes carry meaning.",
             "diagram": {
                 "kind": "layers",
@@ -46,7 +46,7 @@
                 "over-fetching"
             ],
             "question": "What problem does GraphQL solve compared with REST, and what does the diagram show?",
-            "answer": "REST returns fixed shapes, so clients either over-fetch or under-fetch and call several endpoints per view. GraphQL has a single endpoint where the client declares the exact fields and gets them in one round trip, which suits mobile and nested data. The trade-off is that complexity moves server-side, and caching, cost control, and N+1 resolution become your problem. I choose based on client diversity and data shape.",
+            "answer": "REST returns fixed shapes, so clients over-fetch or call several endpoints per view. GraphQL lets the client ask for exact fields in one round trip. The trade-off is that complexity moves to the server: caching, cost control, and N+1 become your problem.",
             "keyTakeaway": "GraphQL trades server complexity for exactly-shaped, single-request responses.",
             "diagram": "rest-vs-graphql"
         },
@@ -59,7 +59,7 @@
                 "decision"
             ],
             "question": "How do you decide between REST and GraphQL for a new public API?",
-            "answer": "I default to REST for public APIs: you get HTTP caching, CDN behavior, and per-endpoint rate limiting. I pick GraphQL for variable client data needs, deep nested graphs, or aggregating many backend services behind one schema. It needs persisted queries, depth limiting, and dataloader-style batching to stay safe and fast. A strong answer is often mixed: REST for resources, GraphQL for a product gateway.",
+            "answer": "I default to REST for public APIs because you get HTTP caching, CDNs, and per-endpoint rate limiting. I pick GraphQL when client needs vary a lot or I'm aggregating many services, and then I add persisted queries, depth limits, and batching.",
             "keyTakeaway": "REST for public cacheable resources; GraphQL for diverse clients over a nested graph.",
             "diagram": {
                 "kind": "branch",
@@ -84,7 +84,7 @@
                 "compatibility"
             ],
             "question": "How do you evolve an API without breaking existing clients?",
-            "answer": "I default to additive changes. New optional fields, endpoints, and enum values (when clients tolerate them) don't break anything, and I make clients ignore unknown fields from day one. For unavoidable breaks, I version at the URL or media-type level, publish a deprecation timeline, and watch old-version usage before retiring it. I also run contract tests in CI.",
+            "answer": "I default to additive changes. New optional fields and endpoints don't break anything if clients ignore unknown fields. For real breaks I version, publish a deprecation timeline, and watch old-version usage before retiring it.",
             "keyTakeaway": "Evolve additively; version only for real breaks, with a published sunset.",
             "diagram": {
                 "kind": "flow",
@@ -123,7 +123,7 @@
                 "typescript"
             ],
             "question": "What is the N+1 problem in GraphQL and how do you fix it?",
-            "answer": "A resolver that fetches per field issues one query per related object, so 50 orders with an author field fire 51 calls. The fix is batching: collect all the keys for a field within one request and load them in a single query. I use DataLoader, which coalesces per tick and caches per request. Authorization and filtering go in the batched query. Then I confirm with tracing that the call count drops from N+1 to a constant.",
+            "answer": "A resolver that fetches per field runs one query per related object, so 50 orders with an author field fire 51 calls. The fix is batching: collect the keys within a request and load them in one query. I use DataLoader, then confirm with tracing that the call count is constant.",
             "keyTakeaway": "Batch field loads per request with DataLoader; N+1 calls become one.",
             "code": {
                 "language": "typescript",
@@ -170,7 +170,7 @@
                 "safety"
             ],
             "question": "Which HTTP methods are safe and idempotent, and why does it matter for clients?",
-            "answer": "GET and HEAD are safe: they don't change state, so caches and prefetchers can repeat them. PUT and DELETE are idempotent but not safe. Repeats leave the same result, so a retry after a timeout is fine. POST is neither, so retries can double-create unless the server deduplicates with an idempotency key.",
+            "answer": "GET and HEAD are safe, so caches may repeat them. PUT and DELETE are idempotent, so retries are fine. POST is neither, so a retry can double-create unless the server dedupes with an idempotency key.",
             "keyTakeaway": "Safe methods never change state; idempotent methods are retry-safe; POST needs a key.",
             "diagram": {
                 "kind": "compare",
@@ -217,7 +217,7 @@
                 "scale"
             ],
             "question": "How do you design pagination for a large, changing collection?",
-            "answer": "I use cursor pagination. An opaque cursor encodes the sort key plus the id of the last item, and the next page starts after it. Offset breaks under writes, since offset 1000 skips or repeats rows on insert or delete, and it still scans the skipped rows. Keyset indexes keep page latency flat. I expose total counts only when required, because counting is expensive.",
+            "answer": "I use cursor pagination. An opaque cursor encodes the sort key and last item's id, and the next page starts after it. Offsets skip or repeat rows when data changes, and they still scan skipped rows. Keyset indexes keep latency flat.",
             "keyTakeaway": "Cursor pagination stays correct under writes and fast at depth; offsets do not.",
             "diagram": {
                 "kind": "flow",
@@ -252,7 +252,7 @@
                 "cost"
             ],
             "question": "How do you protect an API, especially GraphQL, from abusive or expensive queries?",
-            "answer": "I authenticate at the edge and authorize per resource, never just per endpoint. Rate limits go per identity, not just per IP. For GraphQL I control query cost with depth limiting, complexity scoring with per-client budgets, persisted queries, and resolver timeouts. I also disable introspection in production for public APIs.",
+            "answer": "I authenticate at the edge and authorize per resource, not just per endpoint. Rate limits go per identity. For GraphQL I add depth limits, complexity budgets, and persisted queries.",
             "keyTakeaway": "Limit depth, cost, and introspection; authorize per resource, per identity.",
             "diagram": {
                 "kind": "layers",
@@ -290,7 +290,7 @@
                 "gateway"
             ],
             "question": "How do you design a rate limiter, and which algorithm fits which case?",
-            "answer": "I enforce limits server-side, in middleware or the API gateway, because client-side limits are trivially bypassed. The response is a 429 with Retry-After. My default is a token bucket, a fixed refill into a bounded capacity: it's cheap on memory and tolerates bursts up to the bucket size. A leaky bucket drains at a constant rate, which gives even downstream load, but bursts queue. Sliding window counters blend two adjacent windows to avoid the fixed-window edge, where a burst straddling the boundary doubles the effective limit. In a cluster, I update shared in-memory counters atomically, in one round trip or a stored script, so nodes can't over-admit.",
+            "answer": "I enforce limits server-side, in middleware or the gateway, and return 429 with Retry-After. My default is a token bucket: it refills at a fixed rate into a bounded capacity, so it's cheap and tolerates bursts. Sliding window counters avoid the fixed-window edge, where a burst across the boundary doubles the limit. In a cluster I update shared counters atomically so nodes can't over-admit.",
             "keyTakeaway": "Token bucket by default, sliding window against edge bursts, atomic shared counters.",
             "diagram": {
                 "kind": "compare",
@@ -338,7 +338,7 @@
                 "reliability"
             ],
             "question": "How do you design webhooks so consumers can trust and reliably process them?",
-            "answer": "I treat webhooks as an API I expose. I sign the payload with an HMAC over the timestamp plus the raw body, using a per-endpoint secret, so receivers can verify authenticity and reject replays. Each event includes a unique id for deduplication. Ordering is never guaranteed, so I add sequence numbers or timestamps. I retry only on non-2xx with exponential backoff, cap attempts, and dead-letter failures. Receivers should acknowledge fast with a 2xx and process async, or timeouts trigger retry storms.",
+            "answer": "I treat webhooks as an API I expose. I sign an HMAC over the timestamp plus the raw body with a per-endpoint secret, so receivers can verify it and reject replays. Each event has a unique id for dedupe, and I never promise ordering. I retry non-2xx with exponential backoff and dead-letter failures.",
             "keyTakeaway": "Sign payloads with HMAC, dedupe by event id, and never promise ordering.",
             "code": {
                 "language": "typescript",
@@ -385,7 +385,7 @@
                 "sse"
             ],
             "question": "How do you expose an operation that takes minutes without holding the HTTP request open?",
-            "answer": "I never hold an HTTP request open for minutes. I return 202 Accepted with a Location header pointing at an operation resource (queued, running, succeeded, failed) that links the result when it's ready. I default to polling it, since that's stateless, cache-friendly, and survives proxies. I use SSE only when progress visibility matters or polling would become abusive. Finished operations expire. The operation should be a real resource, not a boolean flag.",
+            "answer": "I never hold an HTTP request open for minutes. I return 202 Accepted with a Location header pointing at an operation resource with states like queued, running, succeeded, and failed. I default to polling, since it's stateless, and use SSE only when progress visibility matters.",
             "keyTakeaway": "Return 202 with a pollable operation resource; reserve push for real progress needs.",
             "diagram": {
                 "kind": "flow",
@@ -423,7 +423,7 @@
                 "etags"
             ],
             "question": "How do conditional requests with ETags work, and why should every API support them?",
-            "answer": "The server stamps each representation with an ETag, from a content hash or id plus updated_at. The client sends it back as If-None-Match on the next GET. If nothing changed, it gets a 304 Not Modified with no body, which saves bandwidth. If it changed, it gets a 200 with the new tag. Requiring If-Match on writes gives optimistic concurrency, so lost updates become a clean 412. It's the cheapest performance win in HTTP API design.",
+            "answer": "The server stamps each representation with an ETag. The client sends it back as If-None-Match, and if nothing changed it gets a 304 with no body. Requiring If-Match on writes also gives optimistic concurrency, so lost updates become a clean 412. It's the cheapest performance win in HTTP API design.",
             "keyTakeaway": "ETags with If-None-Match turn refetches into 304s that carry no body.",
             "code": {
                 "language": "bash",
@@ -474,7 +474,7 @@
                 "batching"
             ],
             "question": "How do you design a bulk endpoint that handles partial failures honestly?",
-            "answer": "Twenty POSTs waste twenty round trips and multiply retry logic. I'd offer a bulk endpoint that accepts an array and returns one result per item: created ids for successes, and structured errors with the failing item's index for failures. That can be a 207 Multi-Status or a 200 with a results array. I fail the whole batch only when the business requires atomicity. I cap batch size, use per-item idempotency keys so retries don't double-create, and document the partial-failure semantics.",
+            "answer": "Twenty POSTs waste round trips and multiply retry logic. I'd offer a bulk endpoint that takes an array and returns one result per item: ids for successes, and structured errors with the item's index for failures, as a 207 or a 200 with a results array. I fail the whole batch only when the business needs atomicity, and I cap batch size.",
             "keyTakeaway": "Bulk endpoints report per-item outcomes; partial success beats all-or-nothing failure.",
             "diagram": {
                 "kind": "branch",
@@ -501,7 +501,7 @@
                 "consistency"
             ],
             "question": "How do you standardize error responses across a large API surface?",
-            "answer": "I pick one error format and enforce it everywhere. My default is RFC 9457 problem details, because it's a standard and not something invented. Every failure returns a type URI (the error class), a title, a status, a human detail, an instance path, and extra fields like validation failures. Clients switch on the type URI, while title and detail are for humans. Mixed 400 shapes force defensive parsing in every consumer.",
+            "answer": "I pick one error format and enforce it everywhere. My default is RFC 9457 problem details because it's a standard. Every failure returns a type URI, title, status, and detail, and clients switch on the type URI. Mixed 400 shapes force defensive parsing in every consumer.",
             "keyTakeaway": "Return RFC 9457 problem+json with a type URI on every failure.",
             "code": {
                 "language": "typescript",
@@ -539,7 +539,7 @@
                 "gateway"
             ],
             "question": "What is the backend-for-frontend pattern, and where do teams misuse it?",
-            "answer": "A backend-for-frontend gives each client family its own aggregation layer, owned by that client's team. The gateway holds cross-cutting concerns (authentication, rate limiting, routing), and the BFF holds experience-specific composition. I avoid one unified aggregation API, because every feature changes it and couples all frontends to one release train. I keep BFFs thin, with no business logic. Shared logic belongs in a domain service.",
+            "answer": "A backend-for-frontend gives each client family its own aggregation layer, owned by that client's team. The gateway keeps cross-cutting concerns. I avoid one unified aggregation API, because every feature changes it. BFFs stay thin, with shared logic in a domain service.",
             "keyTakeaway": "Give each client family a thin BFF; gateways stay cross-cutting, BFFs stay logic-free.",
             "diagram": {
                 "kind": "layers",
@@ -573,7 +573,7 @@
                 "openapi"
             ],
             "question": "How do you choose between schema-first and code-first API development?",
-            "answer": "Schema-first means the contract (OpenAPI, protobuf, GraphQL SDL) is reviewed before implementation and code is generated from it. Code-first derives the spec from annotations. Schema-first wins for public and cross-team APIs: you get real review, parallel client work, and honest SDKs. Code-first is faster for internal services, but the spec drifts unless CI diffs it on every merge. Once more than one team consumes the API, the schema moves first.",
+            "answer": "Schema-first means the contract, whether OpenAPI, protobuf, or GraphQL SDL, is reviewed before implementation. For public and cross-team APIs I go schema-first, which gives real review, parallel client work, and honest SDKs. Code-first is faster internally, but the spec drifts unless CI diffs it on every merge.",
             "keyTakeaway": "Schema-first for shared contracts; code-first only with CI spec diffing.",
             "diagram": {
                 "kind": "compare",
@@ -624,7 +624,7 @@
                 "polling"
             ],
             "question": "When do you pick SSE versus WebSockets versus polling for live updates?",
-            "answer": "I match the transport to the direction and freshness I need. Polling fits when minutes-old data is enough, and it needs no infrastructure. SSE gives one-way push over plain HTTP, with automatic reconnection and event ids for resume, which suits notifications, feeds, and progress bars. WebSockets earn their operational cost (stateful connections, heartbeats, sticky load balancing or a relay) only when the client streams data back continuously, like chat, collaborative editing, or games.",
+            "answer": "I match the transport to the direction and freshness I need. Polling works when minutes-old data is fine. SSE gives one-way push over plain HTTP with automatic reconnection, which suits notifications and progress bars. I use WebSockets only when the client streams data back continuously, like chat or collaborative editing.",
             "keyTakeaway": "Poll for tolerant clients, SSE for one-way push, WebSockets only for true bidirectionality.",
             "diagram": {
                 "kind": "branch",
@@ -649,7 +649,7 @@
                 "sorting"
             ],
             "question": "How do you combine pagination with filtering and sorting without wrecking performance?",
-            "answer": "I design filtering, sorting, and pagination as one contract. First I fix a stable total order: every sort needs a unique tiebreaker, usually id, backed by a database index. Cursors are only as stable as the order they encode. Filters apply before pagination and must map to indexed predicates, since a scan destroys flat page latency. I offer curated combinations, not an arbitrary DSL, and gate expensive counts behind an explicit include parameter.",
+            "answer": "I design filtering, sorting, and pagination as one contract. First I fix a stable total order, with a unique tiebreaker like id backed by an index, because cursors are only as stable as that order. Filters apply before pagination and must hit indexed predicates. Counts go behind an explicit parameter.",
             "keyTakeaway": "Pin a unique, indexed sort order first; filters run before pagination, counts behind a flag.",
             "diagram": {
                 "kind": "flow",
@@ -683,7 +683,7 @@
                 "persistence"
             ],
             "question": "How do you implement idempotency keys correctly on the server?",
-            "answer": "I store the outcome in Redis or a database, keyed by the Idempotency-Key header scoped to client identity and route, with a status of in-flight or completed. A completed key returns the saved response unchanged, with a replay header. An in-flight key returns 409. The same key with a different body hash returns 422, since that's a client bug, not a retry. Keys expire after twenty-four to forty-eight hours.",
+            "answer": "I store the outcome in Redis or a database, keyed by the Idempotency-Key header scoped to client and route. A completed key returns the saved response, an in-flight key returns 409, and the same key with a different body returns 422.",
             "keyTakeaway": "Persist key, status, and full response; replays return the saved result, mismatches get 422.",
             "code": {
                 "language": "typescript",
@@ -721,7 +721,7 @@
                 "versioning"
             ],
             "question": "What does good API design look like with gRPC, and how do you evolve protobuf contracts?",
-            "answer": "gRPC gives you a strict protobuf contract, efficient HTTP/2 binary framing, and generated clients, so it's best for internal service-to-service traffic. Never reuse or renumber field tags, reserve the numbers of deleted fields, add only optional fields, and never change a field type, because each of those breaks the wire format silently. I version through the package path, like payments.v1. Every call gets a deadline. Errors map to gRPC status codes, not payloads. Browsers need grpc-web or a REST facade.",
+            "answer": "gRPC gives a strict protobuf contract, HTTP/2 framing, and generated clients, so it fits internal service traffic. I never reuse or renumber field tags, I reserve the numbers of deleted fields, and I only add optional fields, because anything else breaks the wire format silently. I version through the package path, like payments.v1.",
             "keyTakeaway": "In protobuf, reserve retired field numbers, add only optional fields, version via package path.",
             "diagram": {
                 "kind": "compare",
@@ -771,7 +771,7 @@
                 "governance"
             ],
             "question": "How do you run deprecation and sunset for old API versions in practice?",
-            "answer": "I treat deprecation as a program with dates, not a changelog note. Every old-version response carries Deprecation and Sunset headers. I track which clients and tokens still call the deprecated surface, because \"we think nobody uses it\" causes outages. I publish the removal date and notify through every channel. I retire it only after usage drops below an agreed threshold, and I keep the shutdown reversible for a grace period.",
+            "answer": "I treat deprecation as a program with dates, not a changelog note. Old versions carry Deprecation and Sunset headers, and I track which clients still call them, since 'we think nobody uses it' causes outages. I retire only once usage is below an agreed threshold, with a grace period.",
             "keyTakeaway": "Deprecate with Sunset headers, measured usage, and a reversible shutdown date.",
             "diagram": {
                 "kind": "flow",
@@ -805,7 +805,7 @@
                 "rate-limiting"
             ],
             "question": "How does multi-tenancy change API design?",
-            "answer": "I resolve the tenant at the edge, from subdomain, token claim, or header, and pass it as explicit context through every layer, because implicit tenancy eventually crosses tenants. Isolation gets enforced in the data layer, not just in queries. Postgres row-level security is cheap, while schema-per-tenant or database-per-tenant gives stronger isolation and noisy-neighbor protection at an operational cost. I rate-limit and meter per tenant, and I put the tenant id in cache keys, logs, and metrics.",
+            "answer": "I resolve the tenant at the edge, from subdomain, token claim, or header, and pass it as explicit context through every layer, because implicit tenancy eventually crosses tenants. I enforce isolation in the data layer, with Postgres row-level security as the cheap option. I also rate-limit and meter per tenant.",
             "keyTakeaway": "Resolve tenancy at the edge, enforce it in the data layer, meter per tenant.",
             "diagram": {
                 "kind": "layers",
@@ -839,7 +839,7 @@
                 "coupling"
             ],
             "question": "Is HATEOAS worth implementing, or is it REST purity theater?",
-            "answer": "Full HATEOAS stays rare because tooling and consumers prefer contracts. My pragmatic middle is to embed links only for things that genuinely vary, like a next-page link, a cancellation URL, or a payment-flow redirect. When the server controls the flow, links let you change steps without breaking clients, and payment and OAuth APIs use them heavily. A good OpenAPI contract gives you most of the decoupling at a fraction of the cost.",
+            "answer": "Full HATEOAS stays rare because tooling and consumers prefer contracts. My middle ground is to embed links only for things that genuinely vary, like a next-page link or a payment redirect. When the server controls the flow, links let you change steps without breaking clients.",
             "keyTakeaway": "Use hypermedia links for server-driven flows; skip full HATEOAS for contract-first docs.",
             "diagram": {
                 "kind": "compare",
@@ -882,7 +882,7 @@
                 "etag"
             ],
             "question": "How do you prevent lost updates when many clients write the same resource?",
-            "answer": "When two clients read and then write the same resource, you get a lost update, and last-write-wins silently deletes work. I require conditional writes: the client sends If-Match with the ETag it read, or a version field, and the server rejects with 412 Precondition Failed when the state has moved. The client reloads, reapplies, and retries. The 412 returns the current resource and ETag. I reserve pessimistic locking for hot resources where retries thrash, like seat inventory. Every response carries the current version.",
+            "answer": "When two clients read then write the same resource, last-write-wins silently deletes work. I require conditional writes: the client sends If-Match with the ETag it read, and the server answers 412 Precondition Failed with the current resource if the state has moved. The client reapplies and retries. I use locking only for hot resources like seat inventory.",
             "keyTakeaway": "Require If-Match conditional writes and answer mismatches with 412 plus current state.",
             "diagram": {
                 "kind": "sequence",
@@ -929,7 +929,7 @@
                 "pact"
             ],
             "question": "How do consumer-driven contract tests change how you ship API changes safely?",
-            "answer": "Consumer-driven contract tests catch the breaks that page you, like a consumer depending on a renamed field. The consumer writes a contract stating what it calls and expects, tests its client against a mock generated from it, and publishes it. The provider verifies every published contract in CI, so a breaking change fails the provider's build before merge. I use a broker once several teams are involved, keep contracts narrow, and keep a few end-to-end smoke tests.",
+            "answer": "Consumer-driven contract tests catch the breaks that page you, like a consumer depending on a renamed field. The consumer writes a contract of what it calls and expects, and publishes it. The provider verifies every contract in CI, so a breaking change fails the build before merge.",
             "keyTakeaway": "Consumer-defined contracts verified against the provider in CI catch breaks before merge.",
             "diagram": {
                 "kind": "sequence",
@@ -972,7 +972,7 @@
                 "rfc-6902"
             ],
             "question": "How do you choose between JSON Merge Patch and JSON Patch for partial updates?",
-            "answer": "PUT replaces the whole representation and requires every field. PATCH changes part of it, so you have to choose what 'part' means. JSON Merge Patch, RFC 7386, is an object of fields to change, where null deletes a field. It's simple, but it can't update array elements. JSON Patch, RFC 6902, is a list of add, remove, replace, and move operations. It's precise for arrays but hard to hand-author. I use merge-patch for simple resources and JSON Patch for collections or atomic multi-field edits.",
+            "answer": "JSON Merge Patch, RFC 7386, is an object of fields to change where null deletes a field. It's simple, but it can't update array elements. JSON Patch, RFC 6902, is a list of add, remove, replace, and move operations, precise for arrays but hard to hand-author. I use merge-patch for simple resources and JSON Patch for arrays or atomic edits.",
             "keyTakeaway": "Merge Patch for simple field updates; JSON Patch when arrays or atomic edits matter.",
             "diagram": {
                 "kind": "compare",
@@ -1015,7 +1015,7 @@
                 "deprecation"
             ],
             "question": "How do you evolve a GraphQL schema when URL versioning is not an option?",
-            "answer": "GraphQL doesn't version by URL. The schema evolves in place, and discipline keeps it non-breaking. I add nullable fields only. I retire a field with @deprecated and a reason naming the replacement, and I never delete it while anyone still calls it. Persisted queries show which clients execute a field, so removal dates rest on evidence. CI fails on breaking schema diffs. For public APIs with unseen clients, I use date-versioned schemas and a published sunset.",
+            "answer": "GraphQL doesn't version by URL, so the schema evolves in place. I add nullable fields only, and retire a field with @deprecated and a reason naming the replacement. I never delete it while anyone still calls it, and persisted queries show who does. CI fails on breaking schema diffs.",
             "keyTakeaway": "Evolve GraphQL in place: nullable additions, @deprecated retirements, CI schema diffs.",
             "diagram": {
                 "kind": "flow",

@@ -12,7 +12,7 @@
                 "behavioral"
             ],
             "question": "How do you mentor a junior engineer in practice?",
-            "answer": "I start by learning their goals and gaps. Then I give them work one notch beyond their comfort zone, something reachable with support. I pair on the first pass of anything new, then review their solo attempt. They own the outcome and I own the safety net. I make my thinking visible, dead ends included. After each milestone we debrief on what they would do differently.",
+            "answer": "I start with their goals and gaps, then give them work one notch beyond their comfort zone. I pair on the first pass of anything new, then review their solo attempt. They own the outcome, I own the safety net. I think out loud, dead ends included.",
             "keyTakeaway": "Assign stretch work, pair then step back, and narrate your reasoning out loud.",
             "diagram": {
                 "kind": "layers",
@@ -50,7 +50,7 @@
                 "behavioral"
             ],
             "question": "What is the difference between mentoring, coaching, and managing?",
-            "answer": "Mentoring shares experience, and it's best for craft and career judgment. Coaching draws answers out through questions, and I use it when they own the problem. Managing owns outcomes: assignments, performance, and removing organizational blockers. A technical lead wears all three. The usual failure is mentoring when the moment needs coaching. My check is to ask whose problem this is, and whose answer their growth needs.",
+            "answer": "Mentoring shares experience, best for craft and career judgment. Coaching draws answers out with questions, for when they own the problem. Managing owns outcomes and performance. A tech lead wears all three, and the usual failure is mentoring when the moment needs coaching.",
             "keyTakeaway": "Mentor lends experience, coach draws out judgment, manager owns outcomes; pick per moment.",
             "diagram": {
                 "kind": "compare",
@@ -98,7 +98,7 @@
                 "behavioral"
             ],
             "question": "How do you help a senior engineer who has plateaued?",
-            "answer": "I diagnose the plateau with them first: is it motivation, missing skills, no visibility, or a role that stopped growing? Plateaued seniors usually need scope, not tutorials. I hand them a cross-team problem, an incident post-mortem to lead, or a rewrite decision to own, and I protect time for it explicitly. We revisit it quarterly with evidence. If the ceiling is structural, I say so and help them aim at their next role.",
+            "answer": "I diagnose the plateau with them: motivation, missing skills, no visibility, or a role that stopped growing? Plateaued seniors usually need scope, not tutorials, so I hand them a cross-team problem to own. If the ceiling is structural, I say so and help them aim at their next role.",
             "keyTakeaway": "Plateaued seniors need heavier scope and protected time, plus honest talk about ceilings.",
             "diagram": {
                 "kind": "flow",
@@ -136,7 +136,7 @@
                 "behavioral"
             ],
             "question": "How do you structure feedback conversations so they actually change something?",
-            "answer": "I anchor on one observed moment (situation, behavior, impact), not an assessment of their character, which just triggers defense. I deliver it close to the event, in private. I ask for their read before prescribing, and end with one agreed change and a follow-up date. Praise I give specifically and in public, since it shows the team what good looks like.",
+            "answer": "I anchor on one observed moment, not their character, which just triggers defense. I do it privately and soon after, ask for their read first, and end with one agreed change and a follow-up date. Praise I give specifically and in public.",
             "keyTakeaway": "One specific moment, their read first, one agreed change, and a follow-up date.",
             "diagram": {
                 "kind": "flow",
@@ -174,7 +174,7 @@
                 "behavioral"
             ],
             "question": "How do you build and measure a growth plan that survives delivery pressure?",
-            "answer": "I define the plan as two or three capabilities with observable evidence: leads a design review, handles an on-call week solo, ships a migration end to end. Course completions don't count. I tie the evidence to real roadmap work and keep the plan to one page that the engineer writes. We review it monthly for ten minutes. Under a deadline, I adjust the scope, not morale.",
+            "answer": "Two or three capabilities with observable evidence, like leading a design review or shipping a migration, not course completions. I tie them to real roadmap work, keep the plan to one page, and review it monthly. Under deadline I adjust scope, not morale.",
             "keyTakeaway": "Growth goals become roadmap work with observable evidence, reviewed monthly on one page."
         },
         {
@@ -186,7 +186,7 @@
                 "behavioral"
             ],
             "question": "How do you delegate critical work without abandoning it?",
-            "answer": "I delegate outcomes with explicit guardrails: acceptance criteria, known risks, and where I must be consulted. I don't delegate piecemeal tasks. I match the stakes to their runway. For critical pieces I keep failure cheap, with a reversible migration step, a flagged rollout, or a shadow cutover. I set review checkpoints. And I never rewrite their work at the last moment, because that teaches helplessness.",
+            "answer": "I delegate outcomes with guardrails: acceptance criteria and where I must be consulted. I match the stakes to their runway and keep failure cheap with a flagged rollout. I set checkpoints and never rewrite their work at the last moment, because that teaches helplessness.",
             "keyTakeaway": "Delegate outcomes with guardrails, keep failure cheap, review checkpoints instead of rewriting.",
             "diagram": {
                 "kind": "branch",
@@ -214,7 +214,7 @@
                 "behavioral"
             ],
             "question": "How do you use code review as a mentoring tool rather than a quality gate?",
-            "answer": "I calibrate the review to the engineer, not just the diff. I block only on correctness, security and operability. Everything else is a question or a suggestion, because a wall of nitpicks teaches fear. I explain the why behind every preference, with the incident or benchmark that earned it. For the big lessons I ask a question, like 'what happens when this queue empties'. And I praise specifically and in public.",
+            "answer": "I calibrate to the engineer, not just the diff. I block only on correctness, security and operability. Everything else is a question or suggestion, because a wall of nitpicks teaches fear. I explain the why behind my preferences, and I praise specifically.",
             "keyTakeaway": "Review strictly for correctness, teach taste through questions and reasons, praise specifically."
         },
         {
@@ -226,7 +226,7 @@
                 "behavioral"
             ],
             "question": "How do you pair with a junior without taking the keyboard away from them?",
-            "answer": "The keyboard stays with the mentee, full stop. I only navigate: I ask what they see and why they chose that path. I keep my hands off even when the driver is slow. If they're truly stuck, I demo for five minutes on a scratch branch, then hand it back. We end with a five-minute debrief on what they would try alone tomorrow.",
+            "answer": "The keyboard stays with the mentee. I navigate by asking what they see and why they chose that path, even when they're slow. If they're truly stuck, I demo for five minutes on a scratch branch, then hand it back.",
             "keyTakeaway": "Keep the mentee driving, navigate with questions, demo briefly on a scratch branch only.",
             "diagram": {
                 "kind": "flow",
@@ -265,7 +265,7 @@
                 "behavioral"
             ],
             "question": "How do you mentor someone whose confidence and competence are badly out of sync?",
-            "answer": "Both directions are calibration problems, so I engineer evidence instead of arguing with perception. An overconfident engineer gets work where reality answers fast: a production incident, a perf budget, a hard customer review. I show the gap against a concrete bar, not against me. An underconfident engineer gets scoped wins that compound, and then I name their competence publicly, with specifics. I avoid vagueness in both cases.",
+            "answer": "Both are calibration problems, so I engineer evidence instead of arguing with perception. An overconfident engineer gets work where reality answers fast, like an incident or a perf budget. An underconfident one gets scoped wins that compound, and I name their competence publicly, with specifics.",
             "keyTakeaway": "Engineer fast, concrete evidence to recalibrate both overconfidence and underconfidence.",
             "diagram": {
                 "kind": "compare",
@@ -309,7 +309,7 @@
                 "behavioral"
             ],
             "question": "How do you mentor engineers across cultures and time zones?",
-            "answer": "I make mentoring async-first and written. We keep a shared document where they write progress and questions, and I answer with my full reasoning so the thread teaches. I ask each person how they prefer to get hard feedback, since direct public critique reads as respect to some and humiliation to others. I rotate the live slot hour so the time zone burden is shared. And I check understanding with questions, because over video, silence is not agreement.",
+            "answer": "I make mentoring async-first and written, with a shared document for progress and questions, and I answer with full reasoning. I ask each person how they like hard feedback, since direct public critique reads as respect to some and humiliation to others. And I never read silence as agreement.",
             "keyTakeaway": "Write the mentoring down, ask feedback preferences explicitly, never read silence as agreement."
         },
         {
@@ -322,7 +322,7 @@
                 "behavioral"
             ],
             "question": "How do you give hard feedback to a peer engineer who does not report to you?",
-            "answer": "Without authority, I only have credibility. I ask permission first: can I share something I noticed? I anchor on one observed moment and a shared standard, not my own preference. I say the hard sentence plainly, because buried feedback is gossip. I own my contribution to the problem. I don't run follow-up audits, and I invite the same honesty back.",
+            "answer": "Without authority I only have credibility, so I ask permission first. I anchor on one observed moment and a shared standard, not my preference, and say the hard part plainly. I own my part and invite the same honesty back.",
             "keyTakeaway": "Ask permission, cite the shared standard, speak plainly, and invite the same honesty back.",
             "diagram": {
                 "kind": "flow",
@@ -356,7 +356,7 @@
                 "behavioral"
             ],
             "question": "How do you practice reverse mentoring, learning from the juniors you mentor?",
-            "answer": "I schedule it and name it. Otherwise politeness wins and juniors never correct a lead. Each mentee owns one topic where they're ahead of me, like current tooling, new AI workflows, or what onboarding felt like, and they teach it in our one-on-ones. I'm a real beginner in public and ask the dumb question. Then I act visibly: I adopt their practice and credit them by name. Reverse mentoring with no visible change teaches juniors that their input doesn't matter.",
+            "answer": "I schedule it and name it, otherwise politeness wins and juniors never correct a lead. Each mentee owns one topic where they're ahead of me, like current tooling, and teaches it in our one-on-ones. Then I act visibly, adopting their practice and crediting them by name, or they learn their input doesn't matter.",
             "keyTakeaway": "Let juniors own topics where they lead you, then adopt and credit their teaching publicly."
         },
         {
@@ -368,7 +368,7 @@
                 "behavioral"
             ],
             "question": "How do you create mentoring value during a live incident without slowing the response?",
-            "answer": "My rule is that learning never sits on the critical path. During an incident, I give the mentee a bounded role with real value: comms scribe, timeline keeper, or investigator on a non-critical thread. I narrate my own decisions, like why we roll back before we investigate. If there's slack, I ask for their hypothesis aloud. The real mentoring happens afterward, when we write the post-mortem together and they draft the timeline and contributing factors.",
+            "answer": "Learning never sits on the critical path. During an incident I give the mentee a bounded role with real value, like comms scribe or timeline keeper, and I narrate my decisions, such as why we roll back before investigating. The real mentoring is the post-mortem, which we write together.",
             "keyTakeaway": "Give bounded real roles during the incident, then teach judgment in the joint post-mortem.",
             "diagram": {
                 "kind": "sequence",
@@ -417,7 +417,7 @@
                 "behavioral"
             ],
             "question": "How do you mentor an entire team rather than one person at a time?",
-            "answer": "One-on-one mentoring only scales by subtraction, so I build systems that teach. That means a rotation so everyone ships ops, design and customer contact, a standards document that argues its reasons, and reviews where the why is attached. I make learning public with post-mortems everyone attends, design reviews where the author defends their choices, and a weekly teach-back. My one-on-ones calibrate the system. They don't carry it.",
+            "answer": "One-on-one mentoring only scales by subtraction, so I build systems that teach: a rotation so everyone does ops and customer contact, a standards document that argues its reasons, and reviews with the why attached, plus public post-mortems. My one-on-ones calibrate the system, they don't carry it.",
             "keyTakeaway": "Build teaching systems, rotations, reasoned standards, public reviews, and let one-on-ones calibrate them.",
             "diagram": {
                 "kind": "layers",
@@ -456,7 +456,7 @@
                 "behavioral"
             ],
             "question": "How do you recognize when mentoring is the wrong tool for someone's situation?",
-            "answer": "Mentoring presumes the gap is capability and that the person wants to close it, so I test both first. If the engineer knows how and the blocker is motivation, incentives or a broken process, more mentoring is theater. I fix the system or have the performance conversation. If the deficit is below the bar and the deadline won't wait, I use directive management with a training plan. If the struggle is personal, I refer them and accommodate. I'm their lead, not their therapist.",
+            "answer": "Mentoring assumes the gap is capability and the person wants to close it, so I test both first. If the blocker is motivation or a broken process, more mentoring is theater, so I fix the system. If it's performance, I manage directly, and if it's personal, I refer them. I'm their lead, not their therapist.",
             "keyTakeaway": "Mentor capability gaps only; motivation, process, performance, and personal crises need other tools.",
             "diagram": {
                 "kind": "branch",
@@ -484,7 +484,7 @@
                 "behavioral"
             ],
             "question": "What is the difference between sponsoring someone and mentoring them, and when do you do each?",
-            "answer": "A mentor talks with you. A sponsor spends their own capital on you, which is far rarer. Mentoring is advice in the room. Sponsoring happens out of the room: putting my name on their promotion packet, saying their name when visible work is staffed, defending a risky assignment before they've proved themselves. Advice is nearly free, while sponsorship bets my credibility, so it's what moves careers. I audit quarterly: who am I merely advising, and who am I staking something on?",
+            "answer": "A mentor talks with you, but a sponsor spends their own capital on you, which is rarer. Sponsoring happens out of the room: putting my name on their promotion packet, naming them for visible work, defending a risky assignment. Advice is nearly free, while sponsorship bets my credibility.",
             "keyTakeaway": "Mentors advise in the room, sponsors spend their capital on you outside it.",
             "diagram": {
                 "kind": "compare",
@@ -535,7 +535,7 @@
                 "behavioral"
             ],
             "question": "How do you handle a mentee who pushes back on every piece of feedback?",
-            "answer": "I separate reasoning from reflex. Pushback that engages with specifics might be right, so I give it a fair hearing. If it's reflex, I name the pattern gently. Then I shrink the ask to one low-stakes behavior framed as an experiment: handle review comments as questions for two weeks, then review together on a set date. Experiments move the debate from my word to shared evidence. If the resistance survives that, the resistance becomes the feedback.",
+            "answer": "I separate reasoning from reflex. Pushback with specifics might be right, so it gets a fair hearing. If it's reflex, I name the pattern gently and shrink the ask to one low-stakes experiment, like treating review comments as questions for two weeks. That moves the debate to shared evidence.",
             "keyTakeaway": "Test pushback fairly, then convert one behavior into a low-stakes dated experiment.",
             "diagram": {
                 "kind": "flow",
@@ -569,7 +569,7 @@
                 "behavioral"
             ],
             "question": "How do you deliberately build psychological safety instead of hoping it emerges?",
-            "answer": "Safety is built or broken in the first minutes after bad news. I go first with my own mistakes, including what they cost. I thank people for bad news before I triage it, and I credit the person who surfaced it in the post-mortem. I write causes as mechanisms, not names, and I handle real fault privately. I also add structure: silent written starts in reviews, a rotating red team, questions before comments in design reviews. And I measure how fast people report problems.",
+            "answer": "Safety is built or broken in the first minutes after bad news. I go first with my own mistakes, including what they cost. I thank people for bad news before triaging it and credit whoever surfaced it. I write causes as mechanisms, not names, and handle real fault privately.",
             "keyTakeaway": "Script reactions to bad news, go first with your own mistakes, and credit the messengers."
         },
         {
@@ -582,7 +582,7 @@
                 "behavioral"
             ],
             "question": "How do you mentor someone through a promotion cycle, including the possibility of a no?",
-            "answer": "In cycle one, not packet season, I demystify the bar with the actual promotion language and real accepted cases. Mid-cycle, I run a gap review against that bar. I say the hard part plainly: you're not there yet, here are the two behaviors, here is the work that would show it. If the answer is no, I get written reasons, convert them into a dated plan, and separate the decision from their identity. I also name the honest option: sometimes the fastest promotion is elsewhere.",
+            "answer": "Early in the cycle I demystify the bar with the actual promotion language and real accepted cases. Mid-cycle I run a gap review and say it plainly: here are the two behaviors, here's the work that would show it. If it's a no, I get written reasons and turn them into a dated plan, separate from their identity.",
             "keyTakeaway": "Demystify the bar early, review gaps soberly mid-cycle, and turn every no into a dated plan.",
             "diagram": {
                 "kind": "flow",
@@ -613,7 +613,7 @@
                 "behavioral"
             ],
             "question": "How do you know whether your mentoring is actually working?",
-            "answer": "I measure transfer of capability, not gratitude. The evidence is what the engineer now does unaided that used to escalate to me: incidents contained, designs defended, juniors mentored. I also watch their questions change from 'what should I do' to 'which of these two options', which is the clearest early signal of forming judgment. I calibrate against people who aren't me, like peer leads, review threads and a skip-level pulse. And I keep dated artifacts so the trend is readable across quarters.",
+            "answer": "I measure transfer of capability, not gratitude: what the engineer now does unaided that used to escalate to me. Their questions shifting from 'what should I do' to 'which of these two options' is the clearest early sign of judgment. I check that against peer leads and review threads, with dated artifacts.",
             "keyTakeaway": "Measure what mentees now do unaided, calibrated by others, tracked through dated artifacts.",
             "diagram": {
                 "kind": "flow",
@@ -652,7 +652,7 @@
                 "behavioral"
             ],
             "question": "How do you get engineers to document their growth so promotion cases write themselves?",
-            "answer": "I make evidence capture ambient. Growth notes live where the work lives: pull request descriptions get an impact line, post-mortems get a what-changed section, and design docs record the decision and its consequences. I seed each engineer a running document in their first month, because a blank page is the enemy. Monthly, we spend fifteen minutes turning activity into outcome, so 'helped the team' becomes 'cut deploy time by forty percent'. Packet time then becomes assembly, not archaeology.",
+            "answer": "I make evidence capture ambient. PR descriptions get an impact line, post-mortems a what-changed section, and design docs record the decision and its consequences. I seed a running document in their first month, because a blank page is the enemy. Monthly we spend fifteen minutes turning activity into outcome.",
             "keyTakeaway": "Capture evidence where the work lands and sharpen it monthly, so packets are assembly, not archaeology."
         },
         {
@@ -665,7 +665,7 @@
                 "behavioral"
             ],
             "question": "How do you mentor an engineer who is more experienced than you?",
-            "answer": "I don't perform seniority I lack. An engineer more experienced than me usually has a context deficit: which systems are load-bearing lies, who actually decides, which migrations are political. So I mentor as a broker and a peer. I hand them the map, make introductions, and decode the unwritten rules. I coach only where I have genuine range, and I ask what they want from me. They usually lack sponsorship, so I spend my capital there.",
+            "answer": "I don't perform seniority I lack. A more experienced engineer usually has a context deficit: which systems are load-bearing, who really decides. So I act as a broker and peer, handing them the map and making introductions. They usually lack sponsorship too, so I spend my capital there.",
             "keyTakeaway": "Mentor more experienced engineers as context broker and sponsor, never as performed seniority."
         },
         {
@@ -678,7 +678,7 @@
                 "behavioral"
             ],
             "question": "How do you mentor an engineer who wants to move into management?",
-            "answer": "I convert the fantasy into data. People romanticize management until they carry a pager for other people's output. So I hand them real slices: run the team sync for a quarter, own a hiring loop end to end, coordinate communications for one incident. We debrief each one on what drained or energized them. I discuss the tradeoffs honestly: identity, feedback cadence, the day your best work is a good meeting. I keep the door back to engineering open in practice. When the signal is real, I involve their manager early.",
+            "answer": "I convert the fantasy into data, because people romanticize management until they carry a pager for other people's output. I hand them real slices: run the team sync for a quarter, own a hiring loop, coordinate comms for an incident. We debrief each on what drained or energized them. I keep the door back to engineering open in practice.",
             "keyTakeaway": "Give real management slices with honest debriefs and a genuinely reversible door back."
         },
         {
@@ -691,7 +691,7 @@
                 "behavioral"
             ],
             "question": "How do you scale mentoring beyond the handful of pairs you can personally carry?",
-            "answer": "I treat mentoring as a system to design, not a favor queue with me as the bottleneck. I roster pairs by growth goal, not by who asked loudest, and rotate them twice a year. Onboarding buddies own a real checklist with a named 30-day outcome. I mentor the mentors, with a monthly session on running feedback conversations. I keep the structure light: goal, cadence, exit review. I credit mentoring in performance cycles, or it dies within a quarter. And I sample pairs to check that everyone, quiet people especially, has someone.",
+            "answer": "I treat mentoring as a system, not a favor queue with me as the bottleneck. I roster pairs by growth goal, not who asked loudest, and rotate them twice a year. Onboarding buddies own a real checklist with a 30-day outcome. I mentor the mentors monthly, and I credit mentoring in performance cycles, or it dies within a quarter.",
             "keyTakeaway": "Design mentoring as a rotated matching system, train the mentors, and credit it or it dies."
         }
     ]

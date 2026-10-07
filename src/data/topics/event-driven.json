@@ -12,7 +12,7 @@
                 "fundamentals"
             ],
             "question": "What is the difference between a message queue and publish-subscribe?",
-            "answer": "A queue delivers each message to one consumer, so it's how you distribute work across workers. Publish-subscribe delivers each message to every subscriber, so an order-placed event reaches inventory, email, and analytics. Kafka blurs the line. Consumer groups give you pub-sub across groups and queue semantics within a group.",
+            "answer": "A queue gives each message to one consumer, so it spreads work across workers. Pub-sub gives it to every subscriber, so order-placed reaches inventory, email and analytics. Kafka does both: consumer groups.",
             "keyTakeaway": "Queue means one consumer wins; pub-sub means every subscriber sees it.",
             "diagram": {
                 "kind": "compare",
@@ -55,7 +55,7 @@
                 "semantics"
             ],
             "question": "What distinguishes an event from a command message?",
-            "answer": "An event states a fact that already happened and can't be argued with, like order-placed, and the publisher doesn't care who listens. A command tells a specific handler to do something, like reserve-inventory, expects an outcome, and can be refused. Events give you loose coupling, since adding a subscriber needs no producer change, while commands couple the producer to the consumer by intent. Publishing commands everywhere creates hidden workflows nobody can trace, so I only use them for directed flows.",
+            "answer": "An event states a fact that already happened, like order-placed, and the publisher doesn't care who listens. A command tells a specific handler to do something, like reserve-inventory, and can be refused. Events keep coupling loose, so I use commands only for directed flows, or you get hidden workflows nobody can trace.",
             "keyTakeaway": "Events are facts anyone may consume; commands are orders with an owner.",
             "diagram": {
                 "kind": "compare",
@@ -106,7 +106,7 @@
                 "typescript"
             ],
             "question": "Compare at-most-once, at-least-once, and exactly-once delivery, and explain how you make retries safe.",
-            "answer": "At-most-once sends without retry, so it can lose messages. At-least-once retries until acknowledged, so you get duplicates. Exactly-once across systems is really at-least-once plus consumer deduplication. So I make consumers idempotent, with a processed-message id store or an upsert by natural key.",
+            "answer": "At-most-once can lose messages. At-least-once retries until acknowledged, so you get duplicates. Exactly-once across systems is really at-least-once plus deduplication, so I make consumers idempotent.",
             "keyTakeaway": "Assume duplicates: build idempotent consumers instead of trusting exactly-once.",
             "code": {
                 "language": "typescript",
@@ -158,7 +158,7 @@
                 "consumer-groups"
             ],
             "question": "How do Kafka partitions and consumer groups determine throughput and ordering?",
-            "answer": "A topic splits into partitions, which are independent ordered logs. Producers route by key, so the same key always lands in one partition and keeps its order. A consumer group divides the partitions among its members. Adding consumers raises parallelism only up to the partition count, so extra members sit idle. Ordering is per key, not per topic, so I pick the key by what must stay ordered, such as order id. Rebalancing when members join or leave pauses consumption, so I keep handlers fast and stateless.",
+            "answer": "A topic splits into partitions, which are independent ordered logs. Producers route by key, so one key stays in order on one partition. A consumer group divides partitions among members, so consumers beyond the partition count sit idle. Ordering is per key, so I key by what must stay ordered, like order id.",
             "keyTakeaway": "Partition by ordering key; scale consumers to the partition count.",
             "diagram": {
                 "kind": "flow",
@@ -188,7 +188,7 @@
                 "dual-write"
             ],
             "question": "Why is publishing to a broker inside a service's own transaction not enough, and what is the outbox pattern?",
-            "answer": "The database and the broker are two systems, so with a dual write you can commit the row and lose the publish, or publish for a rolled-back transaction. There is no atomic commit across both. The outbox fixes that by writing the state change and the event in the same database transaction. A relay then reads the outbox table, publishes to the broker, and marks rows sent. If the relay crashes, unsent rows remain and get retried, so nothing is silently lost. Consumers still deduplicate, because the relay can publish twice before marking.",
+            "answer": "The database and broker are two systems, so with a dual write you can commit the row and lose the publish, or publish for a rolled-back transaction. The outbox writes the state change and the event in one database transaction. A relay then publishes the outbox rows and marks them sent. Consumers still deduplicate, since the relay can publish twice.",
             "keyTakeaway": "Commit event and state together in the database; a relay publishes the outbox.",
             "diagram": {
                 "kind": "sequence",
@@ -232,7 +232,7 @@
                 "consistency"
             ],
             "question": "How do you handle a transaction that spans three services?",
-            "answer": "I avoid two-phase commit because it locks participants and couples their availability. I use a saga instead. Each service runs a local transaction and publishes an event, and a failure triggers compensating actions, such as releasing reserved stock. Orchestration gives you central visibility, while choreography keeps simple flows loosely coupled. Either way, every step has to be idempotent.",
+            "answer": "I avoid two-phase commit since it locks participants and couples their availability. I use a saga: each service commits locally and publishes an event, and a failure triggers compensating actions like releasing stock. Every step is idempotent.",
             "keyTakeaway": "Sagas with compensating actions replace distributed ACID.",
             "diagram": "saga-flow"
         },
@@ -245,7 +245,7 @@
                 "governance"
             ],
             "question": "How do you evolve an event schema without breaking consumers?",
-            "answer": "I treat schemas as contracts. Compatibility is enforced in the schema registry and in CI, so a breaking change fails the build and not production. Changes are additive, meaning new optional fields with defaults. I never repurpose or narrow a field. Removal takes two steps: deprecate, then drop. For a hard break, I publish a new event version and run both.",
+            "answer": "I treat schemas as contracts. The registry and CI enforce compatibility, so a breaking change fails the build, not production. Changes are additive, with optional fields and defaults. Removal is deprecate, then drop. A hard break gets a new version.",
             "keyTakeaway": "Additive changes, registry-enforced compatibility, and CI checks before consumers break.",
             "diagram": {
                 "kind": "flow",
@@ -282,7 +282,7 @@
                 "failure-handling"
             ],
             "question": "A consumer falls behind and messages start failing. How do you keep the system healthy?",
-            "answer": "I alert on consumer-group lag, since growth means a capacity or failure problem. For backpressure, I pause pulling, defer non-critical work, and scale consumers up to the partition limit. Poison messages go to a dead-letter queue after bounded retries with backoff. I watch the DLQ and support replay, because an unwatched DLQ is silent data loss.",
+            "answer": "I alert on consumer-group lag, since growth means a capacity or failure problem, and scale consumers up to the partition limit. Poison messages go to a dead-letter queue after bounded retries. I watch the DLQ and support replay.",
             "keyTakeaway": "Watch lag, retry with backoff, dead-letter poison, and replay deliberately.",
             "diagram": {
                 "kind": "flow",
@@ -316,7 +316,7 @@
                 "reliability"
             ],
             "question": "Design a notification system that sends millions of push, SMS, and email notifications per day.",
-            "answer": "Trigger services like billing, shipping, and cron jobs call an API on the notification servers. The servers check per-channel opt-out and rate limits, then persist to a notification log and publish to per-channel queues. The queues buffer spikes and let workers scale per channel. Workers render templates and deliver through third parties: platform push services, SMS providers, and email providers. I deduplicate by event id so a retried trigger doesn't double-send.",
+            "answer": "Trigger services call an API that checks opt-outs and rate limits, persists to a log, and publishes to per-channel queues. Queues buffer spikes and let workers scale per channel. Workers render templates and deliver through push, SMS and email providers. I deduplicate by event id so retries don't double-send.",
             "keyTakeaway": "Log, queue per channel, deliver via providers; dedupe by event id and watch queue depth.",
             "diagram": {
                 "kind": "flow",
@@ -355,7 +355,7 @@
                 "retention"
             ],
             "question": "What are the internals of a distributed message queue or log such as Kafka?",
-            "answer": "A topic splits into partitions, and each partition is an append-only log. The partition key decides placement, so events for one key stay ordered. Each message has an offset, and consumer groups track their own offsets. That gives you independent consumers, replay from any point, and competing workers within a group. Partitions replicate across brokers with one write leader, so losing a broker fails over without data loss. More partitions raise parallelism but also rebalance cost and latency, so partition count is a capacity decision.",
+            "answer": "A topic splits into partitions, each an append-only log, and the key decides placement so one key stays ordered. Consumer groups track their own offsets, which gives independent consumers and replay from any point. Partitions replicate across brokers with one leader. More partitions raise parallelism but also rebalance cost, so the count is a capacity decision.",
             "keyTakeaway": "Partitioned append-only logs with per-group offsets: ordering per key, replay per group.",
             "diagram": {
                 "kind": "layers",
@@ -389,7 +389,7 @@
                 "modeling"
             ],
             "question": "When would you choose event sourcing over event-carried state transfer?",
-            "answer": "Event sourcing makes the event log the system of record, and you replay it to derive state. The cost is versioning discipline. Event-carried state transfer keeps the database as the record and puts a current-state snapshot in each event, so consumers need no callback. The cost there is fat messages and stale copies. I'd start with thin fact events and a normal database, and adopt event sourcing only when replayable audit or projections are core requirements.",
+            "answer": "Event sourcing makes the event log the system of record and you replay it to derive state, which costs versioning discipline. Event-carried state transfer keeps the database as the record and puts a snapshot in each event, so consumers need no callback, but messages get fat. I'd start with thin fact events.",
             "keyTakeaway": "Event sourcing stores facts as the record; state transfer ships snapshots so consumers skip call-backs.",
             "diagram": {
                 "kind": "compare",
@@ -440,7 +440,7 @@
                 "integration"
             ],
             "question": "How does change data capture with a tool like Debezium turn a legacy database into an event source?",
-            "answer": "Change data capture turns the database write-ahead log into an event stream. Debezium tails the WAL and publishes every row insert, update, and delete to a topic. The cost is that events are shaped like storage, so consumers couple to the internal schema. I use registry-enforced schemas, key by primary key, and monitor connector lag. CDC is a bridge into event-driven design, not a replacement for domain modeling.",
+            "answer": "CDC turns the database write-ahead log into an event stream. Debezium tails the WAL and publishes every row change to a topic. The catch is that events look like storage, so consumers couple to the schema. I use registry-enforced schemas. It's a bridge, not domain modeling.",
             "keyTakeaway": "CDC streams database changes from the WAL, so legacy apps publish events without code changes.",
             "code": {
                 "language": "yaml",
@@ -479,7 +479,7 @@
                 "kafka"
             ],
             "question": "How do you guarantee that all events for a single order are processed in order without serializing the whole system?",
-            "answer": "I use the entity id as the partition key. That keeps an entity's stream on one partition and one consumer, while different entities run in parallel. The hazards are a hot key, where one busy customer caps throughput, and producer retries landing after newer events. I enable idempotent producers and per-entity sequence numbers so consumers can detect and park gaps. I never promise more order than I enforce.",
+            "answer": "I use the entity id as the partition key, so an entity's events stay on one partition and consumer while different entities run in parallel. The hazards are a hot key capping throughput and late producer retries. Idempotent producers and per-entity sequence numbers help.",
             "keyTakeaway": "Pin each entity to one partition for order, and watch hot keys that cap throughput.",
             "code": {
                 "language": "typescript",
@@ -516,7 +516,7 @@
                 "object-storage"
             ],
             "question": "How do you handle messages whose payloads are too large for the broker?",
-            "answer": "For payloads of megabytes, I don't inflate the broker. I store the blob in object storage and publish only a claim-check reference. That keeps the log fast and replication cheap, and it avoids limits like Kafka's default one-megabyte message. The trade is a second system to keep consistent. The blob must land before the claim is published, and the store's lifecycle must outlive every message that references it.",
+            "answer": "I store the blob in object storage and publish only a claim-check reference. That keeps the log fast and avoids limits like Kafka's default one megabyte. The trade is a second system: the blob must land before the claim is published, and outlive every message referencing it.",
             "keyTakeaway": "Store big payloads externally and publish a claim-check reference to keep the log lean.",
             "diagram": {
                 "kind": "sequence",
@@ -561,7 +561,7 @@
                 "consumers"
             ],
             "question": "The outbox pattern guarantees the producer publishes, but what guarantees the consumer applies each message exactly once?",
-            "answer": "The outbox guarantees the producer side. The consumer has the mirror problem: applying the effect and committing the offset are two systems, so a crash between them replays the message or loses the effect. The fix is a transactional inbox. In the same local transaction as the business change, I record the message id and skip any id already present. A crash leaves both applied or neither. Effectively-once end to end needs outbox and inbox together.",
+            "answer": "The consumer has the mirror problem: applying the effect and committing the offset are two systems, so a crash between them replays the message or loses the effect. A transactional inbox fixes it. In the same local transaction as the business change, I record the message id and skip ids already seen.",
             "keyTakeaway": "Record each consumed message in an inbox table inside the same transaction as its effect.",
             "diagram": {
                 "kind": "flow",
@@ -596,7 +596,7 @@
                 "messaging"
             ],
             "question": "How do you implement request-reply semantics over a message broker, and when should you not?",
-            "answer": "When a handler needs an answer but I still want queue buffering, I publish a command with a correlation id and a reply-to destination, and the replier answers with the same id. I bound the wait with a timeout, because messaging promises delivery, not latency. A missing replier has to fail the operation, not hang a thread. It's the most abused messaging pattern. For tight latency, backpressure, and streaming, a synchronous call is simpler.",
+            "answer": "I publish a command with a correlation id and a reply-to destination, and the replier answers with the same id. I bound the wait with a timeout, since messaging promises delivery, not latency. It's the most abused pattern, so when latency is tight I use a synchronous call.",
             "keyTakeaway": "Correlate replies by id, bound the wait with a timeout, and prefer sync calls when latency matters.",
             "code": {
                 "language": "typescript",
@@ -645,7 +645,7 @@
                 "design"
             ],
             "question": "How do you decide between choreography and orchestration for a multi-service workflow?",
-            "answer": "With choreography, services react to events and there's no coordinator. Coupling stays minimal, but the process lives only in the collective behavior, so debugging and change-impact analysis span ten codebases. Orchestration puts the flow in a coordinator that issues commands, tracks step state, and owns retries and compensations. Few-step, stable flows stay choreographed. Long-running, branchy, or business-critical flows get an orchestrator. I'd promote a flow once a fourth participant joins and nobody can explain it.",
+            "answer": "With choreography services react to events and there's no coordinator. Coupling is minimal, but the process lives only in collective behavior, so debugging spans ten codebases. Orchestration puts the flow in a coordinator that tracks steps and owns retries and compensations. Short, stable flows stay choreographed, and long or critical ones get an orchestrator.",
             "keyTakeaway": "Choreograph simple flows for loose coupling; orchestrate long or critical flows for visibility.",
             "diagram": {
                 "kind": "branch",
@@ -671,7 +671,7 @@
                 "consumers"
             ],
             "question": "A new consumer joins a topic with a year of history. How do you backfill its state?",
-            "answer": "A durable log lets a new consumer rebuild state. I point its group at the earliest offset or a timestamp. Replay needs an idempotent consumer that derives state and doesn't trigger side effects, so I mute outbound notifications and downstream calls during the rebuild. It can fail in a few ways. Retention may have deleted history, replay speed is bounded by partition count, and a rebalance mid-replay can restart work.",
+            "answer": "A durable log lets a new consumer rebuild state, so I point its group at the earliest offset or a timestamp. The consumer must be idempotent and side-effect free, so I mute outbound notifications. It breaks if retention already deleted history, and replay speed is bounded by partition count.",
             "keyTakeaway": "Replay builds a new consumer from retained history only when it is idempotent and side-effect free.",
             "diagram": {
                 "kind": "flow",
@@ -705,7 +705,7 @@
                 "semantics"
             ],
             "question": "What is the difference between idempotency and deduplication, and which one do you design for?",
-            "answer": "Deduplication is about messages, and idempotency is about effects. Dedup filters duplicate delivery through a processed-id store or a broker dedupe window. An idempotent operation gives the same outcome applied once or fifty times, through an upsert or conditional write by natural business key. Dedup windows expire and stores lose entries, so idempotency is the stronger guarantee. I design for idempotency first and treat dedup as a guardrail.",
+            "answer": "Deduplication is about messages, idempotency is about effects. Dedup filters duplicate delivery with a processed-id store or broker window. An idempotent operation gives the same outcome once or fifty times, via an upsert by business key. Dedup windows expire, so I design for idempotency first.",
             "keyTakeaway": "Deduplication filters duplicate messages; idempotency makes the effect itself safe to repeat.",
             "diagram": {
                 "kind": "compare",
@@ -749,7 +749,7 @@
                 "streams"
             ],
             "question": "What do Kafka transactions actually give you, and where does exactly-once end?",
-            "answer": "Kafka transactions make the read-process-write loop atomic inside Kafka. The producer writes outputs and consumed offsets in one transaction, and consumers must read committed records only. Any hop that leaves Kafka, like a database write or an HTTP call, downgrades to at-least-once. So it's exactly-once within Kafka and idempotent effects elsewhere. I use transactions for stream-to-stream pipelines, and outbox plus inbox for external systems.",
+            "answer": "Kafka transactions make the read-process-write loop atomic inside Kafka: outputs and consumed offsets commit together. Any hop that leaves Kafka, like a database write or HTTP call, is back to at-least-once. So I use transactions for stream pipelines and outbox plus inbox for external systems.",
             "keyTakeaway": "Kafka transactions give exactly-once inside Kafka; anything external stays at-least-once and idempotent.",
             "code": {
                 "language": "typescript",
@@ -797,7 +797,7 @@
                 "consumers"
             ],
             "question": "Stored events outlive the code that wrote them. How do you keep old event versions readable?",
-            "answer": "Upcasters transform old event payloads (v1) into the current shape (v2) at read time. Domain logic speaks one dialect while the log keeps its original bytes. I never rewrite the log, since that destroys audit value and is slow. There are two strategies. Either all consumers read the latest shape through shared upcasters, or consumers pin a version and keep their own translators, which isolates teams but multiplies code. I add one upcaster per schema change.",
+            "answer": "Upcasters transform old payloads (v1) into the current shape (v2) at read time, so domain logic sees one schema and the log stays untouched. I never rewrite the log, since that destroys audit value. Consumers either share upcasters or pin a version with their own translators, which isolates teams but multiplies code.",
             "keyTakeaway": "Upcast old event payloads at read time so the log stays immutable and code sees one schema.",
             "diagram": {
                 "kind": "layers",
@@ -832,7 +832,7 @@
                 "windows"
             ],
             "question": "In stream processing, how do you close a window fairly when events arrive late?",
-            "answer": "A watermark tells an event-time window it's safe to emit. It estimates that all older events have arrived, and it equals the maximum observed event time minus an allowed-lateness bound. I choose the bound from business reality: payments may lag minutes, clickstreams seconds. Late events get dropped, sent to a side output, or trigger a window recompute. I never equate processing time with event time, or a producer outage looks like a traffic drop.",
+            "answer": "A watermark tells an event-time window it's safe to emit. It's the maximum observed event time minus an allowed-lateness bound, chosen from business reality: payments may lag minutes, clickstreams seconds. Late events get dropped, side-output or trigger a recompute. I never confuse processing time with event time.",
             "keyTakeaway": "Watermarks bound how long windows wait for late events; the bound is a business decision.",
             "diagram": {
                 "kind": "compare",
@@ -883,7 +883,7 @@
                 "automation"
             ],
             "question": "Beyond parking failures, what does good dead-letter queue tooling look like?",
-            "answer": "I automate DLQ triage. Each failure is classified on arrival as transient, schema mismatch, or poison, and routed by class. Transient failures replay with backoff, contract mismatches page the schema owner, and poison messages park until fixed. Replay is one command that reinjects at the original position, preserves per-key order, and must be idempotent. I alert on DLQ inflow rate and oldest message age, not just depth.",
+            "answer": "I classify each failure on arrival as transient, schema mismatch or poison. Transient ones replay with backoff, contract mismatches page the schema owner, and poison messages park until fixed. Replay is one idempotent command that keeps per-key order. I alert on inflow and oldest message age.",
             "keyTakeaway": "Classify DLQ failures automatically, replay with one idempotent command, and alert on inflow and age.",
             "diagram": {
                 "kind": "branch",
@@ -909,7 +909,7 @@
                 "monitoring"
             ],
             "question": "How do you monitor and autoscale consumers so lag never becomes an outage?",
-            "answer": "Consumer lag is the latest offset minus the group's committed offset, so it captures both failure and capacity trouble. I alert on sustained growth, not size. I autoscale on lag with a scaler like KEDA, but consumers beyond the partition count add nothing. So I provision partitions for peak, or fix the downstream bottleneck.",
+            "answer": "Lag is the latest offset minus the group's committed offset, so it shows both failure and capacity trouble. I alert on sustained growth and autoscale on lag with KEDA. But consumers beyond the partition count add nothing.",
             "keyTakeaway": "Autoscale on consumer lag but remember partitions cap how many consumers help.",
             "diagram": {
                 "kind": "flow",
@@ -944,7 +944,7 @@
                 "data-loss"
             ],
             "question": "What is your retention policy for dead-letter queues, and why does it matter?",
-            "answer": "Dead-lettered messages are undelivered business facts. I set retention longer than the worst realistic triage time, index by failure class and original key, and alert before expiry. Regulated payloads keep their encryption, access control, and deletion-on-request obligations in the DLQ, which can collide with keep-everything forensics, so I set an explicit policy. I keep one DLQ per consumer group so replay stays targeted.",
+            "answer": "Dead-lettered messages are undelivered business facts, so I set retention longer than the worst realistic triage time and alert before expiry. Regulated payloads keep their encryption and deletion obligations there, so I set an explicit policy. One DLQ per consumer group keeps replay targeted.",
             "keyTakeaway": "Set explicit DLQ retention tied to triage time and treat expiry as data loss.",
             "diagram": {
                 "kind": "flow",
@@ -982,7 +982,7 @@
                 "at-least-once"
             ],
             "question": "How do you run the outbox relay in production without it becoming a single point of failure?",
-            "answer": "A single relay is simple and ordered, but it's a single point of failure. I shard the outbox by aggregate id across relay instances, with one elected publisher per shard. That keeps per-key ordering and removes the single point of failure. I monitor the age of the oldest unsent row, since depth hides a stuck relay. The relay is at-least-once, so consumers deduplicate.",
+            "answer": "A single relay is simple and ordered, but it's a single point of failure. I shard the outbox by aggregate id across relays, one elected publisher per shard, keeping per-key order. I monitor the oldest unsent row's age, since depth hides a stuck relay.",
             "keyTakeaway": "Shard relays by aggregate key, monitor oldest unsent outbox row, and stay at-least-once.",
             "diagram": {
                 "kind": "flow",
@@ -1016,7 +1016,7 @@
                 "parking-lot"
             ],
             "question": "What happens when a saga's compensating action itself fails?",
-            "answer": "Saga compensation is best effort, not rollback. When a compensation fails, I retry with backoff, then park it for humans or an automated job. The aggregate stays in an explicit failed state that blocks new work on the same entity. I prefer reversible steps, like authorizations instead of charges and reservations instead of shipments. I never continue silently past a failed compensation. I page someone.",
+            "answer": "Compensation is best effort, not rollback. When one fails I retry with backoff, then park it for humans, and the aggregate stays in an explicit failed state that blocks new work. I prefer reversible steps, like authorizations over charges. I never continue silently, I page someone.",
             "keyTakeaway": "Compensation is best effort: retry failed rollbacks into a parking lot and keep aggregates in a failed state.",
             "diagram": {
                 "kind": "flow",
@@ -1053,7 +1053,7 @@
                 "kafka"
             ],
             "question": "Why do consumer group rebalances hurt, and how do you make them rare?",
-            "answer": "A rebalance stops the group, revokes every partition, and reassigns them. The classic cause is a handler exceeding max.poll.interval.ms, so the consumer gets evicted as dead and triggers a storm under load. I mitigate with static membership (a stable group.instance.id), so a restarting consumer rejoins without reassignment. I also use the cooperative-sticky assignor, which moves only the partitions that need it. Handler time stays well under the poll interval, and I commit promptly.",
+            "answer": "A rebalance stops the group and reassigns every partition. The classic cause is a handler exceeding max.poll.interval.ms, so the consumer is evicted as dead and it storms under load. I use static membership with a stable group.instance.id, so restarts rejoin without reassignment, plus the cooperative-sticky assignor.",
             "keyTakeaway": "Static membership and cooperative-sticky assignors keep consumer group rebalances rare and cheap.",
             "diagram": {
                 "kind": "compare",

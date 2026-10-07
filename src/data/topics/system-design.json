@@ -12,7 +12,7 @@
                 "interview"
             ],
             "question": "Walk me through how you approach designing a new system from scratch.",
-            "answer": "I start with requirements and numbers: users, dominant operations, reads and writes per second, data size and latency targets. Next I define the data model and API, since those are the hardest to change. Then I start boring: a load balancer, stateless services and a database. I add caches, queues and shards only where the numbers demand them. I close with failure modes and the riskiest assumption.",
+            "answer": "I start with the numbers: users, reads and writes per second, data size, latency targets. Then the data model and API, since they're hardest to change. I go boring first, load balancer, stateless services, database, and add caches, queues or shards only where numbers demand.",
             "keyTakeaway": "Numbers first, data model second, boring architecture third, complexity only where proven.",
             "diagram": {
                 "kind": "flow",
@@ -50,7 +50,7 @@
                 "horizontal"
             ],
             "question": "What is the difference between vertical and horizontal scaling?",
-            "answer": "Vertical scaling makes one machine bigger. It's the simplest option because there are no code changes, but it has a ceiling and a price cliff, and it stays a single point of failure. Horizontal scaling adds machines. There's no ceiling and it survives node loss, but it needs stateless services, a shared data strategy and load balancing. I scale up until it hurts, then out.",
+            "answer": "Vertical scaling is a bigger machine. It's simple but capped, and still a single point of failure. Horizontal adds machines, so it's elastic, but you need stateless services and a shared-data plan. I scale up until it hurts, then out.",
             "keyTakeaway": "Up is simple but capped; out is elastic but demands statelessness and shared-state design.",
             "diagram": {
                 "kind": "compare",
@@ -93,7 +93,7 @@
                 "stateless"
             ],
             "question": "What role does a load balancer play, and what must services do to sit behind one?",
-            "answer": "A load balancer spreads traffic by health and capacity and removes failed instances via health checks. That means services must be stateless and expose honest health endpoints. Tuning the checks matters. Too eager, and a slow GC pause removes capacity and cascades. Too lazy, and users hit dead pods. The balancer also enforces rate limits and version routing.",
+            "answer": "It spreads traffic by health and pulls failed instances out, so services must be stateless and expose honest health endpoints. Tuning matters: checks too eager let a GC pause cascade into lost capacity, too lazy send users to dead pods.",
             "keyTakeaway": "The balancer routes around failure; services owe it statelessness and honest health checks.",
             "diagram": {
                 "kind": "sequence",
@@ -136,7 +136,7 @@
                 "performance"
             ],
             "question": "Where do caches fit in a scalable system, and what do you cache first?",
-            "answer": "Caches serve hot data from memory at several layers: browser and CDN at the edge, in-process caches, and shared stores like Redis. I cache expensive, frequently read data first, like reference data and top queries. Every cache needs a TTL as a safety net, explicit invalidation for correctness-sensitive entries, and request coalescing against stampedes. I measure hit rate and staleness.",
+            "answer": "I cache at the edge (browser, CDN), in-process, and in shared stores like Redis, starting with expensive, frequently read data. Every entry gets a TTL as a safety net, explicit invalidation where correctness matters, and request coalescing against stampedes.",
             "keyTakeaway": "Cache hot, expensive reads; TTL for safety, invalidation for freshness, coalescing for stampedes.",
             "diagram": {
                 "kind": "layers",
@@ -170,7 +170,7 @@
                 "trade-offs"
             ],
             "question": "Explain the CAP trade-off and how it shows up in practical decisions.",
-            "answer": "CAP says that during a network partition, a distributed store must choose consistency (refuse or block writes) or availability (serve possibly stale data). Partitions are inevitable, so the real question is which side each data type takes when the network splits. Payments and inventory counts lean consistent, because it's better to be unavailable than wrong. Carts, feeds, and analytics lean available with eventual consistency. In an interview I name the choice per data type and the reconciliation job that cleans up after the stale window, which separates the answer from reciting the theorem.",
+            "answer": "During a partition a store has to pick consistency or availability. Partitions will happen, so I decide per data type. Payments and inventory lean consistent, because unavailable beats wrong. Carts and feeds lean available. I also name the reconciliation job that cleans up after the stale window, which is what separates this from reciting the theorem.",
             "keyTakeaway": "Choose C or A per data type under partition, and design the reconciliation path.",
             "diagram": {
                 "kind": "branch",
@@ -197,7 +197,7 @@
                 "high-availability"
             ],
             "question": "How do you design a system to survive infrastructure failure?",
-            "answer": "I remove every single point of failure: multiple instances across availability zones, and replicated data with automated failover. Then I add timeouts, retries with backoff, circuit breakers and graceful degradation, so one dependency's death is not an outage. I test with game days and restore drills, because untested failover is a hypothesis.",
+            "answer": "I remove single points of failure with multiple zones and automated failover, then add timeouts, backoff retries, circuit breakers and graceful degradation. And I rehearse failover, because untested failover is a hypothesis.",
             "keyTakeaway": "Redundant everything, degrade gracefully, and rehearse failover before you need it.",
             "diagram": {
                 "kind": "flow",
@@ -231,7 +231,7 @@
                 "process"
             ],
             "question": "The application got slow at peak load. How do you find the bottleneck?",
-            "answer": "I trace requests and watch latency percentiles per tier and saturation (CPU, memory, pools, queue depths) until the time concentrates somewhere. The usual culprits are a missing index, exhausted connections, a pool sized for average rather than peak, GC pauses, or a silently queueing dependency. I separate waiting from computation to decide between more capacity and less work, then verify the fix at the same load.",
+            "answer": "I trace requests and watch latency percentiles and saturation per tier, CPU, memory, pools, queue depths, until the time concentrates somewhere. Usual suspects are a missing index or exhausted connections. I separate waiting from computing, then re-test at the same load.",
             "keyTakeaway": "Trace the request, read saturation signals, separate waiting from working, then re-test at peak.",
             "diagram": {
                 "kind": "flow",
@@ -267,7 +267,7 @@
                 "interview"
             ],
             "question": "How do you do back-of-the-envelope capacity estimation for a new feature?",
-            "answer": "I start from daily active users, actions per user, and the read-to-write ratio. From those I derive per-second rates by spreading load over peak hours, assuming the peak hour carries a multiple of the average. I size storage from record size times growth rate, add indexes and replication overhead, and check that anything I want to cache fits in memory. Then I check each tier (requests per second, connections, storage, bandwidth) against realistic per-node capacity to find the first wall. The numbers are coarse by design. They tell you which architecture is even plausible before you draw boxes.",
+            "answer": "I start from daily active users, actions per user and the read-to-write ratio, then spread that over peak hours to get per-second rates. I size storage from record size and growth, and check what I want to cache fits in memory. Then I test each tier against realistic per-node capacity to find the first wall. The numbers are coarse, but they show which architectures are plausible.",
             "keyTakeaway": "Users to per-second rates to per-tier capacity: find the first wall before designing around it.",
             "diagram": {
                 "kind": "flow",
@@ -304,7 +304,7 @@
                 "scaling"
             ],
             "question": "How does consistent hashing distribute data across servers, and why is hash modulo N a problem?",
-            "answer": "hash(key) % N breaks when N changes: adding or removing one server remaps most keys and storms the cache with misses. Consistent hashing maps servers and keys onto a ring over the hash space, typically 0 to 2^160 minus 1, and a key belongs to the first server clockwise. A membership change moves only the keys in that arc. A basic ring skews, so each server gets many virtual nodes: more nodes, flatter distribution. Dynamo-style stores and Cassandra use it.",
+            "answer": "With hash(key) % N, adding one server remaps most keys and floods the cache with misses. Consistent hashing puts servers and keys on a ring, a key belongs to the first server clockwise, and a change moves only the neighboring arc. Virtual nodes flatten the skew. Cassandra uses it.",
             "keyTakeaway": "Ring placement plus virtual nodes: membership changes move only neighboring keys.",
             "diagram": {
                 "kind": "compare",
@@ -348,7 +348,7 @@
                 "replication"
             ],
             "question": "Describe how an architecture evolves from a single server to millions of users.",
-            "answer": "I start with one box serving the app and database. First I split the database out so the tiers scale and fail independently. Then I add a load balancer with a stateless web tier, so the web tier scales horizontally. Next I replicate the database: the primary takes writes, replicas serve reads, and I promote a replica when the primary dies. After that come a cache for hot reads and a CDN for static assets, both with expiry and invalidation rules, and a message queue for slow or spiky work like email, feeds, and media processing, so traffic surges buffer instead of tipping the system over. Each step answers a measured pain, and the order matters: statelessness unlocks the balancer, replication precedes sharding, and multi-region comes last.",
+            "answer": "I start with one box, then split the database out so tiers scale and fail independently. Next a load balancer with a stateless web tier, then database replication: primary for writes, replicas for reads. After that a cache and CDN for hot reads, and a queue for slow or spiky work. Each step answers a measured pain, and multi-region comes last.",
             "keyTakeaway": "Grow by measured pain: split tiers, balance stateless web, replicate, cache and CDN, queue the spikes.",
             "diagram": {
                 "kind": "layers",
@@ -383,7 +383,7 @@
                 "jitter"
             ],
             "question": "Why do retry policies need exponential backoff, and why is jitter essential?",
-            "answer": "An immediate retry hammers a struggling dependency at the same rate and deepens the outage. Exponential backoff spaces attempts out: 100 milliseconds, then 200, then 400. I cap the wait and the total attempts so a hopeless call doesn't hold resources. Jitter randomizes the waits, because without it, clients that failed together retry together and recreate the same spike. I pair all of this with timeouts and a circuit breaker so persistent failure trips fast.",
+            "answer": "Immediate retries hammer a struggling dependency and deepen the outage. Exponential backoff spaces them out, say 100 ms, 200, 400, with a cap. Jitter matters because clients that failed together would otherwise retry together and recreate the spike. I add timeouts and a circuit breaker too.",
             "keyTakeaway": "Exponential backoff spaces retries, but only jitter keeps a million clients from retrying as one spike.",
             "code": {
                 "language": "yaml",
@@ -422,7 +422,7 @@
                 "spikes"
             ],
             "question": "When would you put a message queue between a service and its workload?",
-            "answer": "I use a queue as a load leveler when demand spikes and the work needs no immediate answer: email, media processing, order fulfillment. You enqueue and acknowledge instantly, so a ten-x burst buffers instead of exhausting connection pools. I size workers for sustained capacity, not peak, and monitor depth, because a silent backlog is a delayed outage. Queues level load. They don't create capacity.",
+            "answer": "When demand spikes and the work needs no immediate answer, like email or media processing. We enqueue and acknowledge instantly, so a ten-x burst buffers instead of exhausting pools. I size workers for sustained load and watch depth, since a silent backlog is a delayed outage.",
             "keyTakeaway": "A queue buffers spikes so workers run at sustained capacity, but it levels load and never creates it.",
             "diagram": {
                 "kind": "sequence",
@@ -476,7 +476,7 @@
                 "trade-offs"
             ],
             "question": "How do you choose between object, block, and file storage for a workload?",
-            "answer": "Block storage is a raw disk on one machine: low latency and POSIX-friendly, so databases live there. It doesn't share or scale past a volume. File storage is a network tree (NFS) for shared configs and home directories, with locking and metadata cost at scale. Object storage is a flat HTTP namespace that's effectively infinite, cheap and versioned, which suits backups, media and data lakes. I choose by access pattern.",
+            "answer": "By access pattern. Block is a raw disk on one machine, low latency, so databases live there. File, like NFS, suits shared trees. Object is a flat, effectively infinite, cheap HTTP namespace, which fits backups, media and data lakes.",
             "keyTakeaway": "Pick storage by access pattern: block for databases, file for shared trees, object for write-once petabytes.",
             "diagram": {
                 "kind": "compare",
@@ -523,7 +523,7 @@
                 "api-design"
             ],
             "question": "Why does offset pagination fall apart at scale, and what replaces it?",
-            "answer": "Offset pagination scans and discards every row before the page, so page 500 costs as much as reading 10,000 rows. Keyset pagination uses a cursor: where created_at and id are less than the last row's values, backed by an index on those columns. Every page is a constant-cost index seek. The cost is that you can't jump to page 37. The sort key must be unique and immutable, hence the id tiebreaker.",
+            "answer": "Offset pagination scans and discards every earlier row, so deep pages get slow. Keyset uses a cursor, where created_at and id are less than the last row, backed by an index, so each page is a constant-cost seek. The trade-off is no page 37 jump, and the sort key must be unique.",
             "keyTakeaway": "Keyset cursors turn every page into an indexed seek, so page depth never changes the cost.",
             "diagram": {
                 "kind": "compare",
@@ -567,7 +567,7 @@
                 "availability"
             ],
             "question": "How do graceful degradation and failover differ, and when do you build each?",
-            "answer": "Failover swaps a broken component for a healthy replica. It's right when the component is the system, like the primary database or the auth service. Degradation keeps a reduced feature alive: recommendations collapse to a static default, or checkout works while reviews are off. Failover costs idle standby capacity, and degradation costs a worse experience. Users notice a slow page far less than an error page. I make degradation explicit per-feature switches, decided in advance.",
+            "answer": "Failover swaps a broken component for a healthy replica, which fits when the component is the system, like the primary database. Degradation keeps a reduced feature alive, like static recommendations. Failover costs idle standby, degradation costs experience, and users mind a slow page less than an error.",
             "keyTakeaway": "Failover replaces the broken replica, degradation ships a reduced feature, and both need prebuilt switches.",
             "diagram": {
                 "kind": "branch",
@@ -595,7 +595,7 @@
                 "metrics"
             ],
             "question": "What are SLIs, SLOs, and error budgets, and how do they change design decisions?",
-            "answer": "An SLI is the measured signal, like the fraction of requests that are fast and correct. An SLO is the committed target: 99.9 percent of requests under 300 milliseconds. The error budget is the allowed failure, 0.1 percent, about forty-three bad minutes per month. When it's empty, feature work pauses for stability work. I set targets per service, not five nines everywhere, because an internal admin tool and checkout deserve different money and complexity.",
+            "answer": "An SLI is the measured signal, an SLO the target, say 99.9 percent of requests under 300 ms, and the error budget is the allowed failure, about 43 bad minutes a month. When it's empty, feature work pauses for stability. I set targets per service, not five nines everywhere.",
             "keyTakeaway": "SLOs convert reliability into a spendable error budget that gates feature work when exhausted.",
             "diagram": {
                 "kind": "layers",
@@ -630,7 +630,7 @@
                 "storage"
             ],
             "question": "How does write-ahead logging make a database crash-safe?",
-            "answer": "The database appends each change to a log on stable storage before modifying data pages. That makes a commit one small sequential write, not many random page writes. After a crash, recovery replays the log: it redoes committed changes the pages never received and undoes uncommitted ones. Group commit batches fsyncs under load. WAL volume needs low write latency and capacity monitoring, because a full or slow log stops every write.",
+            "answer": "The database appends each change to a log on stable storage before touching data pages, so a commit is one sequential write. After a crash, recovery replays the log, redoing committed changes and undoing uncommitted ones. I watch WAL latency, since a full or slow log stops every write.",
             "keyTakeaway": "Log the change before applying it: commit becomes one sequential fsync and crashes replay the log.",
             "diagram": {
                 "kind": "flow",
@@ -669,7 +669,7 @@
                 "resilience"
             ],
             "question": "What is a thundering herd, and how do you stop one at a popular cache key?",
-            "answer": "A thundering herd happens when one hot cache entry expires and hundreds of concurrent requests miss and all hit the origin with the same expensive query. Request coalescing fixes it: the first miss takes a lock and fetches, and the rest wait and receive the same result. I also soften the trigger with jittered TTLs, so equal creation times don't expire together, and stale-while-revalidate, so the old value serves while one worker refreshes.",
+            "answer": "When a hot cache entry expires and hundreds of concurrent requests hit the origin with the same expensive query. Coalescing fixes it: the first miss takes a lock and fetches, the rest wait for that result. I also use jittered TTLs and stale-while-revalidate.",
             "keyTakeaway": "Park concurrent misses behind one lock so the herd collapses into a single origin fetch.",
             "diagram": {
                 "kind": "sequence",
@@ -713,7 +713,7 @@
                 "interview"
             ],
             "question": "Walk me through the actual arithmetic you'd do to size QPS for a new feature.",
-            "answer": "Say fifty million daily active users, twenty views each, so one billion views per day. Divide by 86,400 seconds and the average is about twelve thousand QPS. Peak hour is maybe twice that, near twenty-four thousand. At a 100 to 1 read ratio and a ninety-five percent cache hit rate, origin reads drop to barely over a thousand QPS. Bytes per response times QPS gives bandwidth. The first number to exceed node capacity is your bottleneck.",
+            "answer": "Say fifty million daily users at twenty views each, so a billion views a day. Divide by 86,400 for about twelve thousand QPS average, maybe twenty-four thousand at peak. A 95 percent cache hit rate drops origin reads to just over a thousand QPS. The first number to exceed node capacity is the bottleneck.",
             "keyTakeaway": "Divide daily volume by 86,400, double for peak hour, then let cache hit rate rewrite the origin number.",
             "code": {
                 "language": "bash",
@@ -756,7 +756,7 @@
                 "partitioning"
             ],
             "question": "How do you handle a hot key that overwhelms one shard of your cache or database?",
-            "answer": "A hot key is one celebrity, product page or viral item sending every request to the same shard. That node saturates while the others idle, and scaling the cluster doesn't help. I detect it with per-key metrics, not node CPU. To spread it, I replicate the value onto read replicas and rotate reads. For writes, I salt the key with a random suffix and aggregate on read. I also keep a process-local copy in front of the shared cache.",
+            "answer": "A hot key sends everything to one shard, so that node saturates while others idle and adding nodes doesn't help. I spot it with per-key metrics. For reads I replicate the value, for writes I salt the key and aggregate on read, and I keep a process-local copy in front.",
             "keyTakeaway": "Hot keys defeat horizontal scaling, so replicate, salt, or locally pin the few keys everyone wants.",
             "diagram": {
                 "kind": "flow",
@@ -791,7 +791,7 @@
                 "read-write"
             ],
             "question": "When would you fan out feed writes to followers instead of fanning in reads?",
-            "answer": "Fan-out on write pushes each post into every follower's precomputed timeline at publish time. Fan-out on read merges the followed accounts at request time. Real systems hybridize: push for normal users, and for a celebrity with a hundred million followers, pull their posts at read time and merge them into the precomputed feed. Pushing to a hundred million inboxes is a denial-of-service on yourself.",
+            "answer": "Fan-out on write pushes each post into every follower's precomputed timeline, so reads are cheap. In practice I hybridize: push for normal users, but pull a celebrity's posts at read time and merge. Pushing to a hundred million inboxes would be a denial-of-service on ourselves.",
             "keyTakeaway": "Push writes to follower feeds for cheap reads, but pull celebrity posts at read time and merge.",
             "diagram": {
                 "kind": "compare",
@@ -834,7 +834,7 @@
                 "geo-distribution"
             ],
             "question": "How do you budget latency when a system spans multiple regions?",
-            "answer": "A round trip from US East to US West is around sixty to seventy milliseconds, and Europe to Asia is over two hundred. I budget each request as a sum: client to edge, edge to region, service hops, database writes. I keep data read-local with replicas in every region and asynchronous cross-region writes. A globally consistent write either routes to a single leader and accepts its latency, or uses cross-region consensus and pays multiple round trips. Most reads stay local and only a few global operations pay.",
+            "answer": "US East to West is around sixty to seventy ms round trip, Europe to Asia over two hundred. I budget a request as a sum of hops and keep reads local with replicas per region and asynchronous cross-region writes. A globally consistent write routes to one leader or pays for consensus, so few operations should.",
             "keyTakeaway": "Inter-region physics is fixed, so serve reads locally and reserve cross-region consensus for the few writes that need it.",
             "diagram": {
                 "kind": "layers",
@@ -869,7 +869,7 @@
                 "availability"
             ],
             "question": "How do you systematically hunt for single points of failure in a running system?",
-            "answer": "I draw the real dependency graph: DNS, certificates, message brokers, feature flags, cron leaders, IAM roles. Then I kill each node on paper and ask what stops. The sneaky ones are rarely the web tier: a single shared Kafka cluster, one NAT gateway for the whole VPC, a database connection limiter, the config service, the control plane. I separate control plane from data plane failures, since serving during an orchestrator outage is survivable. For each real SPOF I fix it, spread it, or record the accepted risk with its blast radius.",
+            "answer": "I draw the real dependency graph, including DNS, certificates, brokers, feature flags and IAM, then kill each node on paper and ask what stops. The sneaky ones are rarely the web tier. Think a shared Kafka cluster, one NAT gateway, or the config service. For each real SPOF I fix it, spread it, or record the accepted risk with its blast radius.",
             "keyTakeaway": "Hunt SPOFs by killing every node on paper, control plane included, then fix, spread, or accept with eyes open.",
             "diagram": {
                 "kind": "flow",
@@ -904,7 +904,7 @@
                 "ttl"
             ],
             "question": "How does the rate at which data changes decide whether caching it is worth it?",
-            "answer": "Caching pays when data is read many times between changes, so I compute churn first: change frequency divided by read frequency. A live bid or inventory count that changes with every read gives such a short hit window that the cache serves stale data and adds invalidation complexity. For high churn I use short TTLs with staleness tolerance, or no cache and a fast source. Staleness tolerance sets the TTL, and if it's zero, I make the read path cheap.",
+            "answer": "Caching pays when data is read many times between changes, so I compute churn first, change frequency over read frequency. A live bid that changes on every read has no hit window, so you just serve stale data and add invalidation work. Staleness tolerance sets the TTL, and for high churn I skip the cache.",
             "keyTakeaway": "Compute churn first, changes per read, because it sets both the TTL and whether caching pays at all.",
             "diagram": {
                 "kind": "branch",
@@ -932,7 +932,7 @@
                 "denormalization"
             ],
             "question": "How do you keep joins affordable once related data lives on different shards?",
-            "answer": "The cheapest distributed join never crosses the network. I pick the shard key so rows queried together land together: all data for a tenant or order on one shard. Otherwise I denormalize, duplicating needed fields into the parent row and accepting the write-time cost of keeping copies consistent. Referential integrity moves to the application: check ids at write time and repair by background reconciliation. I use scatter-gather only for analytics and offline jobs, never the request path.",
+            "answer": "The cheapest distributed join never crosses the network. I pick the shard key so rows queried together land together, like a tenant's data on one shard. Otherwise I denormalize and accept the cost of keeping copies consistent. Scatter-gather is for analytics, never the request path.",
             "keyTakeaway": "Co-locate rows by shard key or denormalize, because a join across the network is the expensive kind.",
             "diagram": {
                 "kind": "compare",
@@ -976,7 +976,7 @@
                 "global"
             ],
             "question": "What is the difference between global and local load balancing, and why do you need both?",
-            "answer": "Local balancing spreads traffic across instances in one region, health-checking pods and routing around dead ones. Global balancing decides which region receives each user, using DNS, anycast or a global traffic manager fed by health and latency signals, and it absorbs whole-region failures. Global decisions are coarse, since DNS answers cache for minutes. I use latency-based routing with a capacity floor per region, so steering can't send a region more than it can drain.",
+            "answer": "Local balancing spreads traffic across instances in a region and routes around dead ones. Global balancing picks the region per user via DNS, anycast or a traffic manager using health and latency, and absorbs region failures. It's coarse since DNS caches for minutes, so I add a capacity floor per region.",
             "keyTakeaway": "Global balancing picks the region with coarse, slow signals; local balancing fixes instances fast, and both are required.",
             "diagram": {
                 "kind": "layers",
@@ -1006,7 +1006,7 @@
                 "blast-radius"
             ],
             "question": "Explain bulkheads and cell-based architecture, and what each contains.",
-            "answer": "A bulkhead gives each downstream its own connection pool and thread budget, so a hung recommendations service exhausts only its own. Cell-based architecture applies that to the whole stack: independent cells, each with its own app instances and data store for a slice of tenants, behind a thin global router. A bad deploy or corrupt migration destroys one cell only, and recovery is tenant migration, not global rollback. Cells duplicate operations, so I'd adopt them only after shared fate has bitten you.",
+            "answer": "A bulkhead gives each downstream its own connection pool and thread budget, so a hung recommendations service exhausts only its own. Cells apply that to the whole stack: independent app and data store per slice of tenants behind a thin router, so a bad deploy kills one cell. They duplicate operations, so I'd adopt them after shared fate has bitten.",
             "keyTakeaway": "Bulkheads wall off per-dependency resources, cells wall off whole tenant slices, and both cap blast radius.",
             "diagram": {
                 "kind": "compare",
@@ -1050,7 +1050,7 @@
                 "consistency"
             ],
             "question": "Why does idempotency become non-negotiable once you add retries and queues?",
-            "answer": "Retried payments and redelivered queue messages mean the same operation runs twice by design, which causes double charges and duplicate shipments. The fix is an idempotency key: a client-generated identifier stored with the operation's outcome, so a repeat returns the stored result. The key needs a TTL and a unique constraint so concurrent duplicates race safely. Consumers treat delivery as at-least-once and tolerate redelivery, since exactly-once delivery doesn't exist. Exactly-once effects do, by deduplicating on a stable key.",
+            "answer": "Retries and redelivery mean the same operation runs twice by design, causing double charges or duplicate shipments. The fix is an idempotency key: a client-generated id stored with the outcome, so a repeat returns the stored result, with a TTL and a unique constraint. Exactly-once delivery doesn't exist, but exactly-once effects do, by deduplicating on a stable key.",
             "keyTakeaway": "Retries and redelivery are certain, so dedupe on idempotency keys for exactly-once effects, not delivery.",
             "diagram": {
                 "kind": "sequence",

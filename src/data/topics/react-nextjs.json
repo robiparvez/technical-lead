@@ -13,7 +13,7 @@
                 "fundamentals"
             ],
             "question": "What are the two rules of hooks, and what breaks if you violate them?",
-            "answer": "I call hooks at the top level of a component or custom hook, never inside conditions, loops, or nested functions, and only from function components or other hooks. React tracks hook state by call order. If one hook gets skipped, every later useState or useContext lands in the wrong slot, and the state corrupts only under that condition. eslint-plugin-react-hooks catches this, so disabling it is a red flag. If I need a condition, I put it inside the hook logic.",
+            "answer": "I call hooks only at the top level of a function component or custom hook, never in conditions or loops. React matches hook state by call order, so a skipped hook shifts every later one into the wrong slot. eslint-plugin-react-hooks catches it, and I treat disabling it as a red flag.",
             "keyTakeaway": "React matches hooks by call order, so conditions around hooks corrupt state; the lint rule exists for this.",
             "diagram": {
                 "kind": "compare",
@@ -57,7 +57,7 @@
                 "fundamentals"
             ],
             "question": "When is useEffect the right tool, and when is it a sign of a design problem?",
-            "answer": "I use effects to sync with outside systems: subscriptions, timers, imperative DOM libraries, and fetching when no framework layer does it. Work that only affects render output belongs in render as derived state, in event handlers, or in a key or memo. A smell is effect chains that copy state around. I always return a cleanup and list every reactive dependency. I never use an empty array to silence the linter, because that ships stale-closure bugs. In the App Router, server components often remove the fetching effects entirely.",
+            "answer": "I use effects to sync with outside systems like subscriptions, timers, and imperative DOM libraries. Anything that only affects render output belongs in render as derived state, or in an event handler. Effect chains that copy state around are the smell. I always return a cleanup and list every dependency, never an empty array just to quiet the linter.",
             "keyTakeaway": "Effects sync with the outside world; state you can derive or event-driven logic should never be one.",
             "diagram": {
                 "kind": "branch",
@@ -85,7 +85,7 @@
                 "rendering"
             ],
             "question": "How do you find and fix unnecessary re-renders in a React app?",
-            "answer": "I measure first. The React DevTools Profiler shows what re-rendered and why. Then I fix structure before memoizing: push state down, co-locate fast-changing state, and pass slow subtrees as children. React.memo only pays off with stable props, so I pair it with useMemo for objects and useCallback for functions. Memoizing everything just adds cost. I virtualize long lists and split heavy components with lazy and Suspense. I act when the profiler shows real cost.",
+            "answer": "I measure first with the React DevTools Profiler. Then I fix structure before memoizing: push state down, co-locate fast-changing state, and pass slow subtrees as children. React.memo only helps with stable props, and memoizing everything just adds cost, so I use it where the profiler shows real cost.",
             "keyTakeaway": "Profile, then restructure state ownership; memo is a patch for stable props, not a default.",
             "diagram": {
                 "kind": "flow",
@@ -120,7 +120,7 @@
                 "uncontrolled"
             ],
             "question": "Controlled versus uncontrolled form inputs: how do you choose, and what breaks at scale?",
-            "answer": "A controlled input takes its value from React state through onChange. An uncontrolled input keeps the value in the DOM, and I read it through a ref or FormData at submit. I go controlled when the UI reacts to the value, like inline validation, character limits, or dependent fields. I go uncontrolled for large, simple forms. Hundreds of controlled fields lag on every keystroke, which is why React Hook Form uses uncontrolled internals. Either way I keep one authority, because duplicated form state breeds sync bugs.",
+            "answer": "A controlled input takes its value from React state, while an uncontrolled one keeps it in the DOM and I read it at submit. I go controlled when the UI reacts to the value, like inline validation. For large simple forms I go uncontrolled, since hundreds of controlled fields lag on every keystroke. Either way I keep one source of truth.",
             "keyTakeaway": "Controlled when UI reacts to input, uncontrolled for big simple forms; one source of truth only.",
             "diagram": {
                 "kind": "compare",
@@ -164,7 +164,7 @@
                 "rsc"
             ],
             "question": "What are React Server Components, and how do you decide the server/client boundary in the App Router?",
-            "answer": "Server components run only on the server. I can await data directly, and they ship zero JavaScript for their own logic. 'use client' makes a client component, which renders server components only as children passed in via props, never by importing them. I put the boundary at interactivity. Pages, layouts, and data sections stay server, and leaves with useState, effects, handlers, or browser APIs become client islands. I never mark a whole page 'use client' for one button, because that forfeits server fetching below it and bloats the bundle.",
+            "answer": "Server components run only on the server, can await data directly, and ship no JavaScript for their own logic. I keep pages, layouts, and data sections on the server and put 'use client' only on interactive leaves. A client component can render server components only when they're passed in as children. Marking a whole page 'use client' for one button bloats the bundle.",
             "keyTakeaway": "Server by default, 'use client' only at interactive leaves; pass server components down as children.",
             "diagram": {
                 "kind": "branch",
@@ -191,7 +191,7 @@
                 "isr"
             ],
             "question": "Compare static generation, server-side rendering, ISR, and client-side rendering, and where does each fit?",
-            "answer": "Static generation builds HTML at deploy time. It's the fastest and cheapest, and I use it for marketing pages and docs. SSR renders per request and is always fresh, so it suits personalized pages like dashboards, at the cost of server time and TTFB. ISR revalidates static pages after a TTL or on demand with revalidateTag and revalidatePath, which works for product and article pages. Client rendering fits interactive, private, or real-time widgets where SEO doesn't matter. One Next route can blend all of these: a static shell, server-rendered dynamic holes, and client islands.",
+            "answer": "Static generation builds HTML at deploy time, so it's fastest and cheapest for docs and marketing pages. SSR renders per request, which suits personalized pages but costs server time. ISR revalidates static pages on a TTL or on demand, which fits product pages. Client rendering fits private or real-time widgets. One Next route can mix all of these.",
             "keyTakeaway": "Pick per section: static shell, ISR for semi-fresh content, SSR for per-request personalization, client for private interactivity.",
             "diagram": {
                 "kind": "compare",
@@ -239,7 +239,7 @@
                 "debugging"
             ],
             "question": "What is hydration, and what typically causes hydration mismatch errors in Next.js?",
-            "answer": "Hydration is when the client attaches listeners and state to the server HTML, assuming the first client render produces the same tree. A mismatch triggers an error and a costly client re-render. The causes I see are browser-only values (window, localStorage, Date.now, Math.random) in render, locale or timezone formatting that differs between server and client, and browser extensions mutating the DOM. To fix it, I compute those values in effects after mount, gate them behind a mounted flag, or use client components. I use suppressHydrationWarning only for text that can't be reconciled, like timestamps.",
+            "answer": "Hydration attaches listeners and state to server HTML, assuming the first client render produces the same tree. A mismatch causes an error and a costly re-render. The usual causes are window, localStorage, Date.now, or Math.random in render, and locale or timezone formatting that differs between server and client. I move those into effects after mount.",
             "keyTakeaway": "Hydration requires identical first render on both sides; keep randomness, time, and storage out of render.",
             "diagram": {
                 "kind": "flow",
@@ -274,7 +274,7 @@
                 "revalidation"
             ],
             "question": "How does caching work in the modern Next.js App Router, and how do you keep cached data fresh?",
-            "answer": "Caching is explicit and opt-in. fetch and server components are dynamic by default. I cache with 'use cache' on a function or component, plus cacheLife profiles and cacheTag. The arguments form the cache key, so the same loader with a different user ID gives a different entry. I invalidate with revalidateTag when data changes instead of waiting out a TTL. I pick the lifetime per data dependency, since marketing copy, product listings, and the cart all differ. And I name tags so every write knows what to invalidate.",
+            "answer": "Caching in the App Router is explicit and opt-in, and fetch and server components are dynamic by default. I cache with 'use cache' on a function or component, plus cacheLife and cacheTag, and the arguments form the cache key. I invalidate with revalidateTag when data changes instead of waiting out a TTL.",
             "keyTakeaway": "Caching is opt-in per function via 'use cache'; invalidate by tag at write time, not by hoping a TTL saves you.",
             "diagram": {
                 "kind": "layers",
@@ -309,7 +309,7 @@
                 "loading"
             ],
             "question": "How do streaming and Suspense change the way a slow Next.js page feels, and how do you apply them?",
-            "answer": "Next streams the HTML shell immediately and fills in sections as data resolves, so the slowest query no longer blocks the response. I wrap slow async components in loading.tsx or Suspense, and place boundaries by user value, around the product list rather than the whole page. One Suspense boundary high in the tree brings the waterfall back. Streaming hides a slow query but doesn't fix it, so I still add an index or a cache. When SEO matters, I verify the critical content is in the initial payload.",
+            "answer": "Next streams the HTML shell right away and fills in sections as their data resolves, so the slowest query no longer blocks the response. I wrap slow async components in Suspense and place boundaries around what users care about. One boundary high in the tree brings the waterfall back. Streaming hides a slow query but doesn't fix it.",
             "keyTakeaway": "Stream per meaningful section with real skeletons; Suspense hides waits, it does not remove them.",
             "diagram": {
                 "kind": "sequence",
@@ -353,7 +353,7 @@
                 "optimization"
             ],
             "question": "A Next.js page has poor Core Web Vitals: walk through your diagnosis and fixes.",
-            "answer": "I start with real-user data, then lab tools. Lighthouse and the Next.js dev overlay attribute LCP, INP, and CLS to resources and interactions. For LCP, I preload the hero image with next/image priority and keep it in the static shell, not behind client fetches. For INP, I profile with React DevTools, restructure state, memoize long renders, and move heavy computation to a web worker. For CLS, I set width and height on media, never inject banners above content, and use size-adjusted fallback fonts. For systemic problems, I run @next/bundle-analyzer, replace barrel-file imports, lazy-load below-the-fold and admin-only widgets, and add a CI budget check.",
+            "answer": "I start with real-user data, then lab tools like Lighthouse to attribute LCP, INP, and CLS. For LCP, I preload the hero image with next/image priority. For INP, I profile, restructure state, and move heavy work to a web worker. For CLS, I set image dimensions and use size-adjusted fallback fonts. Then I run @next/bundle-analyzer and add a CI budget check.",
             "keyTakeaway": "Attribute each metric to its cause, fix the render path, then enforce a budget so it stays fixed.",
             "diagram": {
                 "kind": "compare",
@@ -397,7 +397,7 @@
                 "performance"
             ],
             "question": "What do useTransition and useDeferredValue actually do, and when do you reach for each?",
-            "answer": "Both build on concurrent rendering: React can interrupt an update so urgent work, like keystrokes, renders first. useTransition wraps the update at its source. startTransition schedules the state change at low priority, and isPending gives feedback. useDeferredValue returns a lagging copy of a value, so an expensive child trails fast input. I use useTransition when I own the update and useDeferredValue when the value arrives as a prop. Neither makes the work cheaper, they only reorder it, so I memoize the children too.",
+            "answer": "Both rely on concurrent rendering, where React can interrupt an update so urgent work like keystrokes renders first. useTransition wraps the state update itself and gives me isPending. useDeferredValue gives a lagging copy of a value, which suits props. Neither makes the work cheaper, they only reorder it, so I still memoize the expensive children.",
             "keyTakeaway": "Transitions reorder render priority so urgent input stays responsive; they defer work, they do not reduce it.",
             "code": {
                 "language": "tsx",
@@ -427,7 +427,7 @@
                 "ux"
             ],
             "question": "How does useOptimistic work, and what does it buy over hand-rolling an optimistic update?",
-            "answer": "useOptimistic renders a temporary value while an async action, usually a server action, is in flight. I pass it the current state and a reducer describing the guess. When the action settles, React discards the guess and reconciles with the server result, and a failure rolls back automatically. So there's no shadow list, rollback flag, or request ordering to hand-roll. Optimistic state is read-only and lasts only for the action. Long operations still need isPending and a revert toast.",
+            "answer": "useOptimistic renders a temporary value while an async action, usually a server action, is in flight. I give it the current state and a reducer describing the guess. When the action settles, React drops the guess and shows the server result, so a failure rolls back on its own. That saves me a hand-rolled shadow list and rollback flags.",
             "keyTakeaway": "useOptimistic renders a transition-scoped guess and automatically reconciles or reverts to server truth when the action settles.",
             "code": {
                 "language": "tsx",
@@ -470,7 +470,7 @@
                 "progressive-enhancement"
             ],
             "question": "How do server actions enable progressive enhancement, and how do you design forms around that?",
-            "answer": "A server action is an async function marked 'use server', exposed as an RPC endpoint. When I pass it to a form action, the submission is a normal HTML POST, so the form works before hydration and without JavaScript. I use real buttons, named uncontrolled inputs, and useFormStatus for pending state. I validate on the server, since that's the only validation guaranteed to run. In the action I use redirect or revalidatePath rather than client state updates, and I add optimistic UI as an enhancement after hydration.",
+            "answer": "A server action is an async function marked 'use server'. Passed to a form's action, the submit is a plain HTML POST, so the form works before hydration and without JavaScript. I validate on the server, since that's the only validation guaranteed to run, and add optimistic UI afterward as an enhancement.",
             "keyTakeaway": "A server action wired to a form is a plain HTML POST, so validate on the server and design the no-JavaScript path first.",
             "code": {
                 "language": "tsx",
@@ -518,7 +518,7 @@
                 "api"
             ],
             "question": "Given that both run on the server, when would you pick a route handler over a server action?",
-            "answer": "Server actions are my default for mutations from our own UI: they're typed end to end, need no API surface, and integrate with revalidation and redirects. I use a route handler when the caller isn't my React tree: webhooks, mobile apps, cron jobs, GET endpoints with cache headers and ETags for a CDN, streaming, proxies, and OAuth callbacks. I never build a private REST API and fetch it from my own server components, because that's a pointless HTTP hop. I call the data functions directly.",
+            "answer": "Server actions are my default for mutations from our own UI, since they're typed end to end and need no API surface. I use a route handler when the caller isn't my React tree, like webhooks, mobile apps, cron jobs, or cached GET endpoints. I never fetch my own REST API from server components, which is a pointless HTTP hop.",
             "keyTakeaway": "Server actions serve your own UI's mutations; route handlers exist for webhooks, apps, and anything needing real HTTP.",
             "diagram": {
                 "kind": "compare",
@@ -569,7 +569,7 @@
                 "route-groups"
             ],
             "question": "How do layouts, route groups, and templates differ in what survives a client-side navigation?",
-            "answer": "A layout persists across navigation. Between sibling routes only the page re-renders, so shared chrome like navigation goes there. Route groups, which are parenthesized folders, organize routes and attach layouts without changing the URL. template.tsx remounts its subtree on every navigation, resetting state and effects, so I use it for enter animations or to wipe form state. If state gets lost on navigation, the UI sits in a template or page rather than in a layout above it.",
+            "answer": "A layout persists across navigation, and between sibling routes only the page re-renders, so shared chrome goes there. Route groups are parenthesized folders that attach layouts without changing the URL. template.tsx remounts its subtree on every navigation, so I use it for enter animations or to reset form state.",
             "keyTakeaway": "Layouts persist across navigation, route groups re-chrome without URL changes, and templates remount their subtree every time.",
             "diagram": {
                 "kind": "layers",
@@ -604,7 +604,7 @@
                 "not-found"
             ],
             "question": "How should error.tsx, global-error.tsx, and not-found.tsx fit together as an error architecture?",
-            "answer": "error.tsx is a client component that wraps its segment in an error boundary. It catches render and data errors from that segment down, siblings and parents stay alive, and reset retries. I nest boundaries at meaningful segments like dashboard, not just the root, to contain the blast radius. global-error.tsx handles root layout errors, so it renders its own html and body. not-found.tsx covers known absence: notFound() renders the nearest boundary with a real 404 status. I log every caught error, because a fallback without telemetry hides outages.",
+            "answer": "error.tsx is a client component that wraps its segment in an error boundary, so siblings and parents stay alive and reset retries. I nest boundaries at meaningful segments like the dashboard, not just the root. notFound() renders not-found.tsx with a real 404 for known absence. I log every caught error, since a fallback without telemetry hides outages.",
             "keyTakeaway": "error.tsx is a per-segment client boundary with reset, global-error replaces the root, and notFound() is for known absence, not crashes.",
             "diagram": {
                 "kind": "flow",
@@ -639,7 +639,7 @@
                 "performance"
             ],
             "question": "What do next/image and next/font actually do under the hood that justifies their abstraction?",
-            "answer": "With next/image, width and height reserve space, lazy loading is the default, srcset variants are generated, and the optimizer converts to AVIF or WebP per device. priority makes an image eager with a preload link, and I use it on the LCP element only. next/font self-hosts fonts at build time with immutable caching, and size-adjust tunes the fallback metrics so text doesn't jump on swap. There's no request to fonts.gstatic.com. Hand-written tags miss these details.",
+            "answer": "With next/image, width and height reserve space, lazy loading is the default, and the optimizer serves AVIF or WebP per device. I use priority on the LCP element only. next/font self-hosts fonts at build time and tunes fallback metrics so text doesn't jump on swap, with no request to fonts.gstatic.com.",
             "keyTakeaway": "next/image prevents CLS and right-sizes formats per device, while next/font self-hosts with metric-adjusted fallbacks and zero third-party requests.",
             "diagram": {
                 "kind": "flow",
@@ -674,7 +674,7 @@
                 "app-router"
             ],
             "question": "How do you architect metadata and SEO across a large App Router site without hand-managed head tags?",
-            "answer": "I use the exports instead of head tags: a static metadata object per layout or page, and generateMetadata for dynamic values, using the same params and data as the page. Metadata resolves from the root down, and children merge over parents, so the root layout owns the title template and leaves supply specifics. I cover canonicals and Open Graph per route, and opengraph-image.tsx generates social cards. I also ship sitemap.ts, robots.ts, and JSON-LD. The trap is fetching twice, once in generateMetadata and once in the page, so I share one cached data function.",
+            "answer": "I use the metadata exports instead of head tags: a static metadata object per layout or page, and generateMetadata for dynamic values. Metadata merges from the root down, so the root layout owns the title template and leaves supply specifics. I also add canonicals, Open Graph, sitemap.ts, and JSON-LD. I share one cached data function so I don't fetch twice.",
             "keyTakeaway": "Metadata is composable exports that merge root-down; factor one cached data function shared by generateMetadata and the page.",
             "diagram": {
                 "kind": "layers",
@@ -709,7 +709,7 @@
                 "components"
             ],
             "question": "Do compound components and render props still matter in modern React now that hooks exist?",
-            "answer": "Yes. Hooks share behavior within one component, while compound components and render props control composition across a component family. Compound components, meaning dot-notation children sharing implicit context, keep markup customizable without a props explosion. Render props survive where internal state has to reach arbitrary render logic, as in downshift and react-table. The modern shape is hooks as the engine, context plus compound components for UI kits, and render props for dynamic render decisions. HOCs have been left behind.",
+            "answer": "Yes. Hooks share behavior inside one component, but compound components and render props handle composition across a component family. Compound components with shared context keep markup customizable without a props explosion. Render props still work where internal state has to reach arbitrary render logic, like downshift. Hooks are the engine underneath.",
             "keyTakeaway": "Compound components compose markup through shared context; render props expose internal state, and hooks are the engine under both.",
             "diagram": {
                 "kind": "compare",
@@ -749,7 +749,7 @@
                 "security"
             ],
             "question": "What is Next.js middleware, what can it do, and what are its hard limits?",
-            "answer": "Middleware runs at the edge before routing, on requests its config matcher selects. It can rewrite, redirect, and set headers. The runtime is starved: no database drivers, no Node APIs, and a small CPU and execution budget. The typical work is to read a cookie, verify a JWT with Web Crypto, and decide. It gates cheaply, and the page or action does the real session lookup. I use it for A-B tests, geo rewrites, and auth redirects. I never use it for data fetching or for more than a few kilobytes of state.",
+            "answer": "Middleware runs at the edge before routing. It can rewrite, redirect, and set headers, but the runtime is starved: no database drivers, no Node APIs, and a small CPU budget. So I use it for cheap gates like reading a cookie and verifying a JWT, or for A/B tests and geo rewrites. The page or action does the real session lookup.",
             "keyTakeaway": "Middleware is a fast, starved gate for rewrites and cheap auth checks; authoritative data and session decisions belong downstream.",
             "diagram": {
                 "kind": "sequence",
@@ -793,7 +793,7 @@
                 "app-router"
             ],
             "question": "What problem do parallel and intercepting routes solve, and where do they earn their folder complexity?",
-            "answer": "Parallel routes let one layout render independent slots (@folder, passed as props). Each slot has its own loading and error state and streams independently, so dashboard panels don't wait on the slowest query. Slots can be conditional, like a login modal or nothing. Intercepting routes show a soft navigation elsewhere via dot conventions. If I click a photo in a feed, it opens as a modal, and if I load the same URL directly, the full photo page renders. I'd only take on the folder ceremony when that experience is a real requirement.",
+            "answer": "Parallel routes let one layout render independent slots, each with its own loading and error state, so dashboard panels stream independently. Intercepting routes show a route in another context on soft navigation: clicking a photo opens a modal, but loading that URL directly renders the full page. I only use them when that is a real requirement.",
             "keyTakeaway": "Parallel routes stream independent dashboard slots; intercepting routes give modals on soft navigation and full pages on direct loads.",
             "diagram": {
                 "kind": "layers",
@@ -828,7 +828,7 @@
                 "middleware"
             ],
             "question": "Describe a sound auth architecture in Next.js: where does session state live, and what gets checked where?",
-            "answer": "I keep the session in an httpOnly, secure, same-site cookie holding an opaque session ID or a signed token, and I check it at three layers. Middleware is the cheap gate: the cookie is present and the signature is valid, otherwise redirect to login. It can't reach the database, so I never trust it alone. A server component with private data does the authoritative lookup from session ID to user row, and redirects or calls notFound on failure. Server actions re-check on every mutation, since they're plain HTTP endpoints. Middleware shapes navigation, never authorization.",
+            "answer": "I keep the session in an httpOnly, secure, same-site cookie holding an opaque session ID or signed token, and check it in layers. Middleware is the cheap gate that checks the cookie and redirects to login, but it can't reach the database, so I never trust it alone. Server components with private data do the real lookup, and server actions re-check on every mutation.",
             "keyTakeaway": "Middleware gates navigation cheaply, but every server component and action returning private data must verify the session itself.",
             "diagram": {
                 "kind": "branch",
@@ -854,7 +854,7 @@
                 "link"
             ],
             "question": "How do Link prefetching and the client router cache work, and why do users sometimes see stale pages after a mutation?",
-            "answer": "In production, Link prefetches routes that enter the viewport. Static routes pull the full RSC payload, while dynamic routes fetch only to the nearest loading boundary. Payloads live in the client router cache per segment, so a back click or prefetch hit renders instantly. That causes stale pages: after a server action or another tab mutates data, the cached segment shows old data until its window expires or I call router.refresh, which refetches the current route and preserves client state. I tune this with prefetch={false} on expensive dynamic links and sensible cache windows.",
+            "answer": "In production, Link prefetches routes as they enter the viewport, and payloads are stored per segment in the client router cache, so back clicks render instantly. The cost is staleness: after a server action or another tab changes data, a cached segment shows old data until its window expires or I call router.refresh, which refetches the current route and keeps client state.",
             "keyTakeaway": "Link prefetch plus the router cache buys instant navigation at the price of staleness; router.refresh is the reconcile button.",
             "diagram": {
                 "kind": "flow",
@@ -889,7 +889,7 @@
                 "tooling"
             ],
             "question": "How do you test React Server Components when most tooling grew up in the client-only era?",
-            "answer": "The component is the wrong test unit. Server components need a request, a database, and the React server runtime, and jsdom emulates none of that. I unit-test data functions and async loaders against fixtures or a test database, since that's where the logic lives. I cover server components with route-level tests in Playwright or a Next-aware harness that asserts on rendered HTML, which also catches serialization bugs like functions leaking across the boundary. For client components I keep classic unit tests with mocked props.",
+            "answer": "The component is the wrong test unit, because server components need a request, a database, and the server runtime, and jsdom has none of that. I unit-test data functions and loaders against fixtures, since the logic lives there. I cover server components with route-level Playwright tests that assert on rendered HTML. Client components keep classic unit tests.",
             "keyTakeaway": "Test RSC logic in data functions and output at the route level; jsdom cannot host a server component.",
             "diagram": {
                 "kind": "layers",
@@ -920,7 +920,7 @@
                 "architecture"
             ],
             "question": "When does modeling UI state as a state machine pay off in React, and how do you do it without overengineering?",
-            "answer": "It pays off when a screen has illegal states, like checkout. Ad-hoc booleans like isSubmitting and hasError combine into impossible states. I use one discriminated union of named states with pure transition functions, so the types make impossible combinations unrepresentable. useReducer plus typed events covers most screens with zero dependencies. I use XState when flows nest, retry, or span components, or when I want visualization and model-based testing. XState is an escalation, not a reflex.",
+            "answer": "It pays off when a screen has illegal states, like checkout, where booleans such as isSubmitting and hasError combine into impossible combinations. I use one discriminated union of named states with pure transitions, usually via useReducer, so the types rule out bad combinations. I only reach for XState when flows nest, retry, or span components.",
             "keyTakeaway": "Model complex flows as a discriminated union in useReducer and escalate to XState only when flows nest or span components.",
             "diagram": {
                 "kind": "compare",
@@ -964,7 +964,7 @@
                 "mutations"
             ],
             "question": "Walk through the write path: what happens between a server action committing data and revalidateTag making it visible?",
-            "answer": "The action runs on the server, authorizes, writes through the data layer, then calls revalidateTag with the tags the read side stamped via 'use cache'. That marks every entry with those tags stale across the deployment, not deleted. The next read re-executes and repopulates, so invalidation is read-through. Next also expires the client router cache for that route, so the next navigation shows fresh data. I tag per entity and per list, and invalidate the narrowest set. Calling revalidatePath on the root admits the cache design failed.",
+            "answer": "The action authorizes, writes through the data layer, then calls revalidateTag with the tags the reads were stamped with via 'use cache'. That marks those entries stale, not deleted, and the next read re-executes and repopulates them. Next also expires the client router cache for that route. I tag per entity and per list, and invalidate the narrowest set.",
             "keyTakeaway": "revalidateTag marks entries stale and the next read repopulates; tag narrowly per entity so one write never clears everything.",
             "code": {
                 "language": "tsx",
@@ -1012,7 +1012,7 @@
                 "localization"
             ],
             "question": "How do you build internationalized routing in the App Router, and what must change beyond translating strings?",
-            "answer": "There's no built-in i18n routing. I use a dynamic locale segment like app/[locale]. Middleware detects the preference from the Accept-Language header or a cookie and redirects bare URLs to the localized path. Segments read the locale param to load messages through a dictionary function that server components call directly, which keeps translations out of the client bundle. Beyond strings, I handle localized metadata with hreflang alternates, RTL direction for Arabic or Hebrew, and date and currency formatting on the server to avoid hydration mismatches. I generate static params per locale. A missing key must not crash the route.",
+            "answer": "There's no built-in i18n routing, so I use a dynamic segment like app/[locale]. Middleware reads Accept-Language or a cookie and redirects bare URLs to the localized path. Server components load messages through a dictionary function, which keeps translations out of the client bundle. Beyond strings, I handle hreflang alternates, RTL, and server-side date and currency formatting.",
             "keyTakeaway": "App Router i18n is a [locale] segment plus a middleware redirect, server-side formatting, and hreflang alternates for SEO.",
             "diagram": {
                 "kind": "flow",
@@ -1047,7 +1047,7 @@
                 "promises"
             ],
             "question": "What does React's use() hook change about consuming promises and context, and how does it reshape the server-to-client handoff?",
-            "answer": "use() is the only hook that can be called conditionally, in branches and loops. If I pass it a promise, the component suspends until it resolves. If I pass it context, it reads like useContext. In Next it shapes the server-to-client handoff: a server component awaits one query and passes another as an unresolved promise prop, and the client component unwraps it with use() inside Suspense. Every promise needs a Suspense boundary above its consumer and an error boundary for rejection. Promises become renderable values, so await turns from a blocking point into a streaming opportunity.",
+            "answer": "use() is the one hook you can call conditionally. Given a promise, the component suspends until it resolves, and given context, it reads like useContext. In Next, a server component can await one query and pass another down as an unresolved promise, and the client unwraps it with use() inside Suspense. Each promise needs a Suspense boundary above it and an error boundary for rejection.",
             "keyTakeaway": "use() unwraps promises or context anywhere, even conditionally, turning awaits into suspendable, streamable values across the RSC boundary.",
             "diagram": {
                 "kind": "sequence",

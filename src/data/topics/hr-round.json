@@ -13,7 +13,7 @@
                 "fundamentals"
             ],
             "question": "How do you answer 'Tell me about yourself' in a senior engineer interview?",
-            "answer": "Use a present-past-future arc, about ninety seconds. Present means your role, stack and one achievement with a number. For the past, cover the choices that led to this specialty, and for the future, what attracts you to this role. Lead with engineering substance, like the systems you owned and an outcome such as 'cut checkout latency by forty percent'. Add one line of personality. Don't recite your CV, because the interviewer already has it.",
+            "answer": "Use a present-past-future arc and keep it to about ninety seconds. Start with your role, stack, and one achievement with a number, like 'cut checkout latency by forty percent'. Then say what led you here, and end on why this role. Don't recite your CV, since they already have it.",
             "keyTakeaway": "Ninety seconds, present-past-future, one quantified achievement, ending on why this role.",
             "diagram": {
                 "kind": "flow",
@@ -44,7 +44,7 @@
                 "company-fit"
             ],
             "question": "How do you answer 'Why Monstarlab?' or 'Why do you want to move into consulting?'",
-            "answer": "Show you've researched the company. Monstarlab is a global digital consultancy, so the honest draws are breadth (diverse clients and industries), pace (faster feedback on architectural decisions), and standards (client-facing work forces crisp communication, estimation and delivery discipline). Back each one with your own evidence, like ramping up fast on an unfamiliar domain. Never say 'for the money' or 'any job would do'. Name one specific thing about their clients or their engineering blog.",
+            "answer": "Show you've researched them. Monstarlab is a global digital consultancy, so the honest draws are breadth across clients, faster feedback on architectural decisions, and the communication discipline client work demands. Back each with your own evidence, like ramping up fast on an unfamiliar domain. Never say 'for the money'.",
             "keyTakeaway": "Connect their consultancy model to concrete growth: breadth, pace, and client-facing communication, with evidence from your history."
         },
         {
@@ -57,7 +57,7 @@
                 "fundamentals"
             ],
             "question": "How do you explain why you are leaving your current job without sounding negative?",
-            "answer": "Frame it as a pull, not a push: bigger technical challenges, consultancy variety, a deeper stack. One neutral sentence about a real limitation is fine, like 'I have grown as far as the current product's scope allows'. Never criticize your employer, your manager or your teammates. Keep your dates consistent with your CV and LinkedIn. If you were laid off, say so plainly. Then end looking forward, on what you will contribute.",
+            "answer": "Frame it as a pull, not a push: bigger technical challenges, consultancy variety. One neutral line about a real limitation is fine, like 'I've outgrown the current product's scope'. Never criticize your employer or teammates, and keep your dates consistent with your CV. End forward-looking.",
             "keyTakeaway": "Move toward something, not away from something; one neutral limitation, zero criticism of the current employer."
         },
         {
@@ -70,7 +70,7 @@
                 "fundamentals"
             ],
             "question": "How do you answer 'What are your greatest strengths?' as a senior candidate?",
-            "answer": "Pick two or three strengths that are true of you and valuable for this role, and prove each with a compact story instead of adjectives. Strong choices for senior consultancy work are ownership ('I took the payment module from design to production, and it has run at ninety-nine point nine percent since'), translating trade-offs for clients, and mentoring. 'I am a hard worker' says nothing. 'I automated data validation and saved two manual weeks' shows impact.",
+            "answer": "Pick two or three strengths that are true and valuable for this role, and prove each with a short story instead of adjectives. For senior consultancy work, good ones are ownership and mentoring. 'I'm a hard worker' says nothing, but 'I automated validation and saved two manual weeks' shows impact.",
             "keyTakeaway": "Two or three role-relevant strengths, each proven by one compact, verifiable story."
         },
         {
@@ -83,7 +83,7 @@
                 "growth"
             ],
             "question": "How do you answer 'What is your greatest weakness?' without torpedoing yourself?",
-            "answer": "Name a real weakness that isn't fatal, and show you're actively dealing with it. The question tests self-awareness. For example: 'I used to go silent on hard problems, so now I post short written updates mid-investigation'. Or: 'I over-engineer, so I timebox spikes and write the RFC first'. Avoid the humblebrag ('I am a perfectionist'), and avoid answers that disqualify you, like 'I struggle with deadlines'. The best close is that someone noticed the change.",
+            "answer": "Name a real weakness that isn't fatal, and show you're dealing with it, because the question tests self-awareness. For example, 'I over-engineer, so I timebox spikes and write the RFC first'. Skip the humblebrag like 'I'm a perfectionist', and don't pick something disqualifying like missing deadlines.",
             "keyTakeaway": "A real non-fatal weakness plus the concrete system that mitigates it, closed with evidence of progress."
         },
         {
@@ -96,7 +96,7 @@
                 "behavioral"
             ],
             "question": "How do you handle the salary expectation question for a role advertised at BDT 100,000 to 170,000 per month?",
-            "answer": "Do your research first, and anchor on a range, not a single number. Know the posted band (BDT 100,000 to 170,000) and what a senior engineer is worth in the Dhaka market. Give a justified range whose bottom you would actually accept: 'Given my payment and cloud experience, I am looking at 150,000 to 170,000, but package and fit matter'. Never state a number below what you'd accept, because lowball anchors rarely rise. Justify the premium with their must-haves: Stripe integration, cloud certifications, mentoring. And ask about benefits and review cycles.",
+            "answer": "Research first, then anchor on a range, not a single number. Know the posted band of BDT 100,000 to 170,000 and what a senior engineer earns in Dhaka. Give a justified range whose bottom you'd accept, like 150,000 to 170,000 given your payment and cloud experience, and say package and fit matter too. Lowball anchors rarely rise.",
             "keyTakeaway": "Give a researched range anchored in their band with a justified target, and negotiate the package, not just the base.",
             "diagram": {
                 "kind": "compare",
@@ -140,7 +140,7 @@
                 "communication"
             ],
             "question": "Tell me about a time you disagreed with a teammate or manager. How should you structure the story?",
-            "answer": "Use STAR. A strong conflict story: a senior colleague wanted a synchronous integration that you believed would fail under load. Your action was a one-page load analysis and an async alternative with a fallback, and you load tested both so everyone trusted the result. The test reproduced your numbers, the team shipped async, and the demo passed. The interviewer is scoring how you collaborate under disagreement. Show shared evidence over winning, and a graceful concession when the other side was right. A story where you 'won' by escalating is a red flag.",
+            "answer": "Use STAR. A strong story is a senior colleague pushing a synchronous integration you believed would fail under load. You wrote a one-page load analysis, proposed an async alternative, and load tested both so everyone trusted the result. They're scoring how you collaborate, so show shared evidence over winning, and concede gracefully when you're wrong.",
             "keyTakeaway": "STAR structure, resolve with shared evidence rather than victory, and land on a relationship and codebase that got better.",
             "diagram": {
                 "kind": "flow",
@@ -175,7 +175,7 @@
                 "behavioral"
             ],
             "question": "How do you answer 'Tell me about a time a project you led failed'?",
-            "answer": "Pick a real failure where you owned a decision, and weight what changed in you over the wreckage. State the failure plainly: 'we missed the launch by six weeks; I underestimated migration complexity'. Then give a specific lesson, like leaving no slack for unknowns and escalating late. Then show the changed behavior: 'now I estimate with ranges, flag risk at the first slipped checkpoint, and I've run three migrations since with no surprises'. Don't use a humblebrag failure ('I cared too much'), and don't blame the team, the client or the stack.",
+            "answer": "Pick a real failure where you owned a decision, and focus on what changed in you. State it plainly: 'we missed the launch by six weeks because I underestimated migration complexity'. Then give the lesson and the changed habit, like estimating with ranges and flagging risk at the first slipped checkpoint. Don't blame the team or client.",
             "keyTakeaway": "Real failure, plain ownership, one precise causal lesson, and the changed habit proven by later projects."
         },
         {
@@ -188,7 +188,7 @@
                 "behavioral"
             ],
             "question": "What should you prepare for the practical HR questions: notice period, hybrid work, and availability?",
-            "answer": "Have exact answers ready, because vagueness reads as disorganization. Give your notice period as a date range: 'thirty days, so I can start by the first of next month'. The role is Dhaka-based hybrid, so state plainly that you can meet the office days. Ask instead of assuming: office days per week, core hours across time zones, the on-call rotation, probation terms. And be transparent about competing offers, since interviewers coordinate timelines.",
+            "answer": "Have exact answers ready, because vagueness reads as disorganization. Give your notice period as a date, like 'thirty days, so I can start by the first of next month'. The role is Dhaka-based hybrid, so say plainly that you can meet the office days. Ask about core hours and on-call.",
             "keyTakeaway": "Exact dates, plain confirmation of hybrid availability, and proactive questions about office days, hours, and on-call."
         },
         {
@@ -201,7 +201,7 @@
                 "behavioral"
             ],
             "question": "How do you handle 'Where do you see yourself in five years?' and what should you ask the interviewer at the end?",
-            "answer": "Connect your ambition to a trajectory this role supports: senior engineer to lead, owning architecture across client projects and mentoring a small team. Avoid 'your CEO's job' and 'starting my own startup'. Treat your questions as a final technical signal. Ask what distinguishes engineers who thrive from those who leave within a year, how projects are staffed, whether you rotate clients or own a product, and how technical debt is handled against client deadlines. Ask about next steps and timeline, then send a short thank-you note citing one specific point from the discussion.",
+            "answer": "Tie your ambition to a path this role supports, like senior engineer to lead, owning architecture and mentoring a small team. Avoid 'your CEO's job'. Then use your questions as a final technical signal, like what separates engineers who thrive from those who leave within a year, and how technical debt is handled against client deadlines. Close with next steps and a thank-you note.",
             "keyTakeaway": "Anchor ambition to their growth path, ask questions that prove you evaluate them too, and close on concrete next steps.",
             "diagram": {
                 "kind": "sequence",
@@ -249,7 +249,7 @@
                 "positioning"
             ],
             "question": "How do you answer 'Why should we hire you?' without drifting into arrogance?",
-            "answer": "Turn the bravado into a fit argument. Name their core need from the job posting, prove you meet it with one quantified example, and add something beyond the ticket, like mentoring or client communication. For example: 'You need someone who owns payment integrations end to end. I have shipped four, each with documentation and a teammate who can maintain it.' Never speculate about other candidates or declare yourself the best. Compare yourself only to their requirements.",
+            "answer": "Make it a fit argument. Name their core need from the job posting, prove you meet it with one quantified example. For example, 'You need someone who owns payment integrations end to end, and I've shipped four with documentation.' Compare yourself only to their requirements, never to other candidates.",
             "keyTakeaway": "Argue fit against their must-haves with one quantified proof, one extra you bring, and no comparisons to other candidates."
         },
         {
@@ -262,7 +262,7 @@
                 "composure"
             ],
             "question": "How do you handle 'How do you work under pressure?' or an interviewer who deliberately turns up the heat?",
-            "answer": "Never claim immunity ('I do not feel pressure'), because it reads as inexperience. Describe a repeatable system and prove it with one story. The system is to triage by client impact, cut scope explicitly, and communicate slippage immediately. The proof: 'during a payment outage two days before a client demo, I sent hourly updates, shipped a feature-flagged rollback, and we demoed on time.' If the interviewer presses, recognize it as a composure test. Slow down and answer the question that was asked.",
+            "answer": "Never claim immunity, because 'I don't feel pressure' reads as inexperience. Describe a repeatable system and prove it with one story: triage by client impact, cut scope explicitly, and communicate slippage right away. For instance, during a payment outage before a demo, I sent hourly updates and shipped a feature-flagged rollback.",
             "keyTakeaway": "Describe a repeatable pressure system proven by one story, and treat aggressive probing as a composure test to pass slowly.",
             "diagram": {
                 "kind": "flow",
@@ -297,7 +297,7 @@
                 "behavioral"
             ],
             "question": "How should you explain a gap in your employment history if the interviewer asks about it?",
-            "answer": "State the gap as a fact, not a confession. Give one sentence on what it was, one on what you did, then pivot to readiness: 'I took eight months off when my father was ill; I kept current with a cloud certification and a small freelance build, and I am ready to return.' Caregiving, health, study, sabbaticals and layoffs are all acceptable reasons. What gets scored is vagueness, defensiveness, and dates that don't match your CV or LinkedIn. Never apologize or over-explain.",
+            "answer": "State the gap as a fact, not a confession. One sentence on what it was, one on what you did, then pivot to readiness: 'I took eight months off when my father was ill, kept current with a cloud certification, and I'm ready to return.' Caregiving, health, and layoffs are all fine. Vagueness and mismatched dates get scored.",
             "keyTakeaway": "State the gap in one factual sentence, show the time stayed productive, and never apologize or over-explain."
         },
         {
@@ -310,7 +310,7 @@
                 "conflict"
             ],
             "question": "What do you say when asked about the best or worst manager you have worked with?",
-            "answer": "Both halves are really asking how you like to be managed and whether you blame people. For the worst manager, describe the style difference neutrally and how you adapted: 'He wanted daily written status while I favored fewer, deeper updates; I switched and our one-on-ones improved'. Never vent. For the best manager, name the behaviors you valued: clear priorities, delegation with context, honest feedback. For your ideal manager: 'Clear goals and freedom to choose the path; when structure is missing, I build it.' Self-sufficiency is the senior signal.",
+            "answer": "Both questions ask how you like to be managed and whether you blame people. For the worst manager, describe the style difference neutrally and how you adapted, like switching to the daily written status he wanted. Never vent. For the best, name behaviors like clear priorities and honest feedback. Say you want clear goals and freedom on the path .",
             "keyTakeaway": "Describe manager differences neutrally with your adaptation, and signal self-sufficiency: clear goals, freedom on the path."
         },
         {
@@ -323,7 +323,7 @@
                 "behavioral"
             ],
             "question": "How do you answer questions about your preference between remote and hybrid work?",
-            "answer": "Confirm you can do what the role requires, then state your honest preference inside that constraint. Saying 'I prefer fully remote' for a hybrid Dhaka role either ends the process or adds friction later. A strong answer is: 'Hybrid works for me; office days are for mentoring and client workshops, home days for deep work.' If you have a hard constraint (childcare, commute, health), raise it early and only once: 'Two office days are fine, five are not'. Ask which days, whether core hours overlap with overseas clients, and how often client sites are involved.",
+            "answer": "Confirm you can do what the role requires, then give your honest preference inside that. Saying 'I prefer fully remote' for a hybrid Dhaka role ends the process or adds friction later. Something like 'Hybrid works for me, with office days for mentoring and home days for deep work' is better. If you have a hard constraint, raise it early and only once.",
             "keyTakeaway": "Confirm the required arrangement first, state one honest preference inside it, and surface hard constraints early and once."
         },
         {
@@ -336,7 +336,7 @@
                 "etiquette"
             ],
             "question": "What is professional etiquette for a take-home assignment, from receiving it to the follow-up review?",
-            "answer": "Treat a take-home as an unpaid client engagement. Confirm the time budget first, state your assumptions in a short README, and commit in small steps. Test the risky path, not every path. They're scoring judgment and communication, not only working code. If the assignment exceeds the budget, stop at a clean point and write down what you would do next and why. Submit with a short note on trade-offs: 'I prioritized payment flow correctness over UI polish.' In the review, defend your decisions calmly and accept critique.",
+            "answer": "Treat a take-home as an unpaid client engagement. Confirm the time budget first, state your assumptions in a short README, and test the risky path rather than every path. If it runs over budget, stop at a clean point and write down what you'd do next. Then defend your decisions calmly in the review, since they're scoring judgment and communication.",
             "keyTakeaway": "Timebox to the stated budget, document assumptions and trade-offs, and treat the follow-up defense as part of the submission.",
             "diagram": {
                 "kind": "sequence",
@@ -384,7 +384,7 @@
                 "behavioral"
             ],
             "question": "How do you manage a panel interview where several interviewers with different concerns question you at once?",
-            "answer": "Learn the panel's names and roles ahead of time. The engineer probes technical depth, the hiring manager probes delivery and ownership, and HR probes process and culture fit. Tailor one story you repeat, with a sentence for each concern. Address whoever asked, but keep eye contact across the whole room. If two questions land at once, say so: 'I will take estimation first and return to the client one'. And answer a junior panelist's basic question seriously, because senior people watch that.",
+            "answer": "Learn the panel's names and roles beforehand. The engineer probes technical depth, the hiring manager probes delivery, and HR probes culture fit. Tailor one story with a line for each concern. Address whoever asked, but keep eye contact across the room, and if two questions land at once, say so and take them in order.",
             "keyTakeaway": "Map the panel's roles, tailor each answer to the asker while including the room, and sequence overlapping questions out loud.",
             "diagram": {
                 "kind": "layers",
@@ -419,7 +419,7 @@
                 "process"
             ],
             "question": "What is appropriate follow-up after an interview, and when is it acceptable to nudge for an update?",
-            "answer": "Within twenty-four hours, send a short thank-you email citing one specific moment: 'our discussion of async integrations matched the migration I led last year'. A generic template adds nothing. If they gave a timeline, wait until the next business day after it passes, then send one brief nudge asking for an update. If a competing deadline appears, tell the recruiter plainly and ask whether the timeline can move. What kills a candidacy is chasing, not silence: daily messages, going to the hiring manager around the recruiter, or demanding feedback before any decision.",
+            "answer": "Send a short thank-you within twenty-four hours that cites one specific moment from the conversation, because a generic template adds nothing. If they gave a timeline, wait until the next business day after it passes, then send one brief nudge. Tell the recruiter plainly about any competing deadline. Chasing hurts you, not silence.",
             "keyTakeaway": "One specific thank-you within a day, one patient nudge after their stated timeline, and full transparency about competing deadlines."
         },
         {
@@ -432,7 +432,7 @@
                 "fundamentals"
             ],
             "question": "How do you answer 'What motivates you?' so it lands with a consultancy interviewer?",
-            "answer": "Give two or three specific drivers, each anchored to a moment: 'I am motivated by seeing users touch what I shipped, by problems with real constraints, and by watching an engineer I mentored start reviewing my pull requests.' Then connect them to this role: varied client domains and compressed feedback loops. Avoid 'money' on its own and 'challenges' without specifics. The senior differentiator is that your motivation survives unglamorous work like maintenance, documentation and unblocking others.",
+            "answer": "Give two or three specific drivers, each anchored to a moment, like seeing users touch what I shipped, or watching an engineer I mentored start reviewing my pull requests. Then connect them to what this role offers. The senior differentiator is that your motivation survives unglamorous work like maintenance and documentation.",
             "keyTakeaway": "Name two or three specific drivers with proof moments, map them to what the role offers, and show motivation survives unglamorous work."
         },
         {
@@ -445,7 +445,7 @@
                 "behavioral"
             ],
             "question": "How do you handle two competing offers or interview processes whose deadlines collide?",
-            "answer": "Run both processes transparently. Recruiters coordinate, and one discovered bluff ends every thread. Tell each one plainly: 'I have another offer with a deadline on Thursday; I would accept this role if the timeline allowed me to decide properly, can anything be accelerated?' A real deadline is legitimate leverage. An invented one costs you your reputation for good in Dhaka's small market. Before offers land, write down ranked criteria: growth, package, team, client variety. And withdraw from the other process the same day you decide.",
+            "answer": "Run both processes transparently. Recruiters talk to each other, and one discovered bluff ends every thread. Tell each about the other deadline and ask if timelines can move. A real deadline is fair leverage, but an invented one costs you your reputation in Dhaka's small market. Rank your criteria before offers land, and withdraw from the other process the day you decide.",
             "keyTakeaway": "Be transparent about real deadlines, rank your decision criteria before offers land, and withdraw from the runner-up the day you accept.",
             "diagram": {
                 "kind": "compare",
@@ -489,7 +489,7 @@
                 "behavioral"
             ],
             "question": "How do you present a career change or stack change so it does not read as starting over?",
-            "answer": "Frame the change as continuity with a deliberate turn. Name the through-line: ownership, delivery discipline, problem decomposition. Give a positive reason: 'I spent six years on PHP, saw the market and my interest moving to Node and cloud, and switched on purpose.' Close the credibility gap with production evidence, not coursework alone: a shipped side project, an internal migration, open-source work. Name the objection before they do: 'I am newer to Go than a specialist, but ramping fast is what my last two moves prove.' Never apologize for your old stack.",
+            "answer": "Frame it as continuity with a deliberate turn. Name the through-line, like ownership and delivery discipline, then a positive reason: 'I spent six years on PHP, saw my interest moving to Node and cloud, and switched on purpose.' Close the credibility gap with production evidence, like a shipped side project. Name the objection before they do, and never apologize for your old stack.",
             "keyTakeaway": "Narrate an unbroken through-line plus a deliberate turn, close the gap with production evidence, and name the objection before they do."
         },
         {
@@ -502,7 +502,7 @@
                 "behavioral"
             ],
             "question": "How do you answer a culture-fit question versus a culture-add question like 'What would you bring to our culture?'",
-            "answer": "For culture fit, show with a story that their stated values already live in your history. For culture add, name a specific, positive difference: 'my years in regulated fintech left me with a documentation and audit habit your fast-moving teams may lack, and it survives client audits.' The senior move is to combine both: 'I fit your ownership culture, and I add client-communication lessons from two failed deliveries I will never repeat.' Don't pretend to be a perfect mirror, and don't list eccentricities as your add.",
+            "answer": "For culture fit, show with a story that their stated values already live in your history. For culture add, name one specific, positive difference, like 'my years in regulated fintech left me with an audit habit your fast-moving teams may lack'. The senior move is to combine both. Don't pretend to be a perfect mirror.",
             "keyTakeaway": "Prove fit with a story in their value vocabulary, name one concrete addition the team lacks, and fold the two together.",
             "diagram": {
                 "kind": "compare",
@@ -546,7 +546,7 @@
                 "behavioral"
             ],
             "question": "How do you handle an inappropriate or non-job-related interview question about age, marriage plans, or family?",
-            "answer": "In Dhaka interviews, questions about age, marriage or family usually come from clumsy small talk, not malice. Answer the legitimate concern underneath, decline the intrusive part, and stay warm: 'I keep personal and professional plans separate, but on commitment, my last three years show exactly one delivery gap, a parental emergency.' Or decline outright: 'I prefer not to discuss that, though I am happy to talk about the on-call rotation'. Never lecture, lie, or seethe silently. Note it as data about the employer's culture.",
+            "answer": "In Dhaka, these questions usually come from clumsy small talk, not malice. Answer the legitimate concern underneath, decline the intrusive part, and stay warm: 'I keep personal and professional plans separate, but on commitment, my record speaks for itself.' Or politely say you'd rather not discuss it. Never lecture or lie, and note it as data about their culture.",
             "keyTakeaway": "Redirect to the legitimate concern with a gentle boundary, decline pleasantly if pressed, and log it as culture data.",
             "diagram": {
                 "kind": "branch",
@@ -574,7 +574,7 @@
                 "communication"
             ],
             "question": "How do you negotiate beyond base salary when the offer is already near the top of the band?",
-            "answer": "When base is pinned near the band ceiling, negotiate the items HR can flex: signing bonus, a written salary review at six months with named criteria, probation terms, title, on-call compensation, learning budget, flexible core hours. Phrase it as collaboration: 'If base is fixed at one hundred seventy thousand, could we put a six-month review with written criteria into the offer letter?' Asks like that cost the company little unless you perform. And get any verbal promise in writing.",
+            "answer": "When base is pinned near the band ceiling, negotiate what HR can flex: a signing bonus, a written six-month salary review with named criteria, probation terms or title. Phrase it as collaboration, like 'could we put a six-month review into the offer letter?' Get any verbal promise in writing.",
             "keyTakeaway": "When base is capped, negotiate the flexible package items in value order, framed as collaboration and secured in writing.",
             "diagram": {
                 "kind": "sequence",
@@ -622,7 +622,7 @@
                 "behavioral"
             ],
             "question": "How should your answers change in a second-round interview with senior leadership or a country manager?",
-            "answer": "By the leadership round, your depth is already proven, so the interview tests judgment. Keep answers short and strategic, and land your stories on business outcomes: 'we cut checkout latency forty percent, which moved conversion two points for the client'. Leaders ask open, uncomfortable questions ('what would you change about our engineering organization') to test whether you think like an owner, so have an honest, tactful opinion ready. Ask questions at their altitude: where the Bangladesh office is heading, which client sectors are growing, what separates the engineers they promote.",
+            "answer": "By the leadership round your depth is already proven, so the interview tests judgment. Keep answers short and strategic, and land stories on business outcomes, like 'we cut checkout latency forty percent, which moved conversion for the client'. Have an honest, tactful opinion ready on what you'd change in their engineering organization, and ask questions at their altitude.",
             "keyTakeaway": "Shift from proving depth to showing judgment: strategic short answers, business outcomes, and questions at the leadership's altitude."
         },
         {
@@ -635,7 +635,7 @@
                 "process"
             ],
             "question": "How do you prepare for the reference-check stage once an offer is close?",
-            "answer": "Choose two or three referees who saw the work you claimed: a former manager, an on-call peer, ideally a client. Ask each for permission first, because a surprised referee reads as fabricated. Brief them by sending the job description, naming the strengths you emphasized, and warning them a call may come that week. Never list your current employer before the offer is confirmed. Offer alternatives instead: a recent former manager or an HR service letter. Every CV date must survive the check, and date mismatches are the quietest rejections.",
+            "answer": "Choose two or three referees who saw the work you claimed, like a former manager, an on-call peer, or a client. Ask each for permission first, because a surprised referee reads as fabricated, and brief them on the job and the strengths you emphasized. Don't list your current employer before the offer is confirmed. Every CV date must survive the check.",
             "keyTakeaway": "Get permission, brief referees on the claims to verify, keep dates consistent, and protect the current employer until an offer exists."
         },
         {
@@ -648,7 +648,7 @@
                 "behavioral"
             ],
             "question": "How do you respond to 'You seem overqualified for this role' or a hint that your expectations exceed the band?",
-            "answer": "Treat 'overqualified' as a flight-risk question and answer the worry: 'I understand the concern that I will leave when something bigger appears; the draw here is client variety and the lead trajectory.' Make your retention promise falsifiable: 'my aim is to grow into an architecture lead here within two years'. If the real message is that your expectations exceed the band, decide your floor beforehand and state it once, warmly. Never inflate your current salary, and never accept an offer you resent at signing.",
+            "answer": "Treat 'overqualified' as a flight-risk question and answer the worry directly: 'I understand the concern that I'll leave when something bigger appears, but the draw here is client variety and the lead trajectory.' Make the promise falsifiable, like growing into an architecture lead in two years. If expectations exceed the band, state your floor once.",
             "keyTakeaway": "Answer the flight-risk worry with specific, falsifiable commitment, know your floor in advance, and never accept an offer you resent."
         },
         {
@@ -661,7 +661,7 @@
                 "behavioral"
             ],
             "question": "How do you answer 'Tell me about a time you received harsh or difficult feedback'?",
-            "answer": "This question scores coachability. Your story needs real criticism that stung, a non-defensive reaction, and a change that stuck. For example, a client retrospective called my work correct but unreadable. My instinct was to defend the tests. Instead I asked for specifics, sat with their engineer, restructured the module, and then adopted a rule: a handover gets walked through with the future maintainers before merge. Close with: 'that client extended the contract'. Avoid the humblebrag ('I work too hard') and stories where the feedback was unfair.",
+            "answer": "This question scores coachability. Tell a story with real criticism that stung, a non-defensive reaction, and a change that stuck. For example, a client called my work correct but unreadable. I wanted to defend the tests, but I asked for specifics, restructured the module, and adopted a rule to walk maintainers through every handover before merge.",
             "keyTakeaway": "Show criticism that stung, a non-defensive ask for specifics, and a habit change that later improved the relationship."
         }
     ]

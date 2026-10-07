@@ -13,7 +13,7 @@
                 "fundamentals"
             ],
             "question": "Which application security risks do you design against by default?",
-            "answer": "The main risks are injection, broken authentication, session flaws, cross-site scripting, broken access control, and insecure direct object references. My defenses are parameterized queries, templated output, centralized authentication, and server-side authorization on every request. I also encrypt in transit and at rest and keep secrets out of the repo. Client-side validation is UX, not security.",
+            "answer": "I design against injection, broken auth and sessions, XSS, and broken access control. My defaults are parameterized queries, templated output, centralized authentication, and server-side authorization on every request. Client-side validation is UX, not security.",
             "keyTakeaway": "Parameterize queries, template output, centralize auth, authorize server-side, assume hostile input.",
             "diagram": {
                 "kind": "layers",
@@ -52,7 +52,7 @@
                 "fundamentals"
             ],
             "question": "Explain symmetric and asymmetric encryption and where each is used.",
-            "answer": "Symmetric uses one shared key, AES for example. It's fast, so it suits bulk data. Asymmetric uses a key pair: the public key encrypts, the private key decrypts. It solves key distribution and identity, as with TLS certificates and signatures, but it's slow. TLS combines both: asymmetric to authenticate and agree on a session key, symmetric for traffic. I use well-known protocols and never hand-roll ciphers.",
+            "answer": "Symmetric uses one shared key, like AES, and it's fast, so it handles bulk data. Asymmetric uses a key pair, which solves key distribution and identity but is slow. TLS uses both: asymmetric to authenticate and agree on a key, symmetric for traffic. I never hand-roll ciphers.",
             "keyTakeaway": "Asymmetric for identity and key exchange, symmetric for bulk data; use standard libraries.",
             "diagram": {
                 "kind": "compare",
@@ -102,7 +102,7 @@
                 "oauth"
             ],
             "question": "Distinguish authentication from authorization, and session tokens from OAuth.",
-            "answer": "Authentication is who you are. Authorization is what you may touch, and it gets enforced per resource. Server-side sessions keep state in a store behind an opaque cookie. JWTs carry signed claims, so there's no session lookup, but revocation needs short lifetimes plus refresh. OAuth and OIDC fit federated identity and machine-to-machine flows. Most breaches are authorization bugs, not broken login.",
+            "answer": "Authentication is who you are, and authorization is what you may touch, checked per request and resource. Sessions use an opaque cookie, while JWTs carry signed claims, so revocation needs short lifetimes plus refresh. Most breaches are authorization bugs, not broken login.",
             "keyTakeaway": "AuthN is identity, authZ is per-request per-resource checks; token systems need revocation design.",
             "diagram": {
                 "kind": "compare",
@@ -152,7 +152,7 @@
                 "argon2"
             ],
             "question": "How should passwords be stored, and why not SHA-256?",
-            "answer": "I store a salted hash from a slow function: bcrypt, scrypt, or Argon2. Never a fast digest like SHA-256 or MD5, because after a DB leak the attacker can try billions of guesses per second. A per-user salt defeats rainbow tables. I tune the work factor to the login latency budget and raise it as hardware improves. I also add rate limiting and breached-password checks.",
+            "answer": "I store a salted hash from a slow function like bcrypt, scrypt or Argon2. A fast digest like SHA-256 lets an attacker try billions of guesses per second after a leak. A per-user salt defeats rainbow tables, and I tune the work factor to the latency budget.",
             "keyTakeaway": "Slow salted hashes, Argon2 or bcrypt, unique salts, tuned work factor; never fast digests.",
             "code": {
                 "language": "typescript",
@@ -199,7 +199,7 @@
                 "key-management"
             ],
             "question": "How do you manage secrets like API keys and database credentials?",
-            "answer": "Secrets never live in source control, images, or CI logs. I load them from a secret store or KMS at runtime. Credentials are scoped least-privilege per environment, so a leaked dev key reads nothing in production. I rotate on a schedule and immediately on suspicion, and I audit access. Anything shipped to the browser is public.",
+            "answer": "Secrets never go in source control, images or CI logs. I inject them at runtime from a secret store, scoped per environment, so a leaked dev key reads nothing in production. I rotate and audit. Browser code is public.",
             "keyTakeaway": "Runtime injection from a managed store, least-privilege per environment, rotate, audit, nothing in the client.",
             "diagram": {
                 "kind": "layers",
@@ -233,7 +233,7 @@
                 "data-protection"
             ],
             "question": "What does encrypting data in transit versus at rest actually cover?",
-            "answer": "In transit, TLS stops interception and tampering between client, services, and databases, internal links included. At rest, encryption protects disks, backups, and snapshots from theft or leaks, typically with KMS keys. The gap is that at-rest encryption doesn't stop an attacker inside the running application. There, authorization and field-level encryption matter. I classify the data first, because the classification decides the layer for each field.",
+            "answer": "In transit, TLS stops interception and tampering, internal links included. At rest, encryption protects disks and backups from theft. It doesn't stop an attacker inside the running app, so there I rely on authorization and field-level encryption. I classify the data first to pick the layer.",
             "keyTakeaway": "TLS for the wire, at-rest for stolen disks, field-level plus authZ for in-app attackers.",
             "diagram": {
                 "kind": "branch",
@@ -257,7 +257,7 @@
                 "process"
             ],
             "question": "How do you threat model a new feature before building it?",
-            "answer": "I gather data flows, trust boundaries, and actors with the people who know the design. Then I walk each flow looking for spoofing, tampering, repudiation, disclosure, denial, and elevation. I write threats as concrete scenarios and rank them by impact and likelihood. For each one we decide to mitigate, accept, or transfer. Those turn into backlog items with owners, and I revisit the model when the design changes.",
+            "answer": "I map data flows, trust boundaries and actors with the people who know the design. Then I walk each flow for spoofing, tampering, disclosure, denial and elevation, and rank concrete threats by impact and likelihood. Mitigations become backlog items with owners.",
             "keyTakeaway": "Flows and trust boundaries, concrete threat scenarios, mitigations as backlog items, revisit on change.",
             "diagram": {
                 "kind": "flow",
@@ -296,7 +296,7 @@
                 "process"
             ],
             "question": "How do you run vulnerability assessment and handle a critical finding?",
-            "answer": "Continuously, not annually. That means dependency and container scanning in CI, static analysis on pull requests, external penetration tests before major releases, and a triage owner for each finding. I classify by exploitability and blast radius and set SLAs by severity: critical in days, high in weeks, exceptions time-boxed in writing. If a critical bug is being exploited, I mitigate first, keep details internal until the fix is deployed, then do the root cause. I track mean time to remediate.",
+            "answer": "Continuously, not annually: dependency and container scanning in CI, static analysis on pull requests, and external pen tests before major releases. I set SLAs by severity, critical in days and high in weeks. If a critical bug is being exploited, I mitigate first, keep details quiet until the fix ships, and track time to remediate.",
             "keyTakeaway": "Scan in CI, triage with severity SLAs, patch exploited bugs before disclosure, track remediation time.",
             "diagram": {
                 "kind": "branch",
@@ -321,7 +321,7 @@
                 "validation"
             ],
             "question": "Walk me through a JWT's structure and what a server must check before trusting one.",
-            "answer": "A JWT is a base64url header naming the algorithm, a payload of claims, and a signature. The payload is encoded, not encrypted. I verify the signature with a key my server chose and pin the allowed algorithms, because alg none and a public key reused as an HMAC secret have caused real breaches. Then I check exp, nbf, iss, and aud. Only after that do I read authorization from the claims. A valid token is authentic, not privileged.",
+            "answer": "A JWT is a base64url header, a payload of claims, and a signature. The payload is encoded, not encrypted. I verify the signature with a key my server chose and pin the allowed algorithms, since alg none attacks are real. Then I check exp, nbf, iss and aud. A valid token is authentic, not privileged.",
             "keyTakeaway": "Verify the signature with pinned algorithms and your own key, then exp, nbf, iss, aud, before trusting claims.",
             "diagram": {
                 "kind": "flow",
@@ -360,7 +360,7 @@
                 "http-only"
             ],
             "question": "What does solid session management look like, and which cookie flags actually matter?",
-            "answer": "Session security is mostly cookie hygiene. The identifier is a long random value minted on the server. I set HttpOnly so scripts can't read it, Secure so it never rides plain HTTP, and SameSite to Lax or Strict. I rotate the id on login against session fixation and keep both an idle timeout and an absolute expiry. The identifier and metadata are stored server-side, so revocation just deletes a row. I re-authenticate for email or password changes.",
+            "answer": "Session security is mostly cookie hygiene. The id is a long random server-minted value, with HttpOnly so scripts can't read it, Secure, and SameSite Lax or Strict. I rotate it on login against fixation, keep idle and absolute timeouts, and store it server-side so revocation is a delete.",
             "keyTakeaway": "HttpOnly, Secure, SameSite cookies, random ids rotated at login, idle and absolute timeouts, re-auth for sensitive actions.",
             "code": {
                 "language": "typescript",
@@ -402,7 +402,7 @@
                 "samesite"
             ],
             "question": "How do you defend against CSRF in depth, and is the classic token still necessary?",
-            "answer": "CSRF is the browser attaching cookies to a cross-site post. SameSite Lax or Strict kills most of it. On state-changing requests I also require an unguessable token: the synchronizer pattern bound to the session, or a double-submit cookie for APIs. A custom header like X-Requested-With helps, since plain forms can't set it. An Origin check is an extra signal, not the sole defense. I never change state on GET, and bearer tokens in headers sidestep CSRF.",
+            "answer": "CSRF is the browser attaching cookies to a cross-site request. SameSite Lax or Strict kills most of it. On state-changing requests I also require an unguessable token bound to the session, and I never change state on GET. Origin checks are an extra signal, not the sole defense.",
             "keyTakeaway": "SameSite cookies first, unguessable session-bound tokens on state-changing requests, never CSRF-able GETs.",
             "diagram": {
                 "kind": "branch",
@@ -427,7 +427,7 @@
                 "parameterization"
             ],
             "question": "Does using an ORM make SQL injection impossible, or where do blind spots remain?",
-            "answer": "The ORM parameterizes values by default. The raw-query escape hatch builds strings again, and that causes most injections. Identifiers and keywords, like table names, column names, and ORDER BY direction, can't be parameterized, so I allowlist them against a fixed set and never interpolate request data. Other gaps are dynamic filters, search paths, and second-order injection, where a stored value gets pasted into a later query. I have CI grep for raw-query calls so someone reviews them.",
+            "answer": "The ORM parameterizes values, but the raw-query escape hatch builds strings again, and that causes most injections. Identifiers like column names and ORDER BY direction can't be parameterized, so I allowlist them. Second-order injection is another gap, where a stored value is pasted into a later query. CI flags raw-query calls for review.",
             "keyTakeaway": "ORMs parameterize values only; allowlist identifiers and ORDER BY, treat raw queries as reviewed exceptions.",
             "code": {
                 "language": "typescript",
@@ -458,7 +458,7 @@
                 "hsts"
             ],
             "question": "Which security response headers do you set on a production web app, and what does each one buy?",
-            "answer": "Content-Security-Policy with script-src limited to our own origins or nonces is the only header that meaningfully blunts XSS. Strict-Transport-Security with a long max-age, ideally preload, stops downgrade. frame-ancestors, or X-Frame-Options as the legacy fallback, stops clickjacking. X-Content-Type-Options nosniff stops MIME guessing, and Referrer-Policy limits URL leaks. Permissions Policy disables unused camera and geolocation. I test headers in CI because they regress silently.",
+            "answer": "Content-Security-Policy with script-src limited to our own origins or nonces is the one header that really blunts XSS. Strict-Transport-Security with a long max-age stops downgrade, frame-ancestors stops clickjacking, and nosniff stops MIME guessing. I assert them all in CI because headers regress silently.",
             "keyTakeaway": "Set CSP, HSTS, frame-ancestors, nosniff, Referrer-Policy everywhere, and assert them in CI.",
             "diagram": {
                 "kind": "layers",
@@ -497,7 +497,7 @@
                 "otp"
             ],
             "question": "How do you rate limit login and one-time-code endpoints without locking out legitimate users?",
-            "answer": "I limit per identity, not just IP. Account, IP, and device fingerprint each get their own budget, since attackers rotate addresses and victims share NATs. For login, five failures then exponential backoff or CAPTCHA. For OTP the cap is tighter, because a six-digit code must not survive a hundred tries, and it expires fast with its own resend budget. Wrong password and unknown user get the same error and timing. A counter spike means credential stuffing, so it's an incident signal.",
+            "answer": "I limit per identity, not just IP: account, IP and device each get a budget, since attackers rotate addresses and victims share NATs. For login, five failures then backoff or CAPTCHA. OTP caps are tighter and codes expire fast. Wrong password and unknown user return the same error, so nobody can enumerate accounts.",
             "keyTakeaway": "Budget per account, IP, and device, step up on excess with backoff or CAPTCHA, keep error responses identical to avoid enumeration.",
             "code": {
                 "language": "yaml",
@@ -535,7 +535,7 @@
                 "browser"
             ],
             "question": "What goes wrong when CORS is configured loosely, and how do you set it correctly?",
-            "answer": "CORS is the browser's gate on reading cross-origin responses. The classic disaster is reflecting the request Origin in Access-Control-Allow-Origin while allowing credentials, which turns any hostile site into the logged-in user. I use a fixed allowlist with exact match, and credentials only for first-party origins. Wildcards go only on public, credential-free endpoints. I reject the null origin, since sandboxed frames present it. Config is per environment, because a loose policy usually ships from local debugging.",
+            "answer": "The classic disaster is reflecting the request Origin in Access-Control-Allow-Origin while allowing credentials, which turns any hostile site into the logged-in user. I use a fixed allowlist with exact match, credentials only for first-party origins, and wildcards only on public credential-free endpoints. I reject the null origin.",
             "keyTakeaway": "Exact origin allowlist, never reflect-and-allow-credentials, wildcards only on public credential-free endpoints.",
             "diagram": {
                 "kind": "branch",
@@ -560,7 +560,7 @@
                 "headers"
             ],
             "question": "What is clickjacking, and how do you shut it down?",
-            "answer": "Clickjacking loads your site in a transparent iframe on the attacker's page, so the victim clicks your confirm, transfer, or delete button. The fix is to refuse framing: CSP frame-ancestors none, or a named allowlist for pages that must embed you, such as payment providers. I add X-Frame-Options DENY or SAMEORIGIN for old browsers. Sensitive one-click actions need confirmation or re-authentication.",
+            "answer": "Clickjacking loads your site in a transparent iframe on the attacker's page, so the victim clicks your delete or transfer button. The fix is to refuse framing with CSP frame-ancestors, plus X-Frame-Options for old browsers. Sensitive one-click actions need confirmation.",
             "keyTakeaway": "Clickjacking is framing; refuse it with frame-ancestors plus X-Frame-Options, and confirm dangerous one-click actions.",
             "diagram": {
                 "kind": "flow",
@@ -594,7 +594,7 @@
                 "redirects"
             ],
             "question": "Why is an open redirect a security issue, and how should redirect parameters be handled?",
-            "answer": "An open redirect accepts a return URL from the request and hops there. The trusted domain lends credibility to a phishing link. It also leaks OAuth codes and tokens through a bent redirect_uri. I validate targets against a fixed host allowlist, or accept relative paths only, rejecting any scheme or authority, including the scheme-relative //evil.com. I prefer a fixed landing page over user-controlled targets.",
+            "answer": "An open redirect takes a return URL from the request and hops there, so your trusted domain lends credibility to a phishing link and can leak OAuth codes. I validate against a fixed host allowlist, or accept relative paths only, rejecting any scheme or authority, including //evil.com.",
             "keyTakeaway": "Allowlist redirect hosts or accept relative paths only; open redirects launder phishing and OAuth codes.",
             "diagram": {
                 "kind": "branch",
@@ -622,7 +622,7 @@
                 "flows"
             ],
             "question": "Walk me through the OAuth 2.1 authorization code flow with PKCE, and what exactly kills code interception?",
-            "answer": "The client generates a random code_verifier and sends a hashed code_challenge with the authorize request. The identity provider authenticates the user and returns a one-time authorization code. The client exchanges that code with the original verifier at the token endpoint, and the provider issues tokens only when the verifier hashes to the challenge. An intercepted code is worthless without the verifier, which never left the client. OAuth 2.1 makes PKCE mandatory and drops the implicit and password grants. The state parameter protects the flow from CSRF.",
+            "answer": "The client generates a random code_verifier and sends a hashed code_challenge with the authorize request. After login, it exchanges the one-time code together with the original verifier, and the provider issues tokens only if the verifier hashes to the challenge. So an intercepted code is worthless. State protects the flow from CSRF.",
             "keyTakeaway": "PKCE binds the code to a verifier that never left the client, killing interception; state carries the flow's CSRF protection.",
             "diagram": {
                 "kind": "sequence",
@@ -675,7 +675,7 @@
                 "token-theft"
             ],
             "question": "How does refresh token rotation work, and what does it buy you against token theft?",
-            "answer": "Each use of a refresh token marks it used and issues a new one. Reuse of a used token proves theft, so the provider revokes the entire family and forces re-login, which makes a silent compromise loud. I bind tokens to client or device where possible, keep access tokens short-lived (minutes), and store refresh tokens server-side, hashed. Rotation without reuse detection is theater. Revoke-on-reuse is the control.",
+            "answer": "Each use of a refresh token marks it used and issues a new one. If a used token shows up again, that proves theft, so the provider revokes the whole family and forces re-login. I keep access tokens short-lived and store refresh tokens hashed. Rotation without reuse detection is theater.",
             "keyTakeaway": "Rotate refresh tokens on every use and revoke the whole family the moment a used one reappears.",
             "diagram": {
                 "kind": "sequence",
@@ -718,7 +718,7 @@
                 "logout"
             ],
             "question": "How do you revoke a JWT, given that statelessness is its whole appeal?",
-            "answer": "A signed token is valid until expiry whatever happens to the account, so I design revocation early. Access tokens live five to fifteen minutes, and logout kills the refresh-token family at the provider. For immediate effect, I ban by jti in a short-TTL denylist checked on sensitive routes only, since checking every request rebuilds the session store. Or I keep a per-user token-generation claim with a version, so a password change invalidates older tokens. I match the mechanism to the threat.",
+            "answer": "A signed token is valid until expiry whatever happens to the account, so I design revocation early. Access tokens live five to fifteen minutes, and logout kills the refresh-token family. For an instant kill, I use a short-TTL jti denylist on sensitive routes only, or a per-user token-generation claim that a password change bumps.",
             "keyTakeaway": "Short access lifetimes, refresh-family revocation at logout, jti denylists or token-generation bumps for an instant kill.",
             "diagram": {
                 "kind": "layers",
@@ -752,7 +752,7 @@
                 "metadata"
             ],
             "question": "How do you stop server-side request forgery when the app must fetch user-supplied URLs?",
-            "answer": "I treat every user-supplied URL as an attempt to reach the internal network. SSRF turns the app's privileged position against it, reaching cloud metadata endpoints and internal admin panels. So I never fetch the raw URL. I allow only https, resolve the hostname myself, and reject private, loopback, link-local, and metadata addresses (169.254.169.254). I re-resolve at connection time against DNS rebinding, or use an egress proxy enforcing the same rules. Redirects are disabled or re-validated at every hop, and the fetcher's credentials are scoped narrowly.",
+            "answer": "I treat every user-supplied URL as an attempt to reach the internal network, like cloud metadata endpoints. I allow only https, resolve the hostname myself, and reject private, loopback and link-local addresses such as 169.254.169.254. I re-check at connection time against DNS rebinding, and re-validate every redirect hop.",
             "keyTakeaway": "Allowlist scheme and resolved IPs, defeat DNS rebinding with re-check or egress proxy, re-validate every redirect hop.",
             "diagram": {
                 "kind": "flow",
@@ -790,7 +790,7 @@
                 "tokens"
             ],
             "question": "People constantly mix up XSS and CSRF; can you untangle what each attacks and why CSRF tokens fail against XSS?",
-            "answer": "CSRF forges requests with the victim's credentials but never sees the response. XSS runs attacker script inside your origin, so it reads cookies and the DOM and calls your API as the user. The defenses don't overlap. A CSRF token works because the attacker can't read it cross-origin, but injected script reads it from the DOM, so XSS bypasses it. I stop XSS with output encoding and nonce-based CSP, and keep CSRF tokens and SameSite for forgeries.",
+            "answer": "CSRF forges requests with the victim's credentials but never sees the response. XSS runs attacker script inside your origin, so it can read the DOM and call your API as the user. A CSRF token fails against XSS because injected script simply reads it. I stop XSS with output encoding and nonce-based CSP.",
             "keyTakeaway": "CSRF forges blind cross-site requests; XSS reads everything in-origin, so a CSRF token is bypassed once XSS exists.",
             "diagram": {
                 "kind": "compare",
@@ -840,7 +840,7 @@
                 "xss"
             ],
             "question": "How do CSP nonces make a strict Content-Security-Policy workable when the app needs inline scripts?",
-            "answer": "A nonce policy replaces unsafe-inline with script-src nonce-random. The server mints a fresh random value per response and stamps each legitimate inline script with it. The browser runs only scripts carrying that value, so injected XSS script tags fail. It's the strongest practical XSS mitigation. The nonce must be unique per response, never cached, never shared across users, because reuse permanently blesses what it allowed. Caching HTML breaks it, and static scripts go in external files.",
+            "answer": "A nonce policy replaces unsafe-inline with script-src nonce-random. The server mints a fresh random value per response and stamps each legitimate inline script, so injected script tags don't run. The nonce must be unique per response and never cached or shared, because reuse permanently blesses what it allowed.",
             "keyTakeaway": "Fresh random nonce per response, stamped on inline scripts, blocks injected script even when XSS lands.",
             "diagram": {
                 "kind": "flow",
@@ -874,7 +874,7 @@
                 "authorization"
             ],
             "question": "How do you systematically prevent IDOR rather than patching it one endpoint at a time?",
-            "answer": "IDOR is when the server fetches an object by an attacker-supplied id and never asks whether the caller may see it. I fix it with one authorization seam, not per-endpoint discipline. Every object-bearing request goes through one policy layer that loads the target and checks ownership or role against the authenticated caller. A lint rule blocks direct fetches. I check the loaded object, not the id, and return 404 rather than 403 so probing can't enumerate. I test every object endpoint with another tenant's ids.",
+            "answer": "IDOR is the server fetching an object by an attacker-supplied id without asking whether the caller may see it. I fix it with one authorization seam: every object request goes through a policy layer that checks the loaded object against the caller. I return 404 rather than 403, and test every endpoint with another tenant's ids.",
             "keyTakeaway": "One authorization seam checks the caller against the loaded object, 404 on mismatch, mechanical cross-tenant tests.",
             "diagram": {
                 "kind": "branch",
@@ -899,7 +899,7 @@
                 "compliance"
             ],
             "question": "Which events belong in a security audit log, and how does it differ from application logging?",
-            "answer": "I log what forensics needs: authentication successes and failures, permission denials, role changes, password and MFA changes, bulk exports of sensitive data, admin actions, and configuration writes. An audit trail differs from application logs. It's structured, with a trusted timestamp, actor, action, target, source, and outcome. It lives in append-only or WORM storage, so an attacker with app privileges can't edit their tracks, and we retain it for years, not weeks. I never log secrets, tokens, passwords, or full card numbers. I alert on repeated denials, impossible travel, and mass export.",
+            "answer": "I log what forensics needs: logins and failures, permission denials, role and password changes, bulk exports, and admin actions. An audit log is structured, with actor, action, target and outcome, and lives in append-only storage so an attacker can't edit their tracks. I never log secrets, and I alert on repeated denials and mass export.",
             "keyTakeaway": "Audit logs are append-only, structured, secret-free records of security decisions, with alerts on high-signal events.",
             "diagram": {
                 "kind": "compare",
@@ -956,7 +956,7 @@
                 "key-management"
             ],
             "question": "How do you rotate signing and encryption keys without breaking live traffic?",
-            "answer": "I design rotation as a lifecycle. I keep a versioned key set, verify against every active key, and sign only with the newest. Keys are published via a JWKS endpoint or KMS so consumers update without a deploy. The overlap comes from data time-to-live: outstanding tokens and cached ciphertext must age out before the old key leaves the verification set, so token lifetime and rotation cadence are one decision. I never overwrite a key in place. On suspected compromise, I publish a new key at once and force re-login or re-encryption. And I rehearse rotation.",
+            "answer": "I keep a versioned key set, sign only with the newest, and verify against every active key. Keys are published via JWKS or KMS so consumers update without a deploy. The old key stays until outstanding tokens and cached ciphertext age out, so token lifetime and rotation cadence are one decision. I never overwrite in place, and I rehearse.",
             "keyTakeaway": "Versioned key sets, verify with old while signing with new, overlap past token lifetime, rehearse, never rotate in place.",
             "diagram": {
                 "kind": "flow",

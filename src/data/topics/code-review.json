@@ -12,7 +12,7 @@
                 "goals"
             ],
             "question": "What is the purpose of code review beyond catching bugs?",
-            "answer": "Bugs caught are the visible payoff. The durable value is knowledge spread, so more than one person understands each subsystem, and standards taught through concrete examples instead of a wiki page nobody reads. Review is also the cheapest architecture checkpoint, since drift shows in a diff long before an incident. It trains judgment both ways: authors learn the reviewers' heuristics, and reviewers pick up patterns from other code. If reviews only find typos, the team reviews the wrong things or the tests carry too little weight.",
+            "answer": "Catching bugs is the visible payoff, but the durable value is knowledge spread, so more than one person understands each subsystem. Review is also the cheapest architecture checkpoint, since drift shows in a diff long before an incident. If reviews only find typos, we're reviewing the wrong things.",
             "keyTakeaway": "Review spreads knowledge, enforces design, and catches bugs, in that order of leverage.",
             "diagram": {
                 "kind": "layers",
@@ -45,7 +45,7 @@
                 "process"
             ],
             "question": "What is on your personal checklist when you review a pull request?",
-            "answer": "I read the diff description first and ask whether the stated intent matches the code. Most review mistakes come from reviewing syntax, not intent. Then correctness, edge cases, test coverage, and naming a newcomer can follow in six months. Then structure: right layer, duplication, any widened contract other teams rely on. Style is the tools' job, not the human review budget.",
+            "answer": "I read the description first and check that the intent matches the code. Then correctness, edge cases, tests and naming a newcomer can follow. Then structure: right layer, duplication, any contract other teams rely on. Style is the tools' job.",
             "keyTakeaway": "Intent, correctness, tests, structure, naming; leave style to the tools."
         },
         {
@@ -57,7 +57,7 @@
                 "communication"
             ],
             "question": "How do you give hard feedback in a review without making it personal?",
-            "answer": "I attach comments to code and consequences, not the author: this loop retries forever when the broker is down, here is what I would do, not you always do this. I ask before giving verdicts, like did you consider X?, since the author may know what the diff doesn't show. I mark must-fix versus preference. And I praise clever code, because criticism-only reviews teach people to hide work.",
+            "answer": "I comment on the code and its consequences, not the author: this loop retries forever when the broker is down. I ask before giving verdicts, since the author may know what the diff doesn't show. I mark must-fix versus preference, and I praise good work.",
             "keyTakeaway": "Critique the code and consequences, question before judging, label blocking versus preference.",
             "diagram": {
                 "kind": "branch",
@@ -82,7 +82,7 @@
                 "standards"
             ],
             "question": "How do you set standards for pull request size and review turnaround?",
-            "answer": "Big pull requests get skimmed. My standard is small, single-purpose changes, using trunk-based flow and stacked PRs. The first review should happen within one business day, because slow reviews push people onto long branches and then bigger next PRs. I measure review latency and merge size as team trends, never as individual scores. When a large PR is unavoidable, we hold a walkthrough call first.",
+            "answer": "Big pull requests get skimmed, so I want small, single-purpose changes and a first review within one business day. Slow reviews push people onto long branches and bigger PRs. I track latency and size as team trends, never individual scores.",
             "keyTakeaway": "Small PRs plus one-day first review; measure trends, and pre-walk through the unavoidable monsters.",
             "diagram": {
                 "kind": "compare",
@@ -132,7 +132,7 @@
                 "enforcement"
             ],
             "question": "How do you enforce standards without turning reviews into a rule fight?",
-            "answer": "I automate every rule a machine can execute: formatters, linters, type checks, dependency policies, pipeline gates. Machines enforce those perfectly and reviewers get tired. Humans should review design fit, failure handling, and whether the tests are honest. When review surfaces a new rule, I codify it as a lint rule or a checklist item. A manual rule has to earn its place through recurring incidents, not one disagreement.",
+            "answer": "I automate every rule a machine can run: formatters, linters, type checks and pipeline gates. Humans review design fit, failure handling and whether the tests are honest. When review surfaces a new rule, I turn it into a lint rule. A manual rule has to earn its place through recurring incidents.",
             "keyTakeaway": "Automate every enforceable rule; keep human review for judgment, and codify new rules on the spot.",
             "diagram": {
                 "kind": "layers",
@@ -165,7 +165,7 @@
                 "behavioral"
             ],
             "question": "You and another senior disagree about a design inside a pull request. How is it resolved?",
-            "answer": "I move it into a short design discussion. PR threads squash trade-offs into yes-or-no replies. I write both positions down as options and judge them against criteria: delivery risk, operability, and reversibility. The disagreement is usually about weights, not facts. Then I name a decider, either the area owner or a documented escalation path, and record the decision with a trigger for revisiting it. I never let whoever merges first win.",
+            "answer": "I move it out of the PR thread into a short design discussion. I write both positions down as options and judge them on delivery risk, operability and reversibility. Then a named decider, the area owner or an escalation path, makes the call, and I record it. I never let whoever merges first win.",
             "keyTakeaway": "Promote the fight to a design decision with criteria and a decider; never merge-race a disagreement.",
             "diagram": {
                 "kind": "flow",
@@ -203,7 +203,7 @@
                 "quality"
             ],
             "question": "How do you know your review culture is working?",
-            "answer": "I watch defect flow and knowledge spread, not review counts. Warning signs are escaped defects a review should have caught, repeated mistakes, and PRs that only one person can review. Healthy signs are comments shifting from correctness to design, juniors reviewing seniors, and post-mortems that rarely find an obvious flaw someone approved. I also ask whether authors feel helped or policed.",
+            "answer": "I watch defect flow and knowledge spread, not review counts. Warning signs are escaped defects a review should have caught and PRs only one person can review. Healthy signs are comments shifting from bugs to design. I also ask whether authors feel helped or policed.",
             "keyTakeaway": "Track escaped defects and single-reviewer risk; the comments should drift from bugs to design."
         },
         {
@@ -215,7 +215,7 @@
                 "prioritization"
             ],
             "question": "How do you keep code reviews meaningful when the team is shipping under a hard deadline?",
-            "answer": "A deadline changes the scope of review, not the honesty of it. I ship a thinner slice instead of doing a shallower review, and I make the trade visible. For urgent changes I rank by risk: correctness first, then blast radius, then data or security implications, then cosmetic issues. Structural comments and missing tests go into a follow-up ticket due within a day or two, because cleanup promises evaporate. I refuse the rubber stamp, since a missed defect costs more than the delay. If the timeline can't absorb a review, leadership makes that call explicitly.",
+            "answer": "A deadline changes the scope of review, not its honesty. I ship a thinner slice instead of a shallower review. For urgent changes I rank by risk: correctness first, then blast radius, then data or security, then cosmetics. Structural comments go into a follow-up ticket due within a day or two. I refuse the rubber stamp, because a missed defect costs more than the delay.",
             "keyTakeaway": "Ship a smaller diff instead of a shallower review, and give urgent merges a tracked follow-up pass.",
             "diagram": {
                 "kind": "flow",
@@ -250,7 +250,7 @@
                 "trust"
             ],
             "question": "How do you keep reviews from drowning authors in nitpicks while still catching what actually matters?",
-            "answer": "Every comment spends the author's attention. My test is whether I'd roll back the merge over it. If not, I mark it as a suggestion. I keep blocking comments rare, because otherwise authors dismiss all of them and the real must-fix gets lost. Repeated nits become tooling: the third missing null check becomes a lint rule, not a fourth comment. Sometimes saying nothing beats a round trip. The payoff is that when this reviewer blocks, it matters.",
+            "answer": "Every comment spends the author's attention, so my test is whether I'd roll back the merge over it. If not, it's a suggestion. I keep blocking comments rare, otherwise authors dismiss them all. Repeated nits become tooling: the third missing null check becomes a lint rule, not a fourth comment.",
             "keyTakeaway": "A blocking comment must carry roll-back severity; repeated nits graduate into tooling, not more comments.",
             "diagram": {
                 "kind": "branch",
@@ -277,7 +277,7 @@
                 "communication"
             ],
             "question": "What do you expect to see in a pull request description, and what does not belong there?",
-            "answer": "The description lets the reviewer check the diff against the intent. I want what changed and why, how the behavior was verified, and the risks: a migration that runs, a flag whose default moved, a deploy-order dependency. Add screenshots for visual changes, and call out anything that touches another team's surface. I skip abandoned attempts and pasted ticket text. My test is whether someone could understand this diff from the description alone in six months.",
+            "answer": "I want what changed and why, how it was verified, and the risks, like a migration that runs or a flag whose default moved. Screenshots help for visual changes. I skip abandoned attempts and pasted ticket text. My test is whether someone could understand this diff from the description alone in six months.",
             "keyTakeaway": "A description carries what, why, how it was verified, and risks; narrative history belongs in commits and docs."
         },
         {
@@ -289,7 +289,7 @@
                 "assertions"
             ],
             "question": "What do you look for when you review the tests in a pull request specifically?",
-            "answer": "I read the tests before the implementation, since they're the spec the author wrote. First, honesty: would any of them fail if the feature broke, or is there so much mocking that the test only verifies the mock? Second, coverage: edge cases and error paths, with assertions specific enough to catch a regression. Third, maintainability: brittle selectors, sleeps, fixture soup. I also watch for tests bent until they pass, like an expectation loosened to match buggy output. That means the author is guessing.",
+            "answer": "I read the tests before the implementation, since they're the spec. First, honesty: would any fail if the feature broke, or is it so mocked it only verifies the mock? Second, edge cases and error paths, with specific assertions. Third, brittleness like sleeps. I also watch for tests bent to pass, like an expectation loosened to match buggy output.",
             "keyTakeaway": "Read the tests first: they must fail when the feature breaks, cover error paths, and never be bent to pass.",
             "code": {
                 "language": "typescript",
@@ -305,7 +305,7 @@
                 "habits"
             ],
             "question": "What is your own routine before you ask someone to review your pull request?",
-            "answer": "I review my own diff first, in the review UI, top to bottom the way a reviewer will. That clears out avoidable debris: debug lines, half-finished renames, unneeded file changes. I write the description before the final read-through, since explaining the change exposes gaps. I run the tests from clean, get CI green before pinging anyone, and annotate the non-obvious parts inline. I pick the reviewer who owns the risky area, not whoever approves fastest, and I never ping everyone at once.",
+            "answer": "I review my own diff first, top to bottom in the review UI, which clears out debug lines and half-finished renames. I write the description before the final read, since explaining exposes gaps. CI is green before I ping anyone. I pick the reviewer who owns the risky area, not whoever approves fastest.",
             "keyTakeaway": "Read your own diff as a reviewer would, annotate the non-obvious, and route to the owner, not the fastest approver.",
             "diagram": {
                 "kind": "flow",
@@ -336,7 +336,7 @@
                 "convergence"
             ],
             "question": "A review has bounced back and forth five times with no convergence. What do you do?",
-            "answer": "Five rounds means the medium has failed. I stop the line comments and get on a call with the diff shared, because a shared cursor settles in two minutes what comments drag across three days. Before resubmitting, I address every point from every round in one push and reply to each, so the reviewer reviews a delta. Then I ask why the loop happened. If standards surfaced one per round, I write the hidden expectations down. If the goals differed, I name a decider.",
+            "answer": "Five rounds means the medium has failed. I stop the line comments and get on a call with the diff shared, because that settles in two minutes what comments drag across three days. Then I address every point in one push. Afterwards I ask why it happened. If standards surfaced one per round, I write them down.",
             "keyTakeaway": "After several stale rounds, walk the diff together and converge in one consolidated push; write down any newly surfaced standard.",
             "diagram": {
                 "kind": "sequence",
@@ -383,7 +383,7 @@
                 "coaching"
             ],
             "question": "How do you use code review to bring a junior engineer up without becoming their bottleneck?",
-            "answer": "Review is a team's highest-frequency coaching moment. Early on, my comments explain instead of judge: the why, an example, what good looks like. A verdict without a reason teaches compliance, not judgment. Then I taper off. Verdicts become questions, questions become silence on the parts they own, and my attention shifts from syntax to design. I sit with them for their first reviews of others' code, since giving a review is about conversation and tone. And I never rubber-stamp juniors, because they learn that quality is negotiable.",
+            "answer": "Review is a team's highest-frequency coaching moment. Early on my comments explain instead of judge: the why, an example, what good looks like, because a verdict without a reason teaches compliance, not judgment. Then I taper off, so verdicts become questions and my attention shifts from syntax to design. I never rubber-stamp their work.",
             "keyTakeaway": "Coach with explained comments, taper guidance as judgment grows, and pair on juniors' first reviews of others."
         },
         {
@@ -395,7 +395,7 @@
                 "authorization"
             ],
             "question": "How does your review change when a pull request touches security-sensitive code?",
-            "answer": "Security review is about tracing attacker-controlled data. I follow untrusted input from entry to every sink: query, shell call, redirect, template. I validate or parameterize at the boundary, not mid-path. I verify authorization at each layer: endpoint, service, row, because the bugs usually live below the careful-looking controller. I look for committed secrets, tokens in logs, and reachable debug endpoints. A new dependency, supply chain included, gets treated as a threat model. I require a test where an unauthenticated request gets 403, and high-stakes changes get a second, security-minded reviewer.",
+            "answer": "Security review is tracing attacker-controlled data. I follow untrusted input from entry to every sink, like a query, shell call or redirect, and validate or parameterize at the boundary. I check authorization at each layer, because bugs usually live below the careful-looking controller. I want a test showing an unauthenticated request gets 403, and a second reviewer on high-stakes changes.",
             "keyTakeaway": "Trace untrusted input to every sink, check authorization per layer, and require tests that prove the check.",
             "diagram": {
                 "kind": "flow",
@@ -433,7 +433,7 @@
                 "process"
             ],
             "question": "Production is down and someone wants to push a fix straight to main. How should emergency reviews work?",
-            "answer": "An incident suspends ceremony, not accountability. The fix can merge before review, but the bypass is loud: a hotfix tag, a note in the incident channel, and a named revert plan. During the fire, review narrows to blast radius: what else calls this path, does rollback work, is customer data touched. After the incident, the diff gets a real review within days, and the debt lands as tickets, not folklore. I write the emergency path down in advance: who may invoke it and who must be told. An improvised bypass becomes the default process.",
+            "answer": "An incident suspends ceremony, not accountability. The fix can merge before review, but the bypass is loud: a hotfix tag, a note in the incident channel and a named revert plan. During the fire, review narrows to blast radius and rollback. Afterwards the diff gets a real review within days. I write the emergency path down in advance.",
             "keyTakeaway": "Merge first only during an active incident, with a visible bypass and a full review once the fire is out.",
             "diagram": {
                 "kind": "branch",
@@ -458,7 +458,7 @@
                 "strategy"
             ],
             "question": "How do you review a pull request in a subsystem you know almost nothing about?",
-            "answer": "I say up front in the review that I'm unfamiliar with the area. Faking domain confidence gives the author false assurance. Labeled novice questions find real bugs, since outsiders ask what insiders stopped asking. I review what transfers: does the diff do what the description claims, are failure modes handled, does the change follow the surrounding patterns. I trace one path end to end deeply instead of skimming everything, and I read the tests as the author's local spec. For high-stakes changes I add the domain owner as a second reviewer: mine covers structure, theirs covers truth. Unfamiliarity never lowers the standard.",
+            "answer": "I say up front that I'm unfamiliar with the area, because faking confidence gives the author false assurance. Outsider questions often find real bugs. I review what transfers: does the diff match its description, are failures handled, does it follow surrounding patterns. For high-stakes changes I add the domain owner. Mine covers structure, theirs covers truth.",
             "keyTakeaway": "Declare your unfamiliarity, review what transfers, and recruit a domain owner for high-stakes calls."
         },
         {
@@ -470,7 +470,7 @@
                 "limitations"
             ],
             "question": "What is your honest take on AI-assisted code review tools, and how do you slot them into the process?",
-            "answer": "AI reviewers are a tireless first pass, never an authority. They're good at the mechanical layer: unhandled null paths, missing validation, leaked secrets, stale comments. They fail at judgment. They don't know the product, the roadmap, or why a given hack exists, and they state hallucinated criticisms as confidently as real ones. So the bot review runs on every PR and is non-blocking by default. Humans own intent, design, and test honesty. We tune noisy rules out loud. A bot approval means nothing, and accountability stays with the human who merges.",
+            "answer": "AI reviewers are a tireless first pass, never an authority. They're good at the mechanical layer, like null paths, missing validation and leaked secrets, but they don't know the product, and they state hallucinated criticisms as confidently as real ones. So the bot runs on every PR and is non-blocking. Humans own intent and design, and accountability stays with whoever merges.",
             "keyTakeaway": "AI reviewers are a tireless non-blocking first pass; judgment and merge accountability stay with humans.",
             "diagram": {
                 "kind": "compare",
@@ -520,7 +520,7 @@
                 "sla"
             ],
             "question": "How do you keep review turnaround sane when authors and reviewers sit in different time zones?",
-            "answer": "Follow-the-sun review is routing, not heroics. An ownership map guarantees every subsystem a qualified reviewer who's awake within a few hours of any author. If I'm reviewing a blocking PR, I do it as the last task of my day. The artifacts carry the load: descriptions complete enough to work with the author asleep, comments written as decisions with reasons, and named reviewers instead of channel blasts. Escalation is automatic and impersonal: no first review within one business day routes to the team channel, and two days routes to leads. I refuse the silent forty-eight-hour diff, because latency pushes teams onto long-lived branches.",
+            "answer": "It's routing, not heroics. An ownership map guarantees every subsystem a qualified reviewer who's awake within a few hours of any author. Descriptions are complete enough to work with the author asleep, and comments are written as decisions with reasons. Escalation is automatic: no first review in a business day goes to the team channel, and two days goes to leads.",
             "keyTakeaway": "Follow-the-sun coverage, self-sufficient descriptions, and automatic escalation beat any single-region turnaround promise.",
             "diagram": {
                 "kind": "sequence",
@@ -563,7 +563,7 @@
                 "process"
             ],
             "question": "When do you skip the pull request cycle and pair on the code instead?",
-            "answer": "I skip the PR cycle when the value of the review is deep knowledge transfer, which PRs deliver poorly. That means exploratory spikes where most of the code gets discarded, a subsystem with exactly one maintainer, sensitive work like credential handling or live data migrations, and any review that has looped three times without converging. Pairing replaces the conversation, never the verification: we still write tests, record the design decision, and merge through the same pipeline gates. I keep a bias toward review for ordinary changes, since its async record keeps a team reviewable.",
+            "answer": "I skip the PR cycle when the value is deep knowledge transfer, which PRs deliver poorly: exploratory spikes where most code gets thrown away, a subsystem with one maintainer, sensitive work like credential handling, and reviews that looped three times. Pairing replaces the conversation, never the verification. We still write tests and use the same pipeline gates.",
             "keyTakeaway": "Pair when work is exploratory, sensitive, or single-maintainer; pairing replaces the conversation, never the verification.",
             "diagram": {
                 "kind": "branch",
@@ -588,7 +588,7 @@
                 "verification"
             ],
             "question": "How do you review a pull request that is thousands of lines of generated or mechanically migrated code?",
-            "answer": "Nobody reviews three thousand generated lines, so I review the generator. A migration script or codegen template gets full scrutiny, because every output line inherits its bugs. I verify it's deterministic, idempotent, and safe on partial failure and rerun. I audit a stratified sample against the source of truth, deliberately including the gnarliest files. The bulk gets covered mechanically: the full suite passes, the behavioral diff against the old system is empty, or shadow mode on real traffic never diverges. The generated code goes in its own commit, excluded from blame and formatting, with a generated header.",
+            "answer": "Nobody reviews three thousand generated lines, so I review the generator. A migration script or codegen template gets full scrutiny, because every output line inherits its bugs. I check it's deterministic and safe to rerun, audit a stratified sample including the gnarliest files, and cover the bulk with the full suite or an empty behavioral diff. Generated code gets its own commit.",
             "keyTakeaway": "Review the generator and a stratified sample, verify the bulk mechanically, and isolate generated code from future diffs.",
             "diagram": {
                 "kind": "flow",
@@ -626,7 +626,7 @@
                 "strategy"
             ],
             "question": "What is your strategy for reviewing a large refactor without rubber-stamping it or stalling it for weeks?",
-            "answer": "A refactor as one giant diff gets approved unread. I insist on a sequence: extract helpers with identical behavior, then a mechanical rename, then the behavior change. Each step is small and lands green on its own. The author proves behavior preservation with characterization tests written before the refactor, output or benchmark comparisons, and zero intended semantic changes. Any behavior change gets split into its own diff. I review mechanical steps with search, not eyes: token diffs and straggler checks. I spend my judgment on the seams. Past a few hundred lines, we hold a walkthrough first.",
+            "answer": "A refactor as one giant diff gets approved unread. I insist on a sequence: extract helpers with identical behavior, then a mechanical rename, then any behavior change in its own diff, each landing green. The author proves preservation with characterization tests written before the refactor. I review mechanical steps with search, not eyes, and spend my judgment on the new seams.",
             "keyTakeaway": "Sequence a refactor into behavior-preserving steps, demand proof of equivalence, and spend judgment on the new seams.",
             "diagram": {
                 "kind": "flow",
@@ -664,7 +664,7 @@
                 "decision-making"
             ],
             "question": "An author and a reviewer have deadlocked and neither will budge. What is the escalation path?",
-            "answer": "A deadlock needs a standing rule, written before anyone is angry. Disagreements are time-boxed. The PR waits and does not merge. After a business day, a named decider, the area's tech lead or architect, gets a written decision request with both options, the criteria each serves, and the cost of delay. Escalation is the process working, not one side winning. I record the decision next to the code as precedent. And I police silent resolution hardest: the midnight force-push, or an approval granted just to end the awkwardness.",
+            "answer": "A deadlock needs a standing rule, written before anyone is angry. The PR waits and doesn't merge. After a business day, a named decider like the tech lead gets a written request with both options, the criteria each serves and the cost of delay. Escalation is the process working, not one side winning. I police silent resolution hardest, like the midnight force-push.",
             "keyTakeaway": "Deadlocks get a standing rule: time-box, then a written decision request to a named owner; silent merges erode the process.",
             "diagram": {
                 "kind": "flow",
@@ -698,7 +698,7 @@
                 "codeowners"
             ],
             "question": "How do you handle review when a change cuts across code owned by several teams?",
-            "answer": "Cross-team review works when ownership is declared before the PR opens, in a CODEOWNERS file. If you route by memory, the platform team learns their SDK changed from a comment thread two days in. The author requests every touched owner. Each owner approves their own slice, and one broad approval never covers someone else's contract. A bot-enforced rule beats a polite norm. If an owner is slow, I ship an adapter facade in my own code, not a drive-by edit in someone else's. Shared-contract changes carry a design note and a deprecation window.",
+            "answer": "It works when ownership is declared before the PR opens, in a CODEOWNERS file. Each owner approves their own slice, and one broad approval never covers someone else's contract. A bot-enforced rule beats a polite norm. If an owner is slow, I ship an adapter facade in my own code, not a drive-by edit in theirs.",
             "keyTakeaway": "Declare ownership in CODEOWNERS, require each owner's approval on their slice, and adapt around slow owners.",
             "diagram": {
                 "kind": "flow",
@@ -727,7 +727,7 @@
                 "risk"
             ],
             "question": "How do you review a change in legacy code that has no meaningful test coverage?",
-            "answer": "In legacy code, the risk is unreviewed behavior. I ask first how the author knows nothing broke. If they can't say, I request characterization tests around the touched code that pin the current output, even where it's wrong. I keep the behavioral fix minimal and separate from cleanup, so each can revert alone. Then I verify with whatever exists: golden files, production traffic replay, shadow comparison. A manual script with recorded output beats vibes. And I name the residual risk, because some legacy changes merge on confidence, not proof.",
+            "answer": "In legacy code the risk is unreviewed behavior, so I first ask the author how they know nothing broke. If they can't say, I ask for characterization tests that pin the current output, even where it's wrong. I keep the fix minimal and separate from cleanup, so each can revert alone, and I name the residual risk honestly.",
             "keyTakeaway": "Pin existing behavior with characterization tests first, separate cleanup from fixes, and state residual risk honestly.",
             "diagram": {
                 "kind": "flow",
