@@ -36,7 +36,7 @@ Remotion license: free for individuals, including personal use
 - `src/components/diagrams/` — Remotion compositions: hand-built diagrams and `SpecDiagram`, which animates any JSON-authored `DiagramSpec`
 - `src/styles/tokens.css` — every design token as a CSS custom property, with light and dark values
 - `src/styles/reset.css` — the only file with background declarations (the themed page canvas, repeated on the sticky desktop header so scrolled content stays hidden; everything else transparent/none)
-- `src/components/ThemeSwitch.tsx` — System / Light / Dark choice, saved in localStorage
+- `src/components/ThemeSwitch.tsx` — light/dark icon toggle; follows the OS until clicked, then saves the choice in localStorage
 
 ## Token-to-component mapping
 
@@ -58,6 +58,7 @@ Every color token is `light-dark(light, dark)`. The OS preference picks the bran
 | `--text-xs`-`--text-xl` | labels 13px, controls and code 15px, body 17px, questions 19px, titles 24-34px |
 | `--leading-*` | label, UI, body (1.65), code, and title line heights |
 | `--measure` | answer line length (about 75 characters) |
+| `--duration-theme` / `--ease-theme` | theme toggle only: the sun/moon icon swap and the page cross-fade |
 | Geist / Geist Mono | `next/font` variables `--font-geist-sans`, `--font-geist-mono` |
 
 ## DESIGN.md amendments
@@ -89,8 +90,8 @@ Every interactive component: keyboard, pointer, touch. State rules live in `src/
 | Diagram player | Group with `aria-label`; no autoplay; controls are regular buttons | Never autoplays, including under `prefers-reduced-motion` |
 | Diagram animation | The figure's `aria-label` carries the full text alternative | The whole diagram is always visible; an accent dot walks the flow, the current node or path turns accent, visited ones turn primary; loops after a short hold |
 | Index / result / reference links | Tab reachable; focus-visible outline; Enter navigates | Tap navigates |
-| Desktop header | Sticky at the top of the content column, its row aligned with the full-height sidebar's head; holds the search input and theme switch, centered over the content | Stays in view while the page scrolls; hidden on phone, where the top bar and panels take over |
-| Theme switch | Tab + Enter/Space picks System, Light, or Dark; `aria-pressed` marks the choice | Tap picks; in the desktop header and the phone menu; 44 px targets |
+| Desktop header | Sticky at the top of the content column, its row aligned with the full-height sidebar's head; holds the search input and theme toggle, centered over the content | Stays in view while the page scrolls; hidden on phone, where the top bar and panels take over |
+| Theme toggle | One icon button labelled "Dark theme"; Tab + Enter/Space flips light and dark; `aria-pressed` is true in dark; the tooltip names the next theme | Tap flips; a sun shows in light, a moon in dark, and they rotate and cross-fade while the page cross-fades (View Transitions where supported); instant under `prefers-reduced-motion`; in the desktop header and the phone top bar; 44 px target |
 
 ## Verification
 

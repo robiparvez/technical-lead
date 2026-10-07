@@ -163,27 +163,6 @@ main {
         flex: 0 1 28rem;
         margin-bottom: 0;
     }
-    .site-header .theme-switch {
-        display: flex;
-        align-items: center;
-        gap: var(--space-xs);
-        margin-top: 0;
-        padding-inline: 0;
-    }
-    .site-header .theme-switch .label {
-        margin-bottom: 0;
-    }
-    /* the sidebar version stretches buttons to fill; here they size to their label */
-    .site-header .theme-options .btn {
-        flex: none;
-        padding-inline: var(--space-xs);
-    }
-    .site-header .theme-options .btn[aria-pressed='true'] {
-        padding-inline-start: calc(var(--space-xs) - 1px);
-    }
-    .site-header .theme-options .btn:active {
-        padding-inline: calc(var(--space-xs) - 1px);
-    }
     .app {
         grid-template-columns: 20rem minmax(0, 1fr);
     }
@@ -1188,31 +1167,60 @@ pre.code .sh__token--comment {
     }
 }
 
-/* ---------- theme switch ----------
-   Three pressed-state buttons; the pressed one carries the selected rule
-   (accent inline-start border, weight 600). */
+/* ---------- theme toggle ----------
+   One icon button: a sun in light mode, a moon in dark mode. Both icons
+   sit in the same grid cell; the theme rules below (the same ones that pick
+   the colors in tokens.css) choose which is shown, so it is right before
+   hydration. Switching rotates one out and the other in; the page itself
+   cross-fades through a view transition started in ThemeSwitch. */
 
-.theme-switch {
-    margin-top: var(--space-lg);
-    padding-inline: var(--space-xs);
+.theme-toggle {
+    display: inline-grid;
+    place-items: center;
 }
-.theme-switch .label {
-    display: block;
-    margin-bottom: var(--space-2xs);
+.theme-icon {
+    grid-area: 1 / 1;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition:
+        opacity var(--duration-theme) var(--ease-theme),
+        transform var(--duration-theme) var(--ease-theme);
 }
-.theme-options {
-    display: flex;
-    gap: var(--space-2xs);
+/* hidden icon: faded, shrunk, and turned away */
+.theme-icon-moon {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.5);
 }
-.theme-options .btn {
-    flex: 1;
-    padding-inline: var(--space-2xs);
+:root[data-theme='dark'] .theme-icon-sun {
+    opacity: 0;
+    transform: rotate(90deg) scale(0.5);
 }
-.theme-options .btn:active {
-    padding-inline: calc(var(--space-2xs) - 1px);
+:root[data-theme='dark'] .theme-icon-moon {
+    opacity: 1;
+    transform: none;
 }
-.theme-options .btn[aria-pressed='true'] {
-    border-inline-start: var(--border-width-2) solid var(--color-accent);
-    padding-inline-start: calc(var(--space-2xs) - 1px);
-    font-weight: var(--font-weight-semibold);
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) .theme-icon-sun {
+        opacity: 0;
+        transform: rotate(90deg) scale(0.5);
+    }
+    :root:not([data-theme='light']) .theme-icon-moon {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-duration: var(--duration-theme);
+    animation-timing-function: var(--ease-theme);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .theme-icon {
+        transition: none;
+    }
 }

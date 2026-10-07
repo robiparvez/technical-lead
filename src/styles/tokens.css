@@ -79,6 +79,10 @@
     --radius-xs: 4px;
     --radius-sm: 8px;
     --radius-md: 12px;
+
+    /* motion: the theme toggle only; everything else changes state instantly */
+    --duration-theme: 320ms;
+    --ease-theme: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 :root[data-theme='light'] {

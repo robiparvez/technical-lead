@@ -13,7 +13,7 @@ const DESKTOP_QUERY = '(min-width: 60rem)';
  * theme centered; the two top rows line up. A hamburger or
  * Ctrl/Cmd+B toggles the sidebar, and the hamburger floats top-left when it
  * is collapsed. Phone: top bar with hamburger and search buttons opening
- * in-flow panels; the theme switch sits in the menu panel.
+ * in-flow panels, plus the theme toggle.
  * "/" reveals the search for the current layout and focuses it.
  */
 export default function Shell({
@@ -120,6 +120,7 @@ export default function Shell({
                 >
                     Search
                 </button>
+                {theme}
             </header>
 
             {/* close the menu once a link in it is followed, including the current page */}
@@ -132,7 +133,6 @@ export default function Shell({
                 }}
             >
                 {nav}
-                {theme}
             </div>
             <div id='phone-search' className='phone-panel' data-open={panel === 'search'}>
                 {search}
