@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { highlight } from 'sugar-high';
 import type { Question } from '@/data/types';
 import { useKnownQuestions } from '@/lib/progress';
@@ -67,6 +67,23 @@ function QuestionCard({
 }) {
     const [open, setOpen] = useState(false);
     const answerId = `${question.id}-answer`;
+
+    // Search results and quiz reviews link to /topics/<slug>#<question-id>;
+    // the linked card opens itself. The hash is read after mount so server
+    // and hydration markup match.
+    useEffect(() => {
+        const openIfTarget = () => {
+            if (window.location.hash !== `#${question.id}`) return;
+            setOpen(true);
+            // scroll once the answer has rendered; scroll-padding keeps it below the sticky header
+            requestAnimationFrame(() =>
+                document.getElementById(question.id)?.scrollIntoView({ block: 'start' }),
+            );
+        };
+        openIfTarget();
+        window.addEventListener('hashchange', openIfTarget);
+        return () => window.removeEventListener('hashchange', openIfTarget);
+    }, [question.id]);
 
     return (
         <article className='q-card' id={question.id} data-known={isKnown}>

@@ -84,7 +84,7 @@ Every interactive component: keyboard, pointer, touch. State rules live in `src/
 | Menu / Search buttons (phone) | Tab + Enter toggles panel; `aria-expanded` reflects state; Menu shows a hamburger icon | Tap toggles in-flow panel; 44 px target |
 | Sidebar toggle (desktop) | Tab + Enter, or Ctrl+B (Cmd+B on macOS) from anywhere except rich-text editors, collapses or restores the sidebar; focus moves to the toggle that replaces the unmounted one; `aria-expanded` and `aria-keyshortcuts` set | Click the hamburger at the top of the sidebar to collapse, the floating hamburger top-left to restore; 44 px target |
 | Nav links | Tab reachable; `aria-current="page"` on the open topic; Enter navigates | Tap navigates; 44 px min height |
-| Question toggle | Tab + Enter/Space expands or collapses; `aria-expanded` and `aria-controls` set | Tap anywhere on the header; 44 px min height |
+| Question toggle | Tab + Enter/Space expands or collapses; `aria-expanded` and `aria-controls` set; a `#question-id` in the URL (search results, quiz review links) opens that card and scrolls it just below the sticky header | Tap anywhere on the header; 44 px min height |
 | Mark as known | Tab + Enter/Space toggles; `aria-pressed` reflects state; label swaps "Mark as known" / "Marked as known" | Tap toggles; glyph appears on the rail |
 | Play / Pause / Restart | Tab + Enter/Space; label announces the action | Tap; 44 px target |
 | Diagram player | Group with `aria-label`; no autoplay; controls are regular buttons | Never autoplays, including under `prefers-reduced-motion` |
