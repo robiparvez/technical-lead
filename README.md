@@ -81,7 +81,7 @@ Every interactive component: keyboard, pointer, touch. State rules live in `src/
 | Component | Keyboard | Pointer / touch |
 | --- | --- | --- |
 | Skip link | First Tab stop; Enter moves focus to `#main` | Tap jumps to content |
-| Search input | `/` anywhere focuses it; type filters live; Escape clears the browser's search text | Tap opens (phone panel); typing filters after 200 ms debounce |
+| Search input | `/` anywhere focuses it; type filters live; Escape clears the browser's search text; the box mirrors `?q=` and re-reads it on every route change, so a topic page or tag link shows it empty and Back restores the query | Tap opens (phone panel); typing filters after 200 ms debounce |
 | Menu / Search buttons (phone) | Tab + Enter toggles panel; `aria-expanded` reflects state; Menu shows a hamburger icon | Tap toggles in-flow panel; 44 px target |
 | Sidebar toggle (desktop) | Tab + Enter, or Ctrl+B (Cmd+B on macOS) from anywhere except rich-text editors, collapses or restores the sidebar; focus moves to the toggle that replaces the unmounted one; `aria-expanded` and `aria-keyshortcuts` set | Click the hamburger at the top of the sidebar to collapse, the floating hamburger top-left to restore; 44 px target |
 | Nav links | Tab reachable; `aria-current="page"` on the open topic; Enter navigates | Tap navigates; 44 px min height |

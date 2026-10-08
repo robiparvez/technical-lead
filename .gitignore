@@ -6,6 +6,7 @@
 .firecrawl/
 .zcode/
 CLAUDE.md
+/brag-output*/
 
 # dependencies
 /node_modules
