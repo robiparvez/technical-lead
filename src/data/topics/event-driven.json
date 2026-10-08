@@ -12,7 +12,7 @@
                 "fundamentals"
             ],
             "question": "What is the difference between a message queue and publish-subscribe?",
-            "answer": "A queue gives each message to one consumer, so it spreads work across workers. Pub-sub gives it to every subscriber, so order-placed reaches inventory, email and analytics. Kafka does both: consumer groups.",
+            "answer": "A queue gives each message to one consumer, so it spreads work across workers. Pub-sub gives it to every subscriber, so order-placed reaches inventory, email and analytics. Kafka does both: consumer groups give pub-sub across groups and queue semantics within a group.",
             "keyTakeaway": "Queue means one consumer wins; pub-sub means every subscriber sees it.",
             "diagram": {
                 "kind": "compare",
@@ -832,7 +832,7 @@
                 "windows"
             ],
             "question": "In stream processing, how do you close a window fairly when events arrive late?",
-            "answer": "A watermark tells an event-time window it's safe to emit. It's the maximum observed event time minus an allowed-lateness bound, chosen from business reality: payments may lag minutes, clickstreams seconds. Late events get dropped, side-output or trigger a recompute. I never confuse processing time with event time.",
+            "answer": "A watermark tells an event-time window it's safe to emit. It's the maximum observed event time minus an allowed-lateness bound, chosen from business reality: payments may lag minutes, clickstreams seconds. Late events get dropped, sent to a side output, or trigger a recompute. I never confuse processing time with event time.",
             "keyTakeaway": "Watermarks bound how long windows wait for late events; the bound is a business decision.",
             "diagram": {
                 "kind": "compare",
@@ -982,7 +982,7 @@
                 "at-least-once"
             ],
             "question": "How do you run the outbox relay in production without it becoming a single point of failure?",
-            "answer": "A single relay is simple and ordered, but it's a single point of failure. I shard the outbox by aggregate id across relays, one elected publisher per shard, keeping per-key order. I monitor the oldest unsent row's age, since depth hides a stuck relay.",
+            "answer": "A single relay is simple and ordered, but it's a single point of failure. I shard the outbox by aggregate id across relays, one elected publisher per shard, keeping per-key order. I monitor the oldest unsent row's age, since depth hides a stuck relay. The relay is at-least-once, so consumers deduplicate.",
             "keyTakeaway": "Shard relays by aggregate key, monitor oldest unsent outbox row, and stay at-least-once.",
             "diagram": {
                 "kind": "flow",

@@ -422,7 +422,7 @@
                 "spikes"
             ],
             "question": "When would you put a message queue between a service and its workload?",
-            "answer": "When demand spikes and the work needs no immediate answer, like email or media processing. We enqueue and acknowledge instantly, so a ten-x burst buffers instead of exhausting pools. I size workers for sustained load and watch depth, since a silent backlog is a delayed outage.",
+            "answer": "I use a queue when demand spikes and the work needs no immediate answer, like email or media processing. We enqueue and acknowledge instantly, so a ten-x burst buffers instead of exhausting pools. I size workers for sustained load and watch depth, since a silent backlog is a delayed outage. Queues level load, they don't create capacity.",
             "keyTakeaway": "A queue buffers spikes so workers run at sustained capacity, but it levels load and never creates it.",
             "diagram": {
                 "kind": "sequence",
@@ -567,7 +567,7 @@
                 "availability"
             ],
             "question": "How do graceful degradation and failover differ, and when do you build each?",
-            "answer": "Failover swaps a broken component for a healthy replica, which fits when the component is the system, like the primary database. Degradation keeps a reduced feature alive, like static recommendations. Failover costs idle standby, degradation costs experience, and users mind a slow page less than an error.",
+            "answer": "Failover swaps a broken component for a healthy replica, which fits when the component is the system, like the primary database. Degradation keeps a reduced feature alive, like static recommendations, through explicit per-feature switches decided in advance. Failover costs idle standby, degradation costs experience, and users mind a slow page less than an error.",
             "keyTakeaway": "Failover replaces the broken replica, degradation ships a reduced feature, and both need prebuilt switches.",
             "diagram": {
                 "kind": "branch",
@@ -669,7 +669,7 @@
                 "resilience"
             ],
             "question": "What is a thundering herd, and how do you stop one at a popular cache key?",
-            "answer": "When a hot cache entry expires and hundreds of concurrent requests hit the origin with the same expensive query. Coalescing fixes it: the first miss takes a lock and fetches, the rest wait for that result. I also use jittered TTLs and stale-while-revalidate.",
+            "answer": "A thundering herd is when a hot cache entry expires and hundreds of concurrent requests hit the origin with the same expensive query. Coalescing fixes it: the first miss takes a lock and fetches, the rest wait for that result. I also use jittered TTLs and stale-while-revalidate.",
             "keyTakeaway": "Park concurrent misses behind one lock so the herd collapses into a single origin fetch.",
             "diagram": {
                 "kind": "sequence",
@@ -869,7 +869,7 @@
                 "availability"
             ],
             "question": "How do you systematically hunt for single points of failure in a running system?",
-            "answer": "I draw the real dependency graph, including DNS, certificates, brokers, feature flags and IAM, then kill each node on paper and ask what stops. The sneaky ones are rarely the web tier. Think a shared Kafka cluster, one NAT gateway, or the config service. For each real SPOF I fix it, spread it, or record the accepted risk with its blast radius.",
+            "answer": "I draw the real dependency graph, including DNS, certificates, brokers, feature flags and IAM, then kill each node on paper and ask what stops. The sneaky ones are rarely the web tier. Think a shared Kafka cluster, one NAT gateway, or the config service. I separate control plane from data plane failures, since serving during an orchestrator outage is survivable. For each real SPOF I fix it, spread it, or record the accepted risk with its blast radius.",
             "keyTakeaway": "Hunt SPOFs by killing every node on paper, control plane included, then fix, spread, or accept with eyes open.",
             "diagram": {
                 "kind": "flow",
@@ -904,7 +904,7 @@
                 "ttl"
             ],
             "question": "How does the rate at which data changes decide whether caching it is worth it?",
-            "answer": "Caching pays when data is read many times between changes, so I compute churn first, change frequency over read frequency. A live bid that changes on every read has no hit window, so you just serve stale data and add invalidation work. Staleness tolerance sets the TTL, and for high churn I skip the cache.",
+            "answer": "Caching pays when data is read many times between changes, so I compute churn first, change frequency over read frequency. A live bid that changes on every read has such a short hit window that the cache serves stale data and adds invalidation work. Staleness tolerance sets the TTL, and for high churn I use short TTLs or skip the cache.",
             "keyTakeaway": "Compute churn first, changes per read, because it sets both the TTL and whether caching pays at all.",
             "diagram": {
                 "kind": "branch",

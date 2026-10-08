@@ -83,7 +83,7 @@
                 "growth"
             ],
             "question": "How do you answer 'What is your greatest weakness?' without torpedoing yourself?",
-            "answer": "Name a real weakness that isn't fatal, and show you're dealing with it, because the question tests self-awareness. For example, 'I over-engineer, so I timebox spikes and write the RFC first'. Skip the humblebrag like 'I'm a perfectionist', and don't pick something disqualifying like missing deadlines.",
+            "answer": "Name a real weakness that isn't fatal, and show you're dealing with it, because the question tests self-awareness. For example, 'I over-engineer, so I timebox spikes and write the RFC first'. Skip the humblebrag like 'I'm a perfectionist', and don't pick something disqualifying like missing deadlines. The best close is that someone noticed the change.",
             "keyTakeaway": "A real non-fatal weakness plus the concrete system that mitigates it, closed with evidence of progress."
         },
         {
@@ -140,7 +140,7 @@
                 "communication"
             ],
             "question": "Tell me about a time you disagreed with a teammate or manager. How should you structure the story?",
-            "answer": "Use STAR. A strong story is a senior colleague pushing a synchronous integration you believed would fail under load. You wrote a one-page load analysis, proposed an async alternative, and load tested both so everyone trusted the result. They're scoring how you collaborate, so show shared evidence over winning, and concede gracefully when you're wrong.",
+            "answer": "Use STAR. A strong story is a senior colleague pushing a synchronous integration you believed would fail under load. You wrote a one-page load analysis, proposed an async alternative, and load tested both so everyone trusted the result. The test reproduced your numbers and the team shipped async. They're scoring how you collaborate, so show shared evidence over winning, and concede gracefully when you're wrong.",
             "keyTakeaway": "STAR structure, resolve with shared evidence rather than victory, and land on a relationship and codebase that got better.",
             "diagram": {
                 "kind": "flow",
@@ -175,7 +175,7 @@
                 "behavioral"
             ],
             "question": "How do you answer 'Tell me about a time a project you led failed'?",
-            "answer": "Pick a real failure where you owned a decision, and focus on what changed in you. State it plainly: 'we missed the launch by six weeks because I underestimated migration complexity'. Then give the lesson and the changed habit, like estimating with ranges and flagging risk at the first slipped checkpoint. Don't blame the team or client.",
+            "answer": "Pick a real failure where you owned a decision, and focus on what changed in you. State it plainly: 'we missed the launch by six weeks because I underestimated migration complexity'. Then give the lesson and the changed habit, like estimating with ranges and flagging risk at the first slipped checkpoint, and prove it with later work: 'I've run three migrations since with no surprises'. Don't blame the team or client.",
             "keyTakeaway": "Real failure, plain ownership, one precise causal lesson, and the changed habit proven by later projects."
         },
         {
@@ -188,7 +188,7 @@
                 "behavioral"
             ],
             "question": "What should you prepare for the practical HR questions: notice period, hybrid work, and availability?",
-            "answer": "Have exact answers ready, because vagueness reads as disorganization. Give your notice period as a date, like 'thirty days, so I can start by the first of next month'. The role is Dhaka-based hybrid, so say plainly that you can meet the office days. Ask about core hours and on-call.",
+            "answer": "Have exact answers ready, because vagueness reads as disorganization. Give your notice period as a date, like 'thirty days, so I can start by the first of next month'. The role is Dhaka-based hybrid, so say plainly that you can meet the office days. Ask about office days, core hours and on-call.",
             "keyTakeaway": "Exact dates, plain confirmation of hybrid availability, and proactive questions about office days, hours, and on-call."
         },
         {
@@ -249,7 +249,7 @@
                 "positioning"
             ],
             "question": "How do you answer 'Why should we hire you?' without drifting into arrogance?",
-            "answer": "Make it a fit argument. Name their core need from the job posting, prove you meet it with one quantified example. For example, 'You need someone who owns payment integrations end to end, and I've shipped four with documentation.' Compare yourself only to their requirements, never to other candidates.",
+            "answer": "Make it a fit argument. Name their core need from the job posting, prove you meet it with one quantified example, and add something beyond the ticket, like mentoring or client communication. For example, 'You need someone who owns payment integrations end to end, and I've shipped four with documentation.' Compare yourself only to their requirements, never to other candidates.",
             "keyTakeaway": "Argue fit against their must-haves with one quantified proof, one extra you bring, and no comparisons to other candidates."
         },
         {
@@ -262,7 +262,7 @@
                 "composure"
             ],
             "question": "How do you handle 'How do you work under pressure?' or an interviewer who deliberately turns up the heat?",
-            "answer": "Never claim immunity, because 'I don't feel pressure' reads as inexperience. Describe a repeatable system and prove it with one story: triage by client impact, cut scope explicitly, and communicate slippage right away. For instance, during a payment outage before a demo, I sent hourly updates and shipped a feature-flagged rollback.",
+            "answer": "Never claim immunity, because 'I don't feel pressure' reads as inexperience. Describe a repeatable system and prove it with one story: triage by client impact, cut scope explicitly, and communicate slippage right away. For instance, during a payment outage before a demo, I sent hourly updates and shipped a feature-flagged rollback. If the interviewer presses, recognize it as a composure test, slow down and answer the question that was asked.",
             "keyTakeaway": "Describe a repeatable pressure system proven by one story, and treat aggressive probing as a composure test to pass slowly.",
             "diagram": {
                 "kind": "flow",
@@ -297,7 +297,7 @@
                 "behavioral"
             ],
             "question": "How should you explain a gap in your employment history if the interviewer asks about it?",
-            "answer": "State the gap as a fact, not a confession. One sentence on what it was, one on what you did, then pivot to readiness: 'I took eight months off when my father was ill, kept current with a cloud certification, and I'm ready to return.' Caregiving, health, and layoffs are all fine. Vagueness and mismatched dates get scored.",
+            "answer": "State the gap as a fact, not a confession. One sentence on what it was, one on what you did, then pivot to readiness: 'I took eight months off when my father was ill, kept current with a cloud certification, and I'm ready to return.' Caregiving, health, and layoffs are all fine. Vagueness and mismatched dates get scored, so never apologize or over-explain.",
             "keyTakeaway": "State the gap in one factual sentence, show the time stayed productive, and never apologize or over-explain."
         },
         {
@@ -310,7 +310,7 @@
                 "conflict"
             ],
             "question": "What do you say when asked about the best or worst manager you have worked with?",
-            "answer": "Both questions ask how you like to be managed and whether you blame people. For the worst manager, describe the style difference neutrally and how you adapted, like switching to the daily written status he wanted. Never vent. For the best, name behaviors like clear priorities and honest feedback. Say you want clear goals and freedom on the path .",
+            "answer": "Both questions ask how you like to be managed and whether you blame people. For the worst manager, describe the style difference neutrally and how you adapted, like switching to the daily written status he wanted. Never vent. For the best, name behaviors like clear priorities and honest feedback. Say you want clear goals and freedom on the path, and that when structure is missing, you build it.",
             "keyTakeaway": "Describe manager differences neutrally with your adaptation, and signal self-sufficiency: clear goals, freedom on the path."
         },
         {
@@ -336,7 +336,7 @@
                 "etiquette"
             ],
             "question": "What is professional etiquette for a take-home assignment, from receiving it to the follow-up review?",
-            "answer": "Treat a take-home as an unpaid client engagement. Confirm the time budget first, state your assumptions in a short README, and test the risky path rather than every path. If it runs over budget, stop at a clean point and write down what you'd do next. Then defend your decisions calmly in the review, since they're scoring judgment and communication.",
+            "answer": "Treat a take-home as an unpaid client engagement. Confirm the time budget first, state your assumptions in a short README, and test the risky path rather than every path. If it runs over budget, stop at a clean point and write down what you'd do next. Submit with a short note on trade-offs, then defend your decisions calmly in the review, since they're scoring judgment and communication.",
             "keyTakeaway": "Timebox to the stated budget, document assumptions and trade-offs, and treat the follow-up defense as part of the submission.",
             "diagram": {
                 "kind": "sequence",
@@ -648,7 +648,7 @@
                 "behavioral"
             ],
             "question": "How do you respond to 'You seem overqualified for this role' or a hint that your expectations exceed the band?",
-            "answer": "Treat 'overqualified' as a flight-risk question and answer the worry directly: 'I understand the concern that I'll leave when something bigger appears, but the draw here is client variety and the lead trajectory.' Make the promise falsifiable, like growing into an architecture lead in two years. If expectations exceed the band, state your floor once.",
+            "answer": "Treat 'overqualified' as a flight-risk question and answer the worry directly: 'I understand the concern that I'll leave when something bigger appears, but the draw here is client variety and the lead trajectory.' Make the promise falsifiable, like growing into an architecture lead in two years. If expectations exceed the band, state your floor once, and never accept an offer you resent.",
             "keyTakeaway": "Answer the flight-risk worry with specific, falsifiable commitment, know your floor in advance, and never accept an offer you resent."
         },
         {
@@ -661,7 +661,7 @@
                 "behavioral"
             ],
             "question": "How do you answer 'Tell me about a time you received harsh or difficult feedback'?",
-            "answer": "This question scores coachability. Tell a story with real criticism that stung, a non-defensive reaction, and a change that stuck. For example, a client called my work correct but unreadable. I wanted to defend the tests, but I asked for specifics, restructured the module, and adopted a rule to walk maintainers through every handover before merge.",
+            "answer": "This question scores coachability. Tell a story with real criticism that stung, a non-defensive reaction, and a change that stuck. For example, a client called my work correct but unreadable. I wanted to defend the tests, but I asked for specifics, restructured the module, and adopted a rule to walk maintainers through every handover before merge. Close with: 'that client extended the contract'.",
             "keyTakeaway": "Show criticism that stung, a non-defensive ask for specifics, and a habit change that later improved the relationship."
         }
     ]

@@ -174,7 +174,7 @@
                 "behavioral"
             ],
             "question": "How do you balance hands-on coding with leadership responsibilities?",
-            "answer": "I keep coding, but deliberately: small non-critical stories, tooling, and reviews that teach. I don't own anything the release depends on, since my time is unpredictable. I hand tracks to seniors, which grows them and frees me.",
+            "answer": "I keep coding, but deliberately: small non-critical stories, tooling, and reviews that teach. I don't own the core of a feature the release depends on, since my time is unpredictable. I hand tracks to seniors, which grows them and frees me.",
             "keyTakeaway": "Code for judgment and teaching, not for the critical path; grow seniors to hold tracks."
         },
         {
@@ -378,7 +378,7 @@
                 "process"
             ],
             "question": "How do you measure engineering health without falling into the velocity-metrics trap?",
-            "answer": "I ask three questions: can we deliver, can we operate, can we sustain the people. For delivery I use lead time and change-failure rate, not story points, which measure activity. For operability I look at incident frequency and time to recover. Sustainability is mostly qualitative. I review numbers with the team, never as a leaderboard, so a dip starts a conversation about causes.",
+            "answer": "I ask three questions: can we deliver, can we operate, can we sustain the people. For delivery I use lead time and change-failure rate, not story points, which measure activity. For operability I look at incident frequency and time to recover. Sustainability is mostly qualitative: survey signals on load and clarity, who is single-threaded, and whether the maintenance share drifts up. I review numbers with the team, never as a leaderboard, so a dip starts a conversation about causes.",
             "keyTakeaway": "Measure deliverability, operability, and sustainability as outcomes reviewed with the team, never as leaderboards.",
             "diagram": {
                 "kind": "layers",
@@ -600,7 +600,7 @@
                 "behavioral"
             ],
             "question": "How do you lead during a production incident while keeping the post-incident culture blameless?",
-            "answer": "During an incident my job is roles and rhythm, not fixes. I name an incident commander for the technical response and a comms owner for stakeholders, and set a short update cadence. I optimize for restoration over root cause and never ask who did it. Afterward: a timeline from artifacts, contributing factors, and owned action items.",
+            "answer": "During an incident my job is roles and rhythm, not fixes. I name an incident commander for the technical response and a comms owner for stakeholders, and set a short update cadence. I optimize for restoration over root cause and never ask who did it. Afterward I build a timeline from artifacts, name contributing factors instead of a culprit, and track owned action items.",
             "keyTakeaway": "Separate incident command from communication, optimize for restoration, and prove blamelessness by how the review treats people.",
             "diagram": {
                 "kind": "sequence",

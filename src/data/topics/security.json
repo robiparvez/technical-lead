@@ -257,7 +257,7 @@
                 "process"
             ],
             "question": "How do you threat model a new feature before building it?",
-            "answer": "I map data flows, trust boundaries and actors with the people who know the design. Then I walk each flow for spoofing, tampering, disclosure, denial and elevation, and rank concrete threats by impact and likelihood. Mitigations become backlog items with owners.",
+            "answer": "I map data flows, trust boundaries and actors with the people who know the design. Then I walk each flow for spoofing, tampering, repudiation, disclosure, denial and elevation, and rank concrete threats by impact and likelihood. Mitigations become backlog items with owners, and I revisit the model when the design changes.",
             "keyTakeaway": "Flows and trust boundaries, concrete threat scenarios, mitigations as backlog items, revisit on change.",
             "diagram": {
                 "kind": "flow",
@@ -296,7 +296,7 @@
                 "process"
             ],
             "question": "How do you run vulnerability assessment and handle a critical finding?",
-            "answer": "Continuously, not annually: dependency and container scanning in CI, static analysis on pull requests, and external pen tests before major releases. I set SLAs by severity, critical in days and high in weeks. If a critical bug is being exploited, I mitigate first, keep details quiet until the fix ships, and track time to remediate.",
+            "answer": "Continuously, not annually: dependency and container scanning in CI, static analysis on pull requests, and external pen tests before major releases. I set SLAs by severity, critical in days and high in weeks, and track time to remediate. If a critical bug is being exploited, I mitigate first and keep details quiet until the fix ships.",
             "keyTakeaway": "Scan in CI, triage with severity SLAs, patch exploited bugs before disclosure, track remediation time.",
             "diagram": {
                 "kind": "branch",
@@ -360,7 +360,7 @@
                 "http-only"
             ],
             "question": "What does solid session management look like, and which cookie flags actually matter?",
-            "answer": "Session security is mostly cookie hygiene. The id is a long random server-minted value, with HttpOnly so scripts can't read it, Secure, and SameSite Lax or Strict. I rotate it on login against fixation, keep idle and absolute timeouts, and store it server-side so revocation is a delete.",
+            "answer": "Session security is mostly cookie hygiene. The id is a long random server-minted value, with HttpOnly so scripts can't read it, Secure, and SameSite Lax or Strict. I rotate it on login against fixation, keep idle and absolute timeouts, and store it server-side so revocation is a delete. I re-authenticate for email or password changes.",
             "keyTakeaway": "HttpOnly, Secure, SameSite cookies, random ids rotated at login, idle and absolute timeouts, re-auth for sensitive actions.",
             "code": {
                 "language": "typescript",
@@ -458,7 +458,7 @@
                 "hsts"
             ],
             "question": "Which security response headers do you set on a production web app, and what does each one buy?",
-            "answer": "Content-Security-Policy with script-src limited to our own origins or nonces is the one header that really blunts XSS. Strict-Transport-Security with a long max-age stops downgrade, frame-ancestors stops clickjacking, and nosniff stops MIME guessing. I assert them all in CI because headers regress silently.",
+            "answer": "Content-Security-Policy with script-src limited to our own origins or nonces is the one header that really blunts XSS. Strict-Transport-Security with a long max-age stops downgrade, frame-ancestors stops clickjacking, nosniff stops MIME guessing, and Referrer-Policy limits URL leaks. I assert them all in CI because headers regress silently.",
             "keyTakeaway": "Set CSP, HSTS, frame-ancestors, nosniff, Referrer-Policy everywhere, and assert them in CI.",
             "diagram": {
                 "kind": "layers",

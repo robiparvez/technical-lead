@@ -277,7 +277,7 @@
                 "authentication"
             ],
             "question": "What is SCA and how does your integration handle a payment that requires customer authentication?",
-            "answer": "SCA is the European rule that most card payments need two factors, done through 3D Secure. The PaymentIntent goes to requires_action and the front end completes the challenge. Checkout does that for you, and with Elements I call handleNextAction. The classic bug is treating requires_action as an error.",
+            "answer": "SCA is the European rule that most card payments need two factors, done through 3D Secure. The PaymentIntent goes to requires_action and the front end completes the challenge. Checkout does that for you, and with Elements I call handleNextAction. The classic bug is treating requires_action as an error. Outside Europe cards may skip SCA, so the flow has to work with or without a challenge.",
             "keyTakeaway": "requires_action means show the 3DS challenge, not an error; both branches must work.",
             "diagram": {
                 "kind": "branch",

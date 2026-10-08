@@ -48,7 +48,7 @@
                 "fundamentals"
             ],
             "question": "How do async/await and Promises work, and where do async errors silently disappear?",
-            "answer": "async/await writes promise chains as sequential code, and errors propagate as rejections, so try/catch around an await works. Rejections go silent with fire-and-forget calls, .then chains without .catch, and un-awaited async functions, and in Node they can crash the process. I use Promise.allSettled when partial failure is fine.",
+            "answer": "async/await writes promise chains as sequential code, and errors propagate as rejections, so try/catch around an await works. Rejections go silent with fire-and-forget calls, .then chains without .catch, and un-awaited async functions, and in Node they can crash the process. So I attach a catch handler to every promise. I use Promise.allSettled when partial failure is fine.",
             "keyTakeaway": "Every promise needs an observer; un-awaited rejections are silent data-loss bugs.",
             "diagram": {
                 "kind": "compare",
@@ -443,7 +443,7 @@
                 "load-balancing"
             ],
             "question": "Where should TLS terminate in a backend architecture, and what are the trade-offs of each placement?",
-            "answer": "I can terminate at the edge load balancer, at an ingress or mesh sidecar, or in the app. The balancer is cheapest, with central cert rotation, but traffic to pods is plaintext, which is fine in a controlled private network and risky in zero-trust. Mesh mTLS fixes that at a latency and complexity cost. I start at the edge.",
+            "answer": "I can terminate at the edge load balancer, at an ingress or mesh sidecar, or in the app. The balancer is cheapest, with central cert rotation, but traffic to pods is plaintext, which is fine in a controlled private network and risky in zero-trust. Mesh mTLS fixes that at a latency and complexity cost. I start at the edge and add mesh mTLS when compliance demands it.",
             "keyTakeaway": "Terminate TLS at the edge for simplicity, and add mesh mTLS internally when the network itself cannot be trusted.",
             "diagram": {
                 "kind": "layers",
@@ -1000,7 +1000,7 @@
                 "jvm"
             ],
             "question": "Why do JVM and Node services get OOMKilled in containers with plenty of heap still free, and how do you prevent it?",
-            "answer": "The kernel kills the container when total RSS passes the cgroup limit, and RSS is more than heap: metaspace, thread stacks, direct buffers and native allocations too. So a JVM can sit well below Xmx and still die. I use MaxRAMPercentage and leave a quarter of the limit as headroom. Exit code 137 means a kernel kill.",
+            "answer": "The kernel kills the container when total RSS passes the cgroup limit, and RSS is more than heap: metaspace, thread stacks, direct buffers and native allocations too. So a JVM can sit well below Xmx and still die. I use MaxRAMPercentage and leave a quarter to a third of the limit as headroom. Exit code 137 means a kernel kill.",
             "keyTakeaway": "OOMKilled means total native plus heap memory breached the cgroup limit, so size with headroom and watch RSS, not heap.",
             "diagram": {
                 "kind": "layers",

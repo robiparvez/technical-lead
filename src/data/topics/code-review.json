@@ -82,7 +82,7 @@
                 "standards"
             ],
             "question": "How do you set standards for pull request size and review turnaround?",
-            "answer": "Big pull requests get skimmed, so I want small, single-purpose changes and a first review within one business day. Slow reviews push people onto long branches and bigger PRs. I track latency and size as team trends, never individual scores.",
+            "answer": "Big pull requests get skimmed, so I want small, single-purpose changes and a first review within one business day. Slow reviews push people onto long branches and bigger PRs. I track latency and size as team trends, never individual scores. When a large PR is unavoidable, we hold a walkthrough first.",
             "keyTakeaway": "Small PRs plus one-day first review; measure trends, and pre-walk through the unavoidable monsters.",
             "diagram": {
                 "kind": "compare",
@@ -383,7 +383,7 @@
                 "coaching"
             ],
             "question": "How do you use code review to bring a junior engineer up without becoming their bottleneck?",
-            "answer": "Review is a team's highest-frequency coaching moment. Early on my comments explain instead of judge: the why, an example, what good looks like, because a verdict without a reason teaches compliance, not judgment. Then I taper off, so verdicts become questions and my attention shifts from syntax to design. I never rubber-stamp their work.",
+            "answer": "Review is a team's highest-frequency coaching moment. Early on my comments explain instead of judge: the why, an example, what good looks like, because a verdict without a reason teaches compliance, not judgment. Then I taper off, so verdicts become questions and my attention shifts from syntax to design. I sit with them for their first reviews of others' code. I never rubber-stamp their work.",
             "keyTakeaway": "Coach with explained comments, taper guidance as judgment grows, and pair on juniors' first reviews of others."
         },
         {

@@ -801,7 +801,7 @@
                 "yaml"
             ],
             "question": "How do you manage configuration and secrets when you have forty services across several environments?",
-            "answer": "I layer it: defaults baked into the image, environment values injected at deploy from a versioned store in git, and secrets pulled at runtime from Vault or a cloud key manager. Never committed, never plain env files. Short-lived tokens or workload identity mean leaks expire, and services fail fast on missing config.",
+            "answer": "I layer it: defaults baked into the image, environment values injected at deploy from a versioned store in git, and secrets pulled at runtime from Vault or a cloud key manager. Never committed, never plain env files, and nothing hand-edited. Short-lived tokens or workload identity mean leaks expire, and services fail fast on missing config.",
             "keyTakeaway": "Defaults in the image, environment values in git, secrets short-lived in a vault; nothing hand-edited.",
             "code": {
                 "language": "yaml",
@@ -958,7 +958,7 @@
                 "orchestration"
             ],
             "question": "When would you reach for a durable execution engine like Temporal instead of hand-rolling orchestration code?",
-            "answer": "Hand-rolled orchestration means owning state persistence, retries, timers and crash recovery. A durable engine like Temporal records each step, and after a crash replays history and resumes. I use one for long or money-touching workflows like multi-day fulfillment. The costs are a runtime to operate and determinism constraints. For request-scoped logic, no.",
+            "answer": "Hand-rolled orchestration means owning state persistence, retries, timers and crash recovery. A durable engine records each step, and after a crash replays history and resumes. I use one for long or money-touching workflows like multi-day fulfillment. The costs are a runtime to operate and determinism constraints. For request-scoped logic, no.",
             "keyTakeaway": "Let a durable engine own workflow state, retries, and resume; hand-roll only the simplest flows.",
             "diagram": {
                 "kind": "flow",

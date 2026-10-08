@@ -50,7 +50,7 @@
                 "behavioral"
             ],
             "question": "What is the difference between mentoring, coaching, and managing?",
-            "answer": "Mentoring shares experience, best for craft and career judgment. Coaching draws answers out with questions, for when they own the problem. Managing owns outcomes and performance. A tech lead wears all three, and the usual failure is mentoring when the moment needs coaching.",
+            "answer": "Mentoring shares experience, best for craft and career judgment. Coaching draws answers out with questions, for when they own the problem. Managing owns outcomes and performance. A tech lead wears all three, and the usual failure is mentoring when the moment needs coaching. My check is to ask whose problem this is, and whose answer their growth needs.",
             "keyTakeaway": "Mentor lends experience, coach draws out judgment, manager owns outcomes; pick per moment.",
             "diagram": {
                 "kind": "compare",
@@ -98,7 +98,7 @@
                 "behavioral"
             ],
             "question": "How do you help a senior engineer who has plateaued?",
-            "answer": "I diagnose the plateau with them: motivation, missing skills, no visibility, or a role that stopped growing? Plateaued seniors usually need scope, not tutorials, so I hand them a cross-team problem to own. If the ceiling is structural, I say so and help them aim at their next role.",
+            "answer": "I diagnose the plateau with them: motivation, missing skills, no visibility, or a role that stopped growing? Plateaued seniors usually need scope, not tutorials, so I hand them a cross-team problem to own and protect time for it explicitly. If the ceiling is structural, I say so and help them aim at their next role.",
             "keyTakeaway": "Plateaued seniors need heavier scope and protected time, plus honest talk about ceilings.",
             "diagram": {
                 "kind": "flow",
@@ -174,7 +174,7 @@
                 "behavioral"
             ],
             "question": "How do you build and measure a growth plan that survives delivery pressure?",
-            "answer": "Two or three capabilities with observable evidence, like leading a design review or shipping a migration, not course completions. I tie them to real roadmap work, keep the plan to one page, and review it monthly. Under deadline I adjust scope, not morale.",
+            "answer": "I define the plan as two or three capabilities with observable evidence, like leading a design review or shipping a migration, not course completions. I tie them to real roadmap work, keep the plan to one page, and review it monthly. Under deadline I adjust scope, not morale.",
             "keyTakeaway": "Growth goals become roadmap work with observable evidence, reviewed monthly on one page."
         },
         {
@@ -535,7 +535,7 @@
                 "behavioral"
             ],
             "question": "How do you handle a mentee who pushes back on every piece of feedback?",
-            "answer": "I separate reasoning from reflex. Pushback with specifics might be right, so it gets a fair hearing. If it's reflex, I name the pattern gently and shrink the ask to one low-stakes experiment, like treating review comments as questions for two weeks. That moves the debate to shared evidence.",
+            "answer": "I separate reasoning from reflex. Pushback with specifics might be right, so it gets a fair hearing. If it's reflex, I name the pattern gently and shrink the ask to one low-stakes experiment, like treating review comments as questions for two weeks, then review together on a set date. That moves the debate to shared evidence.",
             "keyTakeaway": "Test pushback fairly, then convert one behavior into a low-stakes dated experiment.",
             "diagram": {
                 "kind": "flow",
@@ -582,7 +582,7 @@
                 "behavioral"
             ],
             "question": "How do you mentor someone through a promotion cycle, including the possibility of a no?",
-            "answer": "Early in the cycle I demystify the bar with the actual promotion language and real accepted cases. Mid-cycle I run a gap review and say it plainly: here are the two behaviors, here's the work that would show it. If it's a no, I get written reasons and turn them into a dated plan, separate from their identity.",
+            "answer": "Early in the cycle I demystify the bar with the actual promotion language and real accepted cases. Mid-cycle I run a gap review and say it plainly: here are the two behaviors, here's the work that would show it. If it's a no, I get written reasons, turn them into a dated plan, and separate the decision from their identity.",
             "keyTakeaway": "Demystify the bar early, review gaps soberly mid-cycle, and turn every no into a dated plan.",
             "diagram": {
                 "kind": "flow",

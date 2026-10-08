@@ -139,7 +139,7 @@
                 "strategy"
             ],
             "question": "Where do you draw the line between unit and integration tests, and how do you make integration tests fast enough to run on every push?",
-            "answer": "Unit tests check logic with doubles at the edges. Integration tests check real pieces wired together, which is where most production bugs live: bad SQL, wrong transactions, serialization. I keep them fast with an ephemeral database started once per suite and a fresh schema per test, and I use factories, not shared seed data.",
+            "answer": "Unit tests check logic with doubles at the edges. Integration tests check real pieces wired together, which is where most production bugs live: bad SQL, wrong transactions, serialization. I keep them fast with an ephemeral database started once per suite and a fresh schema per test, and I test the integration contract once per repository method. I use factories, not shared seed data.",
             "keyTakeaway": "Integration-test the real wiring with per-test isolated databases; contract-check repositories once instead of everywhere.",
             "diagram": {
                 "kind": "layers",
@@ -214,7 +214,7 @@
                 "process"
             ],
             "question": "What causes flaky tests, and how do you systematically eliminate them?",
-            "answer": "The causes are shared mutable state, fixed sleeps, slow external dependencies and order dependence. I fix them with hygiene, not retries: reset state in setup, unique data per test, randomized order, injected clocks. Retries hide the problem and train the team to ignore red. A flaky test gets an owner and is quarantined that day.",
+            "answer": "The causes are shared mutable state, fixed sleeps, slow external dependencies and order dependence. I fix them with hygiene, not retries: reset state in setup, unique data per test, randomized order, injected clocks. Retries hide the problem and train the team to ignore red. A flaky test gets an owner and is quarantined that day, then fixed or deleted within the sprint.",
             "keyTakeaway": "Flake is shared state, timing, or hidden order dependence; quarantine and fix it, never train red to be normal.",
             "diagram": {
                 "kind": "branch",
@@ -240,7 +240,7 @@
                 "quality"
             ],
             "question": "Is code coverage a useful metric? How do you use it without gaming it?",
-            "answer": "Coverage is a useful negative signal and a weak positive one. Low coverage means the change is unverified, but high coverage only proves the code ran. So I ratchet on diff coverage with no global target, and use mutation testing to see whether tests actually fail when the code changes.",
+            "answer": "Coverage is a useful negative signal and a weak positive one. Low coverage means the change is unverified, but high coverage only proves the code ran. So I ratchet on diff coverage with no global target, and use the reports to find untested branches in critical paths, never to chase a number. Mutation testing shows whether tests actually fail when the code changes.",
             "keyTakeaway": "Ratchet diff coverage, let mutation testing catch empty tests, and never let the metric become the goal.",
             "diagram": {
                 "kind": "compare",
@@ -284,7 +284,7 @@
                 "risk"
             ],
             "question": "How would you build the test strategy for a payments feature where bugs cost real money?",
-            "answer": "I rank by blast radius, so money gets the deepest layers. Unit tests cover amount math, rounding, partial refunds and state transitions. Integration tests use Stripe test mode and replay webhooks against real handlers, including duplicate and out-of-order ones, since that's where payments break. A couple of E2E tests cover checkout, and I alert on anomalous refund rates.",
+            "answer": "I rank by blast radius, so money gets the deepest layers. Unit tests cover amount math, rounding, partial refunds and state transitions. Integration tests use Stripe test mode and replay webhooks against real handlers, including duplicate and out-of-order ones, since that's where payments break. A couple of E2E tests cover checkout, I test reconciliation with deliberate ledger drift, and I alert on anomalous refund rates.",
             "keyTakeaway": "Depth where money moves: deterministic unit math, test-mode integration with webhooks, reconciliation drift tests, production rate alarms.",
             "diagram": {
                 "kind": "layers",
@@ -542,7 +542,7 @@
                 "database"
             ],
             "question": "What do testcontainers give you that mocking the database or sharing a dev instance cannot?",
-            "answer": "Testcontainers starts the real dependency from the test, like an actual Postgres in Docker. In-memory fakes lie, since H2 accepts SQL that Postgres rejects, and a shared dev database gets polluted. One container per suite, with schema or rollback isolation per test.",
+            "answer": "Testcontainers starts the real dependency from the test, like an actual Postgres in Docker. In-memory fakes lie, since H2 accepts SQL that Postgres rejects, and a shared dev database gets polluted. I start one container per suite, and each test gets its own schema or rolls back in a transaction.",
             "keyTakeaway": "Run the real engine in a container per suite with per-test isolation; in-memory fakes lie and shared databases pollute.",
             "diagram": {
                 "kind": "sequence",
@@ -943,7 +943,7 @@
                 "checklist"
             ],
             "question": "What do you look for when reviewing another engineer's tests in a pull request?",
-            "answer": "I read the tests before the implementation, since they show what the author thinks the behavior is. Would each test fail if that behavior broke? Is it deterministic, with no sleeps or real clocks? Does it test public behavior, not internals? Are the sad paths covered? I send back tests with weak assertions, since they run code without verifying it.",
+            "answer": "I read the tests before the implementation, since they show what the author thinks the behavior is. Would each test fail if that behavior broke? Is it deterministic and isolated, with no sleeps, real clocks, execution order, or other tests' data? Does it test public behavior, not internals? Are the sad paths covered? I send back tests with weak assertions, since they run code without verifying it.",
             "keyTakeaway": "A reviewed test must fail when the behavior breaks, stay deterministic and isolated, and cover error paths, not only happy paths.",
             "diagram": {
                 "kind": "layers",
@@ -978,7 +978,7 @@
                 "integration"
             ],
             "question": "How do you test background jobs and async workflows whose results arrive after the request has returned?",
-            "answer": "I split it. The job handler is a function from message to outcome, so I unit-test its logic. Then I integration-test the machinery with a real broker in a testcontainer. The same message twice proves idempotency, and a poison message must retry with backoff and reach the dead-letter queue, not loop forever. I never assert on queue internals.",
+            "answer": "I split it. The job handler is a function from message to outcome, so I unit-test its logic. Then I integration-test the machinery with a real broker in a testcontainer: publish an event and assert the side effect landed. The same message twice proves idempotency, and a poison message must retry with backoff and reach the dead-letter queue, not loop forever. I never assert on queue internals.",
             "keyTakeaway": "Unit-test handler logic, integration-test delivery with idempotency, retries, and dead-lettering, and assert async outcomes with eventually polling.",
             "diagram": {
                 "kind": "sequence",
@@ -1056,7 +1056,7 @@
                 "reliability"
             ],
             "question": "How do you prove that resilience code like retries, timeouts, and circuit breakers actually works?",
-            "answer": "Resilience code is invisible on the happy path, so I inject failure at the boundary. Fail three times then succeed, and assert a retry with backoff. Hang forever, and assert the client times out and degrades. Exceed the threshold, and assert the circuit opens, half-opens and recovers. I retry only idempotent operations.",
+            "answer": "Resilience code is invisible on the happy path, so I inject failure at the boundary. Fail three times then succeed, and assert a retry with backoff. Hang forever, and assert the client times out and degrades. Exceed the threshold, and assert the circuit opens, half-opens and recovers. I retry only idempotent operations, and timeouts must cancel the underlying work, not leak it.",
             "keyTakeaway": "Inject failures against fakes to prove retries, timeouts, and breaker states, including idempotency and genuine cancellation.",
             "diagram": {
                 "kind": "compare",

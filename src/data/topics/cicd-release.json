@@ -25,7 +25,7 @@
                 "yaml"
             ],
             "question": "Walk through the stages of a healthy pipeline for a web service.",
-            "answer": "Fast feedback first: lint and unit tests on every commit. I build the artifact once, then test that immutable artifact through integration and end-to-end, then staging with smoke tests, then production behind an approval gate.",
+            "answer": "Fast feedback first: lint and unit tests on every commit. I build the artifact once, then test that immutable artifact through integration and end-to-end, then staging with smoke tests, then production behind an approval gate. Nothing manual happens before staging.",
             "keyTakeaway": "Fast gates first, one artifact promoted through environments, nothing manual before staging.",
             "code": {
                 "language": "yaml",
@@ -251,7 +251,7 @@
                 "supply-chain"
             ],
             "question": "How do you secure a CI/CD pipeline itself?",
-            "answer": "I treat the pipeline as production. Credentials are least-privilege, injected per environment from a secret manager, never in the repo or logs. I pin dependencies and base images by digest, and pipeline changes get reviewed like application code.",
+            "answer": "I treat the pipeline as production. Credentials are least-privilege, injected per environment from a secret manager, never in the repo or logs. I pin dependencies and base images by digest and scan artifacts, and pipeline changes get reviewed like application code.",
             "keyTakeaway": "Least-privilege deploy credentials, pinned and scanned supply chain, reviewed pipeline changes.",
             "diagram": {
                 "kind": "layers",

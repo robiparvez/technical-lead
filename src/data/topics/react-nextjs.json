@@ -604,7 +604,7 @@
                 "not-found"
             ],
             "question": "How should error.tsx, global-error.tsx, and not-found.tsx fit together as an error architecture?",
-            "answer": "error.tsx is a client component that wraps its segment in an error boundary, so siblings and parents stay alive and reset retries. I nest boundaries at meaningful segments like the dashboard, not just the root. notFound() renders not-found.tsx with a real 404 for known absence. I log every caught error, since a fallback without telemetry hides outages.",
+            "answer": "error.tsx is a client component that wraps its segment in an error boundary, so siblings and parents stay alive and reset retries. I nest boundaries at meaningful segments like the dashboard, not just the root, and global-error.tsx handles root layout errors. notFound() renders not-found.tsx with a real 404 for known absence. I log every caught error, since a fallback without telemetry hides outages.",
             "keyTakeaway": "error.tsx is a per-segment client boundary with reset, global-error replaces the root, and notFound() is for known absence, not crashes.",
             "diagram": {
                 "kind": "flow",
@@ -1047,7 +1047,7 @@
                 "promises"
             ],
             "question": "What does React's use() hook change about consuming promises and context, and how does it reshape the server-to-client handoff?",
-            "answer": "use() is the one hook you can call conditionally. Given a promise, the component suspends until it resolves, and given context, it reads like useContext. In Next, a server component can await one query and pass another down as an unresolved promise, and the client unwraps it with use() inside Suspense. Each promise needs a Suspense boundary above it and an error boundary for rejection.",
+            "answer": "use() is the one hook you can call conditionally. Given a promise, the component suspends until it resolves, and given context, it reads like useContext. In Next, a server component can await one query and pass another down as an unresolved promise, and the client unwraps it with use() inside Suspense. Each promise needs a Suspense boundary above it and an error boundary for rejection. Promises become renderable values, so await turns from a blocking point into a streaming opportunity.",
             "keyTakeaway": "use() unwraps promises or context anywhere, even conditionally, turning awaits into suspendable, streamable values across the RSC boundary.",
             "diagram": {
                 "kind": "sequence",

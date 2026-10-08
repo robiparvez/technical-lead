@@ -13,7 +13,7 @@
                 "fundamentals"
             ],
             "question": "How do you decide between a relational and a non-relational database for a service?",
-            "answer": "I let access patterns and consistency needs decide. If I need constraints, ACID and ad-hoc joins across normalized data, I stay relational. For key lookups, append-heavy feeds or huge write volume, I go NoSQL and accept eventual consistency.",
+            "answer": "I let access patterns and consistency needs decide. If I need constraints, ACID and ad-hoc joins across normalized data, I stay relational. For key lookups, append-heavy feeds or huge write volume, I go NoSQL, usually with eventual consistency.",
             "keyTakeaway": "Let access patterns and consistency needs pick the engine, not the trend.",
             "diagram": {
                 "kind": "branch",
@@ -282,7 +282,7 @@
                 "idempotency"
             ],
             "question": "Two users reserve the last available room at the same time. How do you prevent a double booking?",
-            "answer": "Check-then-update is a race, because both transactions read the same inventory and commit. For one user double-clicking, I use a client-generated reservation id with a unique constraint. For concurrent users, the cheapest fix is a conditional update that re-checks availability in the statement itself. Under heavy contention I'd use SELECT FOR UPDATE.",
+            "answer": "Check-then-update is a race: under weak isolation, both transactions read the same inventory and commit. For one user double-clicking, I use a client-generated reservation id with a unique constraint. For concurrent users, I use optimistic locking with a version column, and often the cheapest option is a conditional update that re-checks availability in the statement itself. Under heavy contention I'd use SELECT FOR UPDATE.",
             "keyTakeaway": "Push the invariant into the update; idempotency keys stop double clicks.",
             "code": {
                 "language": "sql",

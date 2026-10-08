@@ -170,7 +170,7 @@
                 "safety"
             ],
             "question": "Which HTTP methods are safe and idempotent, and why does it matter for clients?",
-            "answer": "GET and HEAD are safe, so caches may repeat them. PUT and DELETE are idempotent, so retries are fine. POST is neither, so a retry can double-create unless the server dedupes with an idempotency key.",
+            "answer": "GET and HEAD are safe: they don't change state, so caches may repeat them. PUT and DELETE are idempotent, so repeats leave the same result and retries are fine. POST is neither, so a retry can double-create unless the server dedupes with an idempotency key.",
             "keyTakeaway": "Safe methods never change state; idempotent methods are retry-safe; POST needs a key.",
             "diagram": {
                 "kind": "compare",
@@ -252,7 +252,7 @@
                 "cost"
             ],
             "question": "How do you protect an API, especially GraphQL, from abusive or expensive queries?",
-            "answer": "I authenticate at the edge and authorize per resource, not just per endpoint. Rate limits go per identity. For GraphQL I add depth limits, complexity budgets, and persisted queries.",
+            "answer": "I authenticate at the edge and authorize per resource, not just per endpoint. Rate limits go per identity. For GraphQL I add depth limits, complexity budgets, and persisted queries, and I disable introspection in production for public APIs.",
             "keyTakeaway": "Limit depth, cost, and introspection; authorize per resource, per identity.",
             "diagram": {
                 "kind": "layers",
@@ -771,7 +771,7 @@
                 "governance"
             ],
             "question": "How do you run deprecation and sunset for old API versions in practice?",
-            "answer": "I treat deprecation as a program with dates, not a changelog note. Old versions carry Deprecation and Sunset headers, and I track which clients still call them, since 'we think nobody uses it' causes outages. I retire only once usage is below an agreed threshold, with a grace period.",
+            "answer": "I treat deprecation as a program with dates, not a changelog note. Old versions carry Deprecation and Sunset headers, and I publish the removal date. I track which clients still call them, since 'we think nobody uses it' causes outages. I retire only once usage is below an agreed threshold, and I keep the shutdown reversible for a grace period.",
             "keyTakeaway": "Deprecate with Sunset headers, measured usage, and a reversible shutdown date.",
             "diagram": {
                 "kind": "flow",

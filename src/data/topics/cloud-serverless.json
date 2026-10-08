@@ -197,7 +197,7 @@
                 "environments"
             ],
             "question": "How do you manage infrastructure across multiple environments without drift?",
-            "answer": "I define every environment in infrastructure as code, like Terraform, and provision only through it. Modules let environments differ by parameters only, and state stays remote and locked. We promote the same artifact and change only configuration.",
+            "answer": "I define every environment in infrastructure as code, like Terraform, and provision only through it. Modules let environments differ by parameters only, and state stays remote and locked. We promote the same artifact and change only configuration, and infrastructure diffs get reviewed in pull requests.",
             "keyTakeaway": "One parameterized module per environment, applied only through IaC with reviewed diffs.",
             "diagram": {
                 "kind": "flow",
@@ -735,7 +735,7 @@
                 "architecture"
             ],
             "question": "How do you decide between active-passive and active-active for a multi-region architecture?",
-            "answer": "Active-passive keeps a second region warm with replicated data and health-check promotion. Recovery takes minutes, and one region writes, so consistency stays simple. Active-active gives near-zero failover but needs conflict resolution on stateful layers, and roughly doubles the bill. I decide by RTO, RPO and conflict tolerance, usually starting active-passive.",
+            "answer": "Active-passive keeps a second region warm with replicated data and health-check promotion. Recovery takes minutes, and one region writes, so consistency stays simple. Active-active gives near-zero failover and lower latency but needs conflict resolution on stateful layers, and roughly doubles the bill. I decide by RTO, RPO and conflict tolerance, usually starting active-passive.",
             "keyTakeaway": "Start active-passive for minutes-level failover at half the cost; go active-active only when latency or uptime contracts justify multi-master data conflicts.",
             "diagram": {
                 "kind": "compare",
@@ -818,7 +818,7 @@
                 "workspaces"
             ],
             "question": "How would you implement blue-green deployments for infrastructure using Terraform workspaces?",
-            "answer": "A core stack holds the shared stateful pieces: load balancer, databases, queues. Blue and green workspaces each bring up a full parallel compute stack. I apply the release to the idle color, smoke test, then switch traffic atomically at a listener rule. The old color stays warm for rollback through the soak period.",
+            "answer": "A core stack holds the shared stateful pieces: load balancer, databases, queues. Blue and green workspaces each bring up a full parallel compute stack. I apply the release to the idle color, smoke test, then switch traffic atomically at a listener rule. The old color stays warm for rollback, and I destroy it only after the soak period.",
             "keyTakeaway": "Provision two parallel stacks in separate workspaces, shift traffic atomically at the load balancer, and destroy the old color only after soak.",
             "code": {
                 "language": "bash",
@@ -983,7 +983,7 @@
                 "tagging"
             ],
             "question": "How do you keep cloud spend visible and controlled as the footprint grows?",
-            "answer": "It starts with allocation, because untagged spend is nobody's problem. I enforce tags like owner, service and environment in IaC modules, with a policy denying untagged resources. Per-team showback dashboards and budgets with anomaly detection page within a day. We clean up idle resources, and buy savings plans only for a provable baseline.",
+            "answer": "It starts with allocation, because untagged spend is nobody's problem. I enforce tags like owner, service and environment in IaC modules, with a policy denying untagged resources. Billing feeds per-team showback dashboards, and budgets with anomaly detection page within a day. We clean up idle resources, and buy savings plans only for a provable baseline.",
             "keyTakeaway": "Enforce tagging at provisioning, allocate spend to owning teams, and back alerts with scheduled cleanup of idle resources.",
             "diagram": {
                 "kind": "layers",

@@ -136,7 +136,7 @@
                 "exercise"
             ],
             "question": "Design a search autocomplete service that returns the top 5 popular completions.",
-            "answer": "I'd aggregate query logs into frequency counts on a schedule and rebuild the trie from them, since per-keystroke updates aren't practical. Each node stores its top-k, so a lookup walks to the prefix and returns, with no sorting. Some staleness is a fair trade for speed.",
+            "answer": "I'd aggregate query logs into frequency counts on a schedule and rebuild the trie from them, since per-keystroke updates aren't practical. Each node stores its top-k, so a lookup walks to the prefix and returns, with no sorting, and I'd cache aggressively. Some staleness is a fair trade for speed.",
             "keyTakeaway": "Trie with cached top-k per node, built offline from logs; serve reads from cache.",
             "diagram": {
                 "kind": "flow",
@@ -269,7 +269,7 @@
                 "exercise"
             ],
             "question": "Design a chat system with reliable delivery, presence, and offline users.",
-            "answer": "I'd use persistent WebSocket connections to stateful chat servers, with service discovery routing each user to theirs. If the recipient is online, deliver directly, otherwise send a push notification. Ordering only needs per-conversation sequence numbers, so I key messages by (channel_id, message_id) in a key-value store.",
+            "answer": "I'd use persistent WebSocket connections to stateful chat servers, with service discovery routing each user to theirs, and presence from heartbeats. If the recipient is online, deliver directly, otherwise send a push notification. Ordering only needs per-conversation sequence numbers, so I key messages by (channel_id, message_id) in a key-value store.",
             "keyTakeaway": "Stateful WebSocket servers, per-channel sequence numbers, KV store for the long tail.",
             "diagram": {
                 "kind": "sequence",

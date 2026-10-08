@@ -113,7 +113,7 @@
                 "behavioral"
             ],
             "question": "Business pressure pushes to ship a feature that skips engineering quality work you consider mandatory. What happens?",
-            "answer": "Some gates aren't negotiable: test coverage on the money path, security review on auth flows, reversible migrations. Refactoring and tooling can wait with a repayment date. If a gate loses, I get the risk accepted in writing with a remediation date.",
+            "answer": "Some gates aren't negotiable and I escalate them: test coverage on the money path, security review on auth flows, reversible migrations. Refactoring and tooling can wait with a repayment date. I show the cost of skipping in business units. If a gate loses, I get the risk accepted in writing with a remediation date.",
             "keyTakeaway": "Escalate the true gates, price the debt, and record any accepted risk with a remediation date.",
             "diagram": {
                 "kind": "layers",
@@ -148,7 +148,7 @@
                 "behavioral"
             ],
             "question": "A release causes an outage. How do you communicate with stakeholders during and after?",
-            "answer": "During an incident I send short updates on a fixed cadence: what's broken, who's affected, what we're doing, and when the next update comes. One channel, one owner, and no speculating on cause. Afterwards I write a business-readable post-mortem with the timeline, impact in numbers, root cause, and fixes with owners and dates. Silence or jargon does more damage than downtime.",
+            "answer": "During an incident I send short updates on a fixed cadence: what's broken, who's affected, what we're doing, and when the next update comes. One channel, one owner, no speculating on cause, and I never mix remediation with blame. Afterwards I write a business-readable post-mortem with the timeline, impact in numbers, root cause, and fixes with owners and dates. Silence or jargon does more damage than downtime.",
             "keyTakeaway": "Cadenced updates with one owner during, honest numbered post-mortem after, no speculation, no blame.",
             "diagram": {
                 "kind": "sequence",
@@ -731,7 +731,7 @@
                 "behavioral"
             ],
             "question": "How do you recover when a capability you promised stakeholders turns out not to exist?",
-            "answer": "I correct it fast, in the same channel as the promise: what I said, what's true, and the impact. I bring a workaround now and the real fix in a named release. Stakeholders rarely punish a wrong estimate, they punish bad news sat on.",
+            "answer": "I correct it fast, in the same channel as the promise: what I said, what's true, and the impact. I bring priced recovery options, a workaround now and the real fix in a named release. Stakeholders rarely punish a wrong estimate, they punish bad news sat on.",
             "keyTakeaway": "Correct a broken promise in its original channel with priced recovery options; correction speed is the currency.",
             "diagram": {
                 "kind": "flow",

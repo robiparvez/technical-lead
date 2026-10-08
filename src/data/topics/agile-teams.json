@@ -95,7 +95,7 @@
                 "behavioral"
             ],
             "question": "How do you keep a team effective when it spans multiple time zones?",
-            "answer": "Written work comes first, so decisions and status live in documents and the tracker. We keep one small overlap window for decisions and unblocks, and everything else is async with clear response-time expectations. I rotate meeting times so one region doesn't always take the 10 PM call.",
+            "answer": "Written work comes first, so decisions and status live in documents and the tracker. We keep one small overlap window for decisions and unblocks, and everything else is async with clear response-time expectations. I rotate meeting times so one region doesn't always take the 10 PM call. Handoffs carry context and acceptance criteria, or the rework eats the time-zone savings.",
             "keyTakeaway": "Documents over meetings, one protected overlap hour, fair rotation, context-rich handoffs.",
             "diagram": {
                 "kind": "compare",
@@ -145,7 +145,7 @@
                 "process"
             ],
             "question": "Velocity is down two sprints in a row. What do you do?",
-            "answer": "I look for the cause, not someone to blame. Interrupts, underestimated stories and review latency each need a different fix, so I pull the data, like interrupt tickets and cycle time by stage. Then I fix flow. I never target velocity, because teams just inflate estimates.",
+            "answer": "I look for the cause, not someone to blame. Interrupts, underestimated stories and review latency each need a different fix, so I pull the data, like interrupt tickets and cycle time by stage. Then I fix flow: protect focus time, kill the recurring interrupt source, and tighten review turnaround. I never target velocity, because teams just inflate estimates.",
             "keyTakeaway": "Diagnose flow, not people; fix the interrupt source; never target the velocity number.",
             "diagram": {
                 "kind": "flow",
@@ -265,7 +265,7 @@
                 "flow"
             ],
             "question": "The same three stories keep spilling across sprints. What is going on and what do you change?",
-            "answer": "Spilling once is estimation noise. Spilling every sprint is a defect in the story, so I find where it waits, like the review queue or a missing environment. Then I split along an acceptance-criteria seam so the first slice is demoable. I never roll over automatically, I re-size and re-prioritize.",
+            "answer": "Spilling once is estimation noise. Spilling every sprint is a defect in the story, so I find where it waits, like the review queue, a missing environment, or an unanswered dependency. Then I split along an acceptance-criteria seam so the first slice is demoable. A story that needs another team before it can start is a dependency, not a story. I never roll over automatically. I re-size and re-prioritize.",
             "keyTakeaway": "Re-split spilling stories along acceptance criteria and expose their hidden dependencies instead of rolling them.",
             "diagram": {
                 "kind": "flow",
@@ -327,7 +327,7 @@
                 "behavioral"
             ],
             "question": "You have just formed a brand-new team. How do you get it jelled and productive fast?",
-            "answer": "I plan the first sprints for learning, not output, and tell stakeholders so, since velocity lags for three or four sprints and judging it early creates fear. In week one we write working agreements like definition of done and review turnaround. I land a small shipped win early, and I name friction as normal storming, not a hiring mistake.",
+            "answer": "I plan the first sprints for learning, not output, and tell stakeholders so, since velocity lags for three or four sprints and judging it early creates fear. In week one we write working agreements like definition of done and review turnaround. I pair people and rotate work so knowledge spreads, and I land a small shipped win early. I name friction as normal storming, not a hiring mistake.",
             "keyTakeaway": "New teams need explicit working agreements, deliberate pairing, and an early shipped win, not velocity judgment."
         },
         {
@@ -559,7 +559,7 @@
                 "behavioral"
             ],
             "question": "A senior executive asks mid-sprint for something urgent and the team disagrees. What do you do?",
-            "answer": "First I check whether it's an emergency or a priority: who is blocked, what five days of delay costs, what breaks if it waits. Most are priorities, so I give a date in the next sprint. If it's truly urgent, I make the trade visible. The product owner picks what comes out, and it's written down with its cost. I shield the team from pressure, never from reality.",
+            "answer": "First I check whether it's an emergency or a priority: who is blocked, what five days of delay costs, what breaks if it waits. Most are priorities, so I give a date in the next sprint. If it's truly urgent, I make the trade visible. The product owner picks what comes out, and it's written down with its cost. I shield the team from pressure, never from reality. If routine asks keep bypassing planning, I fix that forum.",
             "keyTakeaway": "Verify real urgency, trade scope visibly in writing, and fix the planning gap that caused the bypass.",
             "diagram": {
                 "kind": "branch",
@@ -646,7 +646,7 @@
                 "focus"
             ],
             "question": "Mid-sprint the sprint goal is at risk while individual tickets look fine. How do you react?",
-            "answer": "The sprint goal is the deliverable and tickets only decompose it. When it's at risk, I replan with the product owner and move people to the critical story, even if that abandons in-flight tickets. I cut the periphery first, since a goal met with eighty percent of the stories beats five complete stories and no goal.",
+            "answer": "The sprint goal is the deliverable and tickets only decompose it. When it's at risk, I trigger a mid-sprint replan with the product owner instead of letting slippage show up at review, and I move people to the critical story, even if that abandons in-flight tickets. I cut the periphery first, since a goal met with eighty percent of the stories beats five complete stories and no goal.",
             "keyTakeaway": "Replan around the sprint goal mid-sprint, cut periphery scope, and name the risk while options remain.",
             "diagram": {
                 "kind": "flow",
@@ -675,7 +675,7 @@
                 "flow"
             ],
             "question": "Beyond velocity, what signals tell you a team is actually healthy?",
-            "answer": "I start with flow: cycle time trend, WIP, and flow efficiency, which show whether work moves or waits. Then sustainability, like interrupt ratio and after-hours commits, and quality, like escaped defects. The behavioral tells matter most: people argue hard about ideas, and a two-week vacation causes no heroics.",
+            "answer": "I start with flow: cycle time trend, WIP, and flow efficiency. They show whether work moves or waits, which velocity can't. Then sustainability, like interrupt ratio and after-hours commits, and quality, like escaped defects and rework on finished stories. The behavioral tells matter most: people argue hard about ideas, and a two-week vacation causes no heroics.",
             "keyTakeaway": "Read cycle time, interrupt ratio, rework, and behavioral tells; velocity alone measures volume, not health."
         },
         {
