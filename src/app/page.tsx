@@ -13,7 +13,7 @@ export default function Home() {
     // The ?q= query is read in the browser (static export has no request);
     // the prerendered fallback is the topic index, which needs no search index.
     return (
-        <Suspense fallback={<Results topics={topics} index={[]} query='' />}>
+        <Suspense fallback={<Results topics={topics} index={[]} query='' tag='' />}>
             <SearchResults topics={topics} index={getSearchIndex()} />
         </Suspense>
     );

@@ -36,13 +36,14 @@ export default function SearchBox() {
     const committed = useRef<string | null>(null);
 
     useEffect(() => {
-        // read the URL after mount so server and hydration markup match;
-        // setState here is the intended one-time external-system sync
-        const initial = new URLSearchParams(window.location.search).get('q') ?? '';
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setValue(initial);
-        committed.current = initial;
-    }, []);
+        // read the URL after mount so server and hydration markup match, and
+        // again on route changes (a tag link drops ?q=). A URL equal to the
+        // last commit came from this box, so skip it to keep newer keystrokes.
+        const fromUrl = new URLSearchParams(window.location.search).get('q') ?? '';
+        if (committed.current === fromUrl) return;
+        setValue(fromUrl);
+        committed.current = fromUrl;
+    }, [pathname]);
 
     useEffect(() => {
         if (committed.current === null || committed.current === value) return;

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { highlight } from 'sugar-high';
 import type { Question } from '@/data/types';
@@ -96,10 +97,21 @@ function QuestionCard({
             >
                 <span className='q-text'>
                     <span className='q-question'>{question.question}</span>
-                    <span className='q-tags'>{question.tags.join(' · ')}</span>
                 </span>
                 <ChevronGlyph />
             </button>
+            {/* links sit outside the toggle: a link inside a button is invalid HTML */}
+            {question.tags.length > 0 && (
+                <ul className='q-tags' aria-label='Tags'>
+                    {question.tags.map((tag) => (
+                        <li key={tag}>
+                            <Link className='tag' href={`/?tag=${encodeURIComponent(tag)}`}>
+                                {tag}
+                            </Link>
+                        </li>
+                    ))}
+                </ul>
+            )}
             {open && (
                 <div className='answer' id={answerId}>
                     <p>{question.answer}</p>

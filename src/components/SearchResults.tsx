@@ -13,26 +13,30 @@ interface TopicSummary {
     questionIds: string[];
 }
 
-/** Home index driven by the ?q= query in the URL; needs a Suspense boundary. */
+/** Home index driven by the ?q= and ?tag= queries in the URL; needs a Suspense boundary. */
 export default function SearchResults(props: { topics: TopicSummary[]; index: SearchEntry[] }) {
-    const query = useSearchParams().get('q') ?? '';
-    return <Results {...props} query={query} />;
+    const params = useSearchParams();
+    return <Results {...props} query={params.get('q') ?? ''} tag={params.get('tag') ?? ''} />;
 }
 
-/** Home index: topic cards, or live search results across questions. */
+/** Home index: topic cards, live search results, or the questions carrying one tag. */
 export function Results({
     topics,
     index,
     query,
+    tag,
 }: {
     topics: TopicSummary[];
     index: SearchEntry[];
     query: string;
+    tag: string;
 }) {
     const { known } = useKnownQuestions();
     const q = query.trim().toLowerCase();
+    // a search query wins over a tag filter; the search box only writes ?q=
+    const tagFilter = q ? '' : tag.trim();
 
-    if (!q) {
+    if (!q && !tagFilter) {
         const questionCount = topics.reduce((n, t) => n + t.questionIds.length, 0);
         return (
             <div>
@@ -64,14 +68,33 @@ export function Results({
         );
     }
 
-    const matches = index.filter((e) => {
-        const haystack = [e.question, e.answer, e.keyTakeaway, e.tags.join(' '), e.topicTitle]
-            .join(' ')
-            .toLowerCase();
-        return haystack.includes(q);
-    });
+    const matches = tagFilter
+        ? index.filter((e) => e.tags.includes(tagFilter))
+        : index.filter((e) => {
+              const haystack = [e.question, e.answer, e.keyTakeaway, e.tags.join(' '), e.topicTitle]
+                  .join(' ')
+                  .toLowerCase();
+              return haystack.includes(q);
+          });
 
     if (matches.length === 0) {
+        if (tagFilter) {
+            return (
+                <div>
+                    <header className='topic-header'>
+                        <h1 className='topic-title'>No matches</h1>
+                    </header>
+                    <div className='search-empty' role='status'>
+                        <p>
+                            No questions carry the tag <strong>&ldquo;{tagFilter}&rdquo;</strong>.
+                        </p>
+                        <Link className='btn' href='/'>
+                            Show all topics
+                        </Link>
+                    </div>
+                </div>
+            );
+        }
         return (
             <div>
                 <header className='topic-header'>
@@ -94,9 +117,16 @@ export function Results({
         <div>
             <header className='topic-header'>
                 <h1 className='topic-title'>
-                    {matches.length} {matches.length === 1 ? 'question' : 'questions'} match
-                    &ldquo;{query.trim()}&rdquo;
+                    {matches.length} {matches.length === 1 ? 'question' : 'questions'}{' '}
+                    {tagFilter ? 'tagged' : 'match'} &ldquo;{tagFilter || query.trim()}&rdquo;
                 </h1>
+                {tagFilter && (
+                    <p className='topic-meta'>
+                        <Link className='btn' href='/'>
+                            Show all topics
+                        </Link>
+                    </p>
+                )}
             </header>
             <ul className='search-results'>
                 {matches.map((m) => (

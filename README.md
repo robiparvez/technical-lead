@@ -13,7 +13,7 @@ Open http://localhost:3000. Production build: `npm run build` writes a static si
 
 ## Deploy
 
-`.github/workflows/pages.yml` lints, builds the static export (`output: 'export'`, `trailingSlash: true`), and publishes `out/` to GitHub Pages on every push to `master`. The workflow sets `PAGES_BASE_PATH` to `/technical-lead`; local runs leave it unset and serve from `/`. There is no server: the home page reads `?q=` in the browser, and on the home page the search box updates the query with `history.replaceState`, since the export has no per-query payload.
+`.github/workflows/pages.yml` lints, builds the static export (`output: 'export'`, `trailingSlash: true`), and publishes `out/` to GitHub Pages on every push to `master`. The workflow sets `PAGES_BASE_PATH` to `/technical-lead`; local runs leave it unset and serve from `/`. There is no server: the home page reads `?q=` (search) and `?tag=` (tag filter) in the browser, and on the home page the search box updates the query with `history.replaceState`, since the export has no per-query payload.
 
 ## Versions
 
@@ -31,7 +31,8 @@ Remotion license: free for individuals, including personal use
 ## Structure
 
 - `src/data/topics/*.json` — questions, answers, tags, diagrams, key takeaways
-- `src/components/QuestionRail.tsx` — difficulty rail with stations and progress glyphs
+- `src/components/QuestionRail.tsx` — difficulty rail with stations and progress glyphs; each card lists its tags as links to `/?tag=<tag>`
+- `src/components/SearchResults.tsx` — home index: topic cards, `?q=` search results, or the questions carrying one `?tag=` across all topics
 - `src/components/Diagram.tsx` — diagram host: every diagram plays as a looping @remotion/player animation
 - `src/components/diagrams/` — Remotion compositions: hand-built diagrams and `SpecDiagram`, which animates any JSON-authored `DiagramSpec`
 - `src/styles/tokens.css` — every design token as a CSS custom property, with light and dark values
@@ -46,14 +47,14 @@ Every color token is `light-dark(light, dark)`. The OS preference picks the bran
 | --- | --- |
 | `--color-canvas` | page background (`html`, in `reset.css`) |
 | `--color-text-primary` | headings, question text, answer body, borders on hover/active, static SVG labels |
-| `--color-text-secondary` | eyebrows, metadata, nav idle text, code comments and punctuation |
+| `--color-text-secondary` | eyebrows, metadata, nav idle text, tag chip text, code comments and punctuation |
 | `--color-accent` | difficulty rail line, focus rings, known-check glyph, search match underline, key-takeaway rule, active diagram path, selected-nav and pressed-theme border |
-| `--color-border-control` | control boundaries at 3:1: buttons, search input, quiz options and radios, code block rule, progress rings |
+| `--color-border-control` | control boundaries at 3:1: buttons, search input, tag chips, quiz options and radios, code block rule, progress rings |
 | `--color-border-subtle` | card outlines, hairlines, frame edges (decorative only) |
 | `--color-code-*` | syntax tokens: keyword, string, entity, type, property |
 | `--space-3xs`-`--space-3xl` | all paddings and gaps (4px to 80px) |
 | `--radius-md` | outlined cards, player frames |
-| `--radius-sm` / `--radius-xs` | search input and buttons / badges |
+| `--radius-sm` / `--radius-xs` | search input and buttons / badges and tag chips |
 | `--border-width-1` / `--border-width-2` | default borders / active, focus, and rail weights |
 | `--text-xs`-`--text-xl` | labels 13px, controls and code 15px, body 17px, questions 19px, titles 24-34px |
 | `--leading-*` | label, UI, body (1.65), code, and title line heights |
@@ -85,6 +86,7 @@ Every interactive component: keyboard, pointer, touch. State rules live in `src/
 | Sidebar toggle (desktop) | Tab + Enter, or Ctrl+B (Cmd+B on macOS) from anywhere except rich-text editors, collapses or restores the sidebar; focus moves to the toggle that replaces the unmounted one; `aria-expanded` and `aria-keyshortcuts` set | Click the hamburger at the top of the sidebar to collapse, the floating hamburger top-left to restore; 44 px target |
 | Nav links | Tab reachable; `aria-current="page"` on the open topic; Enter navigates | Tap navigates; 44 px min height |
 | Question toggle | Tab + Enter/Space expands or collapses; `aria-expanded` and `aria-controls` set; a `#question-id` in the URL (search results, quiz review links) opens that card and scrolls it just below the sticky header | Tap anywhere on the header; 44 px min height |
+| Tag link | Tab reachable, one link per tag under each question; Enter opens `/?tag=<tag>`, which lists every question with that exact tag across all topics; typing in search replaces the tag filter | Tap navigates; "Show all topics" returns to the index |
 | Mark as known | Tab + Enter/Space toggles; `aria-pressed` reflects state; label swaps "Mark as known" / "Marked as known" | Tap toggles; glyph appears on the rail |
 | Play / Pause / Restart | Tab + Enter/Space; label announces the action | Tap; 44 px target |
 | Diagram player | Group with `aria-label`; no autoplay; controls are regular buttons | Never autoplays, including under `prefers-reduced-motion` |
