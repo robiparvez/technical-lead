@@ -617,7 +617,7 @@
                 "dynamodb"
             ],
             "question": "How do you choose between RDS, Aurora Serverless, and DynamoDB for a new service?",
-            "answer": "I start from access patterns. For relational data with joins and steady load, it's plain RDS Postgres, the boring correct default. Aurora Serverless suits spiky or rarely used SQL workloads. DynamoDB wins when access patterns are few, fixed and key-shaped at large scale, but you design tables around queries upfront, with no joins.",
+            "answer": "I start from access patterns. For relational data with joins and steady load, it's plain RDS Postgres, the boring correct default. Aurora Serverless suits spiky or rarely used SQL workloads. DynamoDB wins when access patterns are few, fixed and key-shaped at large scale, but tables are designed around queries upfront, with no joins.",
             "keyTakeaway": "Default to relational Postgres, take Aurora Serverless for spiky SQL workloads, and pick DynamoDB only for fixed access patterns at large scale.",
             "diagram": {
                 "kind": "compare",

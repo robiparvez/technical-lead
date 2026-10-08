@@ -55,7 +55,7 @@
                 "semantics"
             ],
             "question": "What distinguishes an event from a command message?",
-            "answer": "An event states a fact that already happened, like order-placed, and the publisher doesn't care who listens. A command tells a specific handler to do something, like reserve-inventory, and can be refused. Events keep coupling loose, so I use commands only for directed flows, or you get hidden workflows nobody can trace.",
+            "answer": "An event states a fact that already happened, like order-placed, and the publisher doesn't care who listens. A command tells a specific handler to do something, like reserve-inventory, and can be refused. Events keep coupling loose, so I use commands only for directed flows, or the result is hidden workflows nobody can trace.",
             "keyTakeaway": "Events are facts anyone may consume; commands are orders with an owner.",
             "diagram": {
                 "kind": "compare",
@@ -106,7 +106,7 @@
                 "typescript"
             ],
             "question": "Compare at-most-once, at-least-once, and exactly-once delivery, and explain how you make retries safe.",
-            "answer": "At-most-once can lose messages. At-least-once retries until acknowledged, so you get duplicates. Exactly-once across systems is really at-least-once plus deduplication, so I make consumers idempotent.",
+            "answer": "At-most-once can lose messages. At-least-once retries until acknowledged, so the result is duplicates. Exactly-once across systems is really at-least-once plus deduplication, so I make consumers idempotent.",
             "keyTakeaway": "Assume duplicates: build idempotent consumers instead of trusting exactly-once.",
             "code": {
                 "language": "typescript",
@@ -389,7 +389,7 @@
                 "modeling"
             ],
             "question": "When would you choose event sourcing over event-carried state transfer?",
-            "answer": "Event sourcing makes the event log the system of record and you replay it to derive state, which costs versioning discipline. Event-carried state transfer keeps the database as the record and puts a snapshot in each event, so consumers need no callback, but messages get fat. I'd start with thin fact events.",
+            "answer": "Event sourcing makes the event log the system of record, and state comes from replaying it. The cost is versioning discipline. Event-carried state transfer keeps the database as the record and puts a snapshot in each event, so consumers need no callback, but messages get fat. I'd start with thin fact events.",
             "keyTakeaway": "Event sourcing stores facts as the record; state transfer ships snapshots so consumers skip call-backs.",
             "diagram": {
                 "kind": "compare",

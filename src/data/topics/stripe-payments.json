@@ -277,7 +277,7 @@
                 "authentication"
             ],
             "question": "What is SCA and how does your integration handle a payment that requires customer authentication?",
-            "answer": "SCA is the European rule that most card payments need two factors, done through 3D Secure. The PaymentIntent goes to requires_action and the front end completes the challenge. Checkout does that for you, and with Elements I call handleNextAction. The classic bug is treating requires_action as an error. Outside Europe cards may skip SCA, so the flow has to work with or without a challenge.",
+            "answer": "SCA is the European rule that most card payments need two factors, done through 3D Secure. The PaymentIntent goes to requires_action and the front end completes the challenge. Checkout does that, and with Elements I call handleNextAction. The classic bug is treating requires_action as an error. Outside Europe cards may skip SCA, so the flow has to work with or without a challenge.",
             "keyTakeaway": "requires_action means show the 3DS challenge, not an error; both branches must work.",
             "diagram": {
                 "kind": "branch",
@@ -463,7 +463,7 @@
                 "authentication"
             ],
             "question": "What is a SetupIntent and when do you need one instead of a PaymentIntent?",
-            "answer": "A SetupIntent verifies and saves a payment method without charging it, which I use for trials and card-on-file. Under SCA you can't silently charge a stored card months later unless the issuer authenticated it at save time, and a SetupIntent through 3DS does that. The later charge is a PaymentIntent with off_session true.",
+            "answer": "A SetupIntent verifies and saves a payment method without charging it, which I use for trials and card-on-file. Under SCA a stored card can't be silently charged months later unless the issuer authenticated it at save time, and a SetupIntent through 3DS does that. The later charge is a PaymentIntent with off_session true.",
             "keyTakeaway": "SetupIntents authenticate a card at save time so later off-session charges actually succeed.",
             "code": {
                 "language": "typescript",
@@ -646,7 +646,7 @@
                 "settlement"
             ],
             "question": "How do presentment currency and settlement currency differ in Stripe, and why should you care?",
-            "answer": "Presentment is the currency you charge and settlement is what lands in your bank, like euros charged and dollars paid out. Stripe converts at its FX rate and takes a fee at payout. I price natively per market instead of converting the home price, and I decide deliberately whether to hold foreign balances, since passive conversion is a silent cost.",
+            "answer": "Presentment is the currency charged and settlement is what lands in the bank, like euros charged and dollars paid out. Stripe converts at its FX rate and takes a fee at payout. I price natively per market instead of converting the home price, and I decide deliberately whether to hold foreign balances, since passive conversion is a silent cost.",
             "keyTakeaway": "Charge in the presentment currency, get paid in the settlement currency, and FX conversion at payout is a real cost.",
             "diagram": {
                 "kind": "compare",

@@ -375,7 +375,7 @@
                 "analytics"
             ],
             "question": "How do window functions differ from GROUP BY, and when do you reach for them?",
-            "answer": "GROUP BY collapses rows to one per group and loses the detail. Window functions compute over a partition but keep every row, so I can show a running total or a rank beside each order. They replace self-joins and correlated subqueries. They run after aggregation, so to filter on one I wrap it in a subquery or CTE.",
+            "answer": "GROUP BY collapses rows to one per group and loses the detail. Window functions compute over a partition but keep every row, so a query can show a running total or a rank beside each order. They replace self-joins and correlated subqueries. They run after aggregation, so to filter on one I wrap it in a subquery or CTE.",
             "keyTakeaway": "Window functions aggregate over rows while keeping them, no self-join required.",
             "code": {
                 "language": "sql",
@@ -1033,7 +1033,7 @@
                 "operations"
             ],
             "question": "How does a backup strategy turn a bad delete from an hour ago into a boring recovery?",
-            "answer": "Nightly full backups lose everything since midnight. I use continuous archiving: a base backup plus WAL streamed to object storage. Then point-in-time recovery lets me restore to just before the bad delete and copy back the lost rows. I run restore drills and check RPO and RTO against what the business needs.",
+            "answer": "Nightly full backups lose everything since midnight. I use continuous archiving: a base backup plus WAL streamed to object storage. Then point-in-time recovery restores to just before the bad delete, and the lost rows can be copied back. I run restore drills and check RPO and RTO against what the business needs.",
             "keyTakeaway": "Base backup plus WAL archiving buys point-in-time recovery; rehearse restores or it is theater.",
             "diagram": {
                 "kind": "sequence",

@@ -732,7 +732,7 @@
                 "bulkhead"
             ],
             "question": "How do you set timeouts and resource limits so one slow dependency cannot take down a whole request path?",
-            "answer": "I start from an end-to-end budget and hand fractions down the chain, so each inner timeout is smaller than its caller's, or you get abandoned work. Bulkheads give each dependency a bounded pool, so a hung inventory service can't eat the payments threads. I prove it in load tests by hanging one on purpose.",
+            "answer": "I start from an end-to-end budget and hand fractions down the chain, so each inner timeout is smaller than its caller's, or the result is abandoned work. Bulkheads give each dependency a bounded pool, so a hung inventory service can't eat the payments threads. I prove it in load tests by hanging one on purpose.",
             "keyTakeaway": "Give each hop a slice of one end-to-end budget, and give each dependency its own bulkhead.",
             "diagram": {
                 "kind": "layers",

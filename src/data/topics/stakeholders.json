@@ -398,7 +398,7 @@
                 "behavioral"
             ],
             "question": "How do you build trust with a product partner you have never worked with before?",
-            "answer": "Early and small. I deliver one of their requests fast and visibly, since a partner who's seen you ship argues with estimates less. I surface small mistakes myself. Trust compounds on kept micro-predictions: say Tuesday, deliver Tuesday.",
+            "answer": "Early and small. I deliver one of their requests fast and visibly, since a partner who's seen me ship argues with estimates less. I surface small mistakes myself. Trust compounds on kept micro-predictions: say Tuesday, deliver Tuesday.",
             "keyTakeaway": "Deliver one small thing fast, surface a small mistake yourself, and compound trust on kept micro-predictions."
         },
         {
@@ -629,7 +629,7 @@
                 "behavioral"
             ],
             "question": "How do you settle a trade-off argument with data instead of dueling opinions?",
-            "answer": "I move the argument from adjectives to a measured number, like what p95 latency costs us in conversion, and a one-day measurement ends a week of debate. If it can't be measured, I use a weighted matrix. Whoever brings the first number usually owns the decision, so I bring it.",
+            "answer": "I move the argument from adjectives to a measured number, like what p95 latency costs in conversion, and a one-day measurement ends a week of debate. If it can't be measured, I use a weighted matrix. Whoever brings the first number usually owns the decision, so I bring it.",
             "keyTakeaway": "Replace adjectives with a cheap measurement or stakeholder-weighted matrix, and be the one who brings the first number.",
             "diagram": {
                 "kind": "branch",

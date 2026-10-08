@@ -512,7 +512,7 @@
                 "deployment"
             ],
             "question": "How do you ship a database schema change without taking the table offline?",
-            "answer": "Expand and contract. First deploy the backward-compatible expansion: a nullable column, a throttled batch backfill, and dual-write if semantics changed. Then ship code that reads and writes the new shape. Only after no old version remains do we drop the old column. Each step is its own release.",
+            "answer": "Expand and contract. First deploy the backward-compatible expansion: a nullable column, a throttled batch backfill, and dual-write if semantics changed. Then ship code that reads and writes the new shape. Only after no old version remains, I drop the old column. Each step is its own release.",
             "keyTakeaway": "Expand first, migrate in place, contract last — every deploy step stays reversible.",
             "code": {
                 "language": "yaml",

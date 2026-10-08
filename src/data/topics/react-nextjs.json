@@ -518,7 +518,7 @@
                 "api"
             ],
             "question": "Given that both run on the server, when would you pick a route handler over a server action?",
-            "answer": "Server actions are my default for mutations from our own UI, since they're typed end to end and need no API surface. I use a route handler when the caller isn't my React tree, like webhooks, mobile apps, cron jobs, or cached GET endpoints. I never fetch my own REST API from server components, which is a pointless HTTP hop.",
+            "answer": "Server actions are my default for mutations from the app's own UI, since they're typed end to end and need no API surface. I use a route handler when the caller isn't my React tree, like webhooks, mobile apps, cron jobs, or cached GET endpoints. I never fetch my own REST API from server components, which is a pointless HTTP hop.",
             "keyTakeaway": "Server actions serve your own UI's mutations; route handlers exist for webhooks, apps, and anything needing real HTTP.",
             "diagram": {
                 "kind": "compare",

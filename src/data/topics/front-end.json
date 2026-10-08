@@ -90,7 +90,7 @@
                 "decision"
             ],
             "question": "How do you choose between React, Angular, and Vue for a new project?",
-            "answer": "I decide on team skills, hiring pool and ecosystem before syntax. React is flexible with a huge ecosystem, but you assemble your own stack. Angular is opinionated, with DI and tooling, which suits enterprise consistency. The worst choice is retraining a productive team for fashion.",
+            "answer": "I decide on team skills, hiring pool and ecosystem before syntax. React is flexible with a huge ecosystem, but the team assembles its own stack. Angular is opinionated, with DI and tooling, which suits enterprise consistency. The worst choice is retraining a productive team for fashion.",
             "keyTakeaway": "Team capability and ecosystem depth decide; framework syntax is a rounding error.",
             "diagram": {
                 "kind": "branch",

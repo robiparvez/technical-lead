@@ -59,7 +59,7 @@
                 "decision"
             ],
             "question": "How do you decide between REST and GraphQL for a new public API?",
-            "answer": "I default to REST for public APIs because you get HTTP caching, CDNs, and per-endpoint rate limiting. I pick GraphQL when client needs vary a lot or I'm aggregating many services, and then I add persisted queries, depth limits, and batching.",
+            "answer": "I default to REST for public APIs because it gives HTTP caching, CDNs, and per-endpoint rate limiting. I pick GraphQL when client needs vary a lot or I'm aggregating many services, and then I add persisted queries, depth limits, and batching.",
             "keyTakeaway": "REST for public cacheable resources; GraphQL for diverse clients over a nested graph.",
             "diagram": {
                 "kind": "branch",
@@ -839,7 +839,7 @@
                 "coupling"
             ],
             "question": "Is HATEOAS worth implementing, or is it REST purity theater?",
-            "answer": "Full HATEOAS stays rare because tooling and consumers prefer contracts. My middle ground is to embed links only for things that genuinely vary, like a next-page link or a payment redirect. When the server controls the flow, links let you change steps without breaking clients.",
+            "answer": "Full HATEOAS stays rare because tooling and consumers prefer contracts. My middle ground is to embed links only for things that genuinely vary, like a next-page link or a payment redirect. When the server controls the flow, links let the server change steps without breaking clients.",
             "keyTakeaway": "Use hypermedia links for server-driven flows; skip full HATEOAS for contract-first docs.",
             "diagram": {
                 "kind": "compare",

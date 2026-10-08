@@ -321,7 +321,7 @@
                 "validation"
             ],
             "question": "Walk me through a JWT's structure and what a server must check before trusting one.",
-            "answer": "A JWT is a base64url header, a payload of claims, and a signature. The payload is encoded, not encrypted. I verify the signature with a key my server chose and pin the allowed algorithms, since alg none attacks are real. Then I check exp, nbf, iss and aud. A valid token is authentic, not privileged.",
+            "answer": "A JWT is a base64url header, a payload of claims, and a signature. The payload is encoded, not encrypted. I verify the signature with a key the server chose and pin the allowed algorithms, since alg none attacks are real. Then I check exp, nbf, iss and aud. A valid token is authentic, not privileged.",
             "keyTakeaway": "Verify the signature with pinned algorithms and your own key, then exp, nbf, iss, aud, before trusting claims.",
             "diagram": {
                 "kind": "flow",
@@ -458,7 +458,7 @@
                 "hsts"
             ],
             "question": "Which security response headers do you set on a production web app, and what does each one buy?",
-            "answer": "Content-Security-Policy with script-src limited to our own origins or nonces is the one header that really blunts XSS. Strict-Transport-Security with a long max-age stops downgrade, frame-ancestors stops clickjacking, nosniff stops MIME guessing, and Referrer-Policy limits URL leaks. I assert them all in CI because headers regress silently.",
+            "answer": "Content-Security-Policy with script-src limited to the site's own origins or nonces is the one header that really blunts XSS. Strict-Transport-Security with a long max-age stops downgrade, frame-ancestors stops clickjacking, nosniff stops MIME guessing, and Referrer-Policy limits URL leaks. I assert them all in CI because headers regress silently.",
             "keyTakeaway": "Set CSP, HSTS, frame-ancestors, nosniff, Referrer-Policy everywhere, and assert them in CI.",
             "diagram": {
                 "kind": "layers",
@@ -594,7 +594,7 @@
                 "redirects"
             ],
             "question": "Why is an open redirect a security issue, and how should redirect parameters be handled?",
-            "answer": "An open redirect takes a return URL from the request and hops there, so your trusted domain lends credibility to a phishing link and can leak OAuth codes. I validate against a fixed host allowlist, or accept relative paths only, rejecting any scheme or authority, including //evil.com.",
+            "answer": "An open redirect takes a return URL from the request and hops there, so a trusted domain lends credibility to a phishing link and can leak OAuth codes. I validate against a fixed host allowlist, or accept relative paths only, rejecting any scheme or authority, including //evil.com.",
             "keyTakeaway": "Allowlist redirect hosts or accept relative paths only; open redirects launder phishing and OAuth codes.",
             "diagram": {
                 "kind": "branch",
@@ -790,7 +790,7 @@
                 "tokens"
             ],
             "question": "People constantly mix up XSS and CSRF; can you untangle what each attacks and why CSRF tokens fail against XSS?",
-            "answer": "CSRF forges requests with the victim's credentials but never sees the response. XSS runs attacker script inside your origin, so it can read the DOM and call your API as the user. A CSRF token fails against XSS because injected script simply reads it. I stop XSS with output encoding and nonce-based CSP.",
+            "answer": "CSRF forges requests with the victim's credentials but never sees the response. XSS runs attacker script inside the origin, so it can read the DOM and call the API as the user. A CSRF token fails against XSS because injected script simply reads it. I stop XSS with output encoding and nonce-based CSP.",
             "keyTakeaway": "CSRF forges blind cross-site requests; XSS reads everything in-origin, so a CSRF token is bypassed once XSS exists.",
             "diagram": {
                 "kind": "compare",

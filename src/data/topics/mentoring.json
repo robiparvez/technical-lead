@@ -484,7 +484,7 @@
                 "behavioral"
             ],
             "question": "What is the difference between sponsoring someone and mentoring them, and when do you do each?",
-            "answer": "A mentor talks with you, but a sponsor spends their own capital on you, which is rarer. Sponsoring happens out of the room: putting my name on their promotion packet, naming them for visible work, defending a risky assignment. Advice is nearly free, while sponsorship bets my credibility.",
+            "answer": "A mentor talks with an engineer, but a sponsor spends personal capital on that engineer, which is rarer. Sponsoring happens out of the room: putting my name on their promotion packet, naming them for visible work, defending a risky assignment. Advice is nearly free, while sponsorship bets my credibility.",
             "keyTakeaway": "Mentors advise in the room, sponsors spend their capital on you outside it.",
             "diagram": {
                 "kind": "compare",

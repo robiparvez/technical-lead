@@ -50,7 +50,7 @@
                 "horizontal"
             ],
             "question": "What is the difference between vertical and horizontal scaling?",
-            "answer": "Vertical scaling is a bigger machine. It's simple but capped, and still a single point of failure. Horizontal adds machines, so it's elastic, but you need stateless services and a shared-data plan. I scale up until it hurts, then out.",
+            "answer": "Vertical scaling is a bigger machine. It's simple but capped, and still a single point of failure. Horizontal adds machines, so it's elastic, but it needs stateless services and a shared-data plan. I scale up until it hurts, then out.",
             "keyTakeaway": "Up is simple but capped; out is elastic but demands statelessness and shared-state design.",
             "diagram": {
                 "kind": "compare",
@@ -422,7 +422,7 @@
                 "spikes"
             ],
             "question": "When would you put a message queue between a service and its workload?",
-            "answer": "I use a queue when demand spikes and the work needs no immediate answer, like email or media processing. We enqueue and acknowledge instantly, so a ten-x burst buffers instead of exhausting pools. I size workers for sustained load and watch depth, since a silent backlog is a delayed outage. Queues level load, they don't create capacity.",
+            "answer": "I use a queue when demand spikes and the work needs no immediate answer, like email or media processing. The service enqueues and acknowledges instantly, so a ten-x burst buffers instead of exhausting pools. I size workers for sustained load and watch depth, since a silent backlog is a delayed outage. Queues level load, they don't create capacity.",
             "keyTakeaway": "A queue buffers spikes so workers run at sustained capacity, but it levels load and never creates it.",
             "diagram": {
                 "kind": "sequence",
@@ -791,7 +791,7 @@
                 "read-write"
             ],
             "question": "When would you fan out feed writes to followers instead of fanning in reads?",
-            "answer": "Fan-out on write pushes each post into every follower's precomputed timeline, so reads are cheap. In practice I hybridize: push for normal users, but pull a celebrity's posts at read time and merge. Pushing to a hundred million inboxes would be a denial-of-service on ourselves.",
+            "answer": "Fan-out on write pushes each post into every follower's precomputed timeline, so reads are cheap. In practice I hybridize: push for normal users, but pull a celebrity's posts at read time and merge. Pushing to a hundred million inboxes would be a self-inflicted denial of service.",
             "keyTakeaway": "Push writes to follower feeds for cheap reads, but pull celebrity posts at read time and merge.",
             "diagram": {
                 "kind": "compare",
