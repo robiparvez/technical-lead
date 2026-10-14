@@ -44,6 +44,7 @@ Press "Mark as known" on any answer. The sidebar and the home page show a count 
 
 - Press `/` anywhere to search questions, answers, takeaways and tags.
 - Press `Ctrl+B` (`Cmd+B` on a Mac) to hide the sidebar.
+- Click the full-screen button next to the theme button to fill the whole screen. Press `Esc` to leave it.
 - The site follows your system's light or dark setting until you click the sun or moon button.
 - It works on a phone.
 - The References page lists the sources used to choose the questions.

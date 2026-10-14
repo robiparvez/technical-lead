@@ -6,6 +6,7 @@ import '../styles/app.css';
 import Shell from '@/components/Shell';
 import TopicNav from '@/components/TopicNav';
 import SearchBox from '@/components/SearchBox';
+import FullscreenToggle from '@/components/FullscreenToggle';
 import ThemeSwitch from '@/components/ThemeSwitch';
 import { TOPIC_GROUPS } from '@/data';
 import { getTechnologySummaries } from '@/data/technologies';
@@ -52,7 +53,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 <Shell
                     nav={<TopicNav key='nav' groups={groups} technologies={getTechnologySummaries()} />}
                     search={<SearchBox key='search' />}
-                    theme={<ThemeSwitch key='theme' />}
+                    // Shell renders this slot in the header and the phone top bar
+                    theme={
+                        <>
+                            <FullscreenToggle />
+                            <ThemeSwitch />
+                        </>
+                    }
                 >
                     {children}
                 </Shell>

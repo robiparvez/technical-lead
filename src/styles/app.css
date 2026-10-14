@@ -93,6 +93,14 @@ body {
 }
 .topbar .brand {
     margin-inline-end: auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+/* overflow clips an outer ring, so draw the focus ring inside the box */
+.topbar .brand:focus-visible {
+    outline-offset: calc(var(--border-width-2) * -1);
 }
 
 /* phone toggle panels */
