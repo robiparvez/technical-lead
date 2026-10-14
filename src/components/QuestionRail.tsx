@@ -14,7 +14,14 @@ import { DIFFICULTIES, DIFFICULTY_LABELS } from '@/lib/quiz';
  * stations drawn as rings, questions hanging from the line as nodes in
  * order. Known questions show a checked node.
  */
-export default function QuestionRail({ questions }: { questions: Question[] }) {
+export default function QuestionRail({
+    questions,
+    topicLabels,
+}: {
+    questions: Question[];
+    /** Question id to topic title; set on pages that mix topics. */
+    topicLabels?: Record<string, string>;
+}) {
     const { known, toggle } = useKnownQuestions();
 
     return (
@@ -44,6 +51,7 @@ export default function QuestionRail({ questions }: { questions: Question[] }) {
                                     <RailNode known={known.has(q.id)} />
                                     <QuestionCard
                                         question={q}
+                                        topic={topicLabels?.[q.id]}
                                         isKnown={known.has(q.id)}
                                         onToggleKnown={() => toggle(q.id)}
                                     />
@@ -59,10 +67,12 @@ export default function QuestionRail({ questions }: { questions: Question[] }) {
 
 function QuestionCard({
     question,
+    topic,
     isKnown,
     onToggleKnown,
 }: {
     question: Question;
+    topic?: string;
     isKnown: boolean;
     onToggleKnown: () => void;
 }) {
@@ -96,6 +106,7 @@ function QuestionCard({
                 onClick={() => setOpen((o) => !o)}
             >
                 <span className='q-text'>
+                    {topic && <span className='label'>{topic}</span>}
                     <span className='q-question'>{question.question}</span>
                 </span>
                 <ChevronGlyph />

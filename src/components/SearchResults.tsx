@@ -13,20 +13,32 @@ interface TopicSummary {
     questionIds: string[];
 }
 
+interface TechnologySummary {
+    slug: string;
+    label: string;
+    questionIds: string[];
+}
+
 /** Home index driven by the ?q= and ?tag= queries in the URL; needs a Suspense boundary. */
-export default function SearchResults(props: { topics: TopicSummary[]; index: SearchEntry[] }) {
+export default function SearchResults(props: {
+    topics: TopicSummary[];
+    technologies: TechnologySummary[];
+    index: SearchEntry[];
+}) {
     const params = useSearchParams();
     return <Results {...props} query={params.get('q') ?? ''} tag={params.get('tag') ?? ''} />;
 }
 
-/** Home index: topic cards, live search results, or the questions carrying one tag. */
+/** Home index: topic and technology cards, live search results, or the questions carrying one tag. */
 export function Results({
     topics,
+    technologies,
     index,
     query,
     tag,
 }: {
     topics: TopicSummary[];
+    technologies: TechnologySummary[];
     index: SearchEntry[];
     query: string;
     tag: string;
@@ -41,29 +53,57 @@ export function Results({
         return (
             <div>
                 <header className='topic-header'>
-                    <h1 className='topic-title'>Topics</h1>
+                    <h1 className='topic-title'>Study guide</h1>
                     <p className='topic-meta label'>
-                        {topics.length} topics, {questionCount} questions
+                        {topics.length} topics, {technologies.length} technologies, {questionCount}{' '}
+                        questions
                     </p>
                 </header>
-                <ul className='index-list'>
-                    {topics.map((t) => {
-                        const knownCount = t.questionIds.filter((id) => known.has(id)).length;
-                        return (
-                            <li key={t.slug}>
-                                <Link className='index-card' href={`/topics/${t.slug}`}>
-                                    <span className='index-head'>
-                                        <span className='index-title'>{t.title}</span>
-                                        <span className='index-meta'>
-                                            {knownCount}/{t.questionIds.length} known
+                <section className='index-section' aria-labelledby='index-topics'>
+                    <h2 className='index-section-title' id='index-topics'>
+                        Topics
+                    </h2>
+                    <ul className='index-list'>
+                        {topics.map((t) => {
+                            const knownCount = t.questionIds.filter((id) => known.has(id)).length;
+                            return (
+                                <li key={t.slug}>
+                                    <Link className='index-card' href={`/topics/${t.slug}`}>
+                                        <span className='index-head'>
+                                            <span className='index-title'>{t.title}</span>
+                                            <span className='index-meta'>
+                                                {knownCount}/{t.questionIds.length} known
+                                            </span>
                                         </span>
-                                    </span>
-                                    <span className='index-requirement'>{t.requirement}</span>
-                                </Link>
-                            </li>
-                        );
-                    })}
-                </ul>
+                                        <span className='index-requirement'>{t.requirement}</span>
+                                    </Link>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </section>
+                <section className='index-section' aria-labelledby='index-technologies'>
+                    <h2 className='index-section-title' id='index-technologies'>
+                        Technologies
+                    </h2>
+                    <ul className='index-list'>
+                        {technologies.map((t) => {
+                            const knownCount = t.questionIds.filter((id) => known.has(id)).length;
+                            return (
+                                <li key={t.slug}>
+                                    <Link className='index-card' href={`/technologies/${t.slug}`}>
+                                        <span className='index-head'>
+                                            <span className='index-title'>{t.label}</span>
+                                            <span className='index-meta'>
+                                                {knownCount}/{t.questionIds.length} known
+                                            </span>
+                                        </span>
+                                    </Link>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </section>
             </div>
         );
     }

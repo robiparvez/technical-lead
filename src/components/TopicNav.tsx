@@ -18,15 +18,27 @@ interface NavGroup {
     topics: NavTopic[];
 }
 
-/** Topic navigation with per-topic progress from localStorage. */
-export default function TopicNav({ groups }: { groups: NavGroup[] }) {
+interface NavTechnology {
+    slug: string;
+    label: string;
+    questionIds: string[];
+}
+
+/** Topic and technology navigation with per-item progress from localStorage. */
+export default function TopicNav({
+    groups,
+    technologies,
+}: {
+    groups: NavGroup[];
+    technologies: NavTechnology[];
+}) {
     // trailingSlash export paths end in '/'; compare without it (root stays '/')
     const pathname = usePathname().replace(/(.)\/$/, '$1');
     const { known } = useKnownQuestions();
     const { scores } = useQuizScores();
 
     return (
-        <nav className='nav' aria-label='Topics'>
+        <nav className='nav' aria-label='Topics and technologies'>
             <h2 className='nav-heading label'>
                 <span>Topics</span>
                 <span aria-hidden='true'>Known</span>
@@ -53,6 +65,27 @@ export default function TopicNav({ groups }: { groups: NavGroup[] }) {
                     })}
                 </Fragment>
             ))}
+            <h2 className='nav-heading label'>
+                <span>Technologies</span>
+                <span aria-hidden='true'>Known</span>
+            </h2>
+            {technologies.map((t) => {
+                const knownCount = t.questionIds.filter((id) => known.has(id)).length;
+                return (
+                    <Link
+                        key={t.slug}
+                        className='nav-link'
+                        href={`/technologies/${t.slug}`}
+                        aria-current={pathname === `/technologies/${t.slug}` ? 'page' : undefined}
+                    >
+                        <span>{t.label}</span>
+                        <span className='nav-count'>
+                            {knownCount}/{t.questionIds.length}
+                            <span className='sr-only'> known</span>
+                        </span>
+                    </Link>
+                );
+            })}
             <h2 className='nav-heading label'>Pages</h2>
             <Link
                 className='nav-link'

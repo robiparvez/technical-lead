@@ -752,6 +752,15 @@ pre.code .sh__token--comment {
 .index-list > li {
     display: flex;
 }
+.index-section + .index-section {
+    margin-top: var(--space-2xl);
+}
+.index-section-title {
+    margin: 0 0 var(--space-sm);
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: var(--letter-spacing-tight);
+}
 .index-card {
     display: flex;
     flex: 1;

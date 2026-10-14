@@ -8,6 +8,7 @@ import TopicNav from '@/components/TopicNav';
 import SearchBox from '@/components/SearchBox';
 import ThemeSwitch from '@/components/ThemeSwitch';
 import { TOPIC_GROUPS } from '@/data';
+import { getTechnologySummaries } from '@/data/technologies';
 
 // Applies a saved theme choice before first paint, so a dark reader never
 // sees a light flash. The key and JSON format match ThemeSwitch's store.
@@ -49,7 +50,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                     Skip to content
                 </a>
                 <Shell
-                    nav={<TopicNav key='nav' groups={groups} />}
+                    nav={<TopicNav key='nav' groups={groups} technologies={getTechnologySummaries()} />}
                     search={<SearchBox key='search' />}
                     theme={<ThemeSwitch key='theme' />}
                 >
