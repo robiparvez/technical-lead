@@ -234,6 +234,37 @@ describe('questions: D16 id assignment', () => {
         expect(response.body.saved.id).toBe('tmx-q2');
     });
 
+    it('returns 422 fields.keyTakeaway when a create duplicates a live takeaway', async () => {
+        // The insert trips the partial unique index before the shared
+        // validator's 422 can fire; the constraint name must steer the
+        // response to 422 with a fields map (not the D16 409 backstop).
+        const response = await admin
+            .post('/v1/admin/questions')
+            .send({ topicSlug: slug, ...questionBody('Beta takeaway for e2e.') })
+            .expect(422);
+        expect(response.body.error).toBe('Unprocessable Entity');
+        expect(response.body.fields.keyTakeaway).toMatch(/tmx-q2/);
+        expect(response.body.fields.keyTakeaway).toMatch(/takeaway.*differ/);
+
+        // nothing was written: still exactly two live rows in the topic
+        const [counts] = await pg`select count(*)::int as n from questions where topic_slug = ${slug} and deleted_at is null`;
+        expect(counts.n).toBe(2);
+    });
+
+    it('returns 422 fields.keyTakeaway when a PATCH moves a question onto a live duplicate', async () => {
+        const list = await admin.get(`/v1/admin/topics/${slug}`).expect(200);
+        const q1 = list.body.questions.find((q: { id: string }) => q.id === 'tmx-q1');
+        const response = await admin
+            .patch('/v1/admin/questions/tmx-q1')
+            .send({ ...q1, keyTakeaway: 'Beta takeaway for e2e.' })
+            .expect(422);
+        expect(response.body.fields.keyTakeaway).toMatch(/tmx-q2/);
+
+        // rolled back: tmx-q1 keeps its own takeaway
+        const [row] = await pg`select key_takeaway from questions where id = 'tmx-q1'`;
+        expect(row.key_takeaway).toBe('Alpha takeaway for e2e.');
+    });
+
     it('soft-deletes: the row survives and the deleted list shows it', async () => {
         const response = await admin.del('/v1/admin/questions/tmx-q1').expect(200);
         expect(response.body.questions.map((q: { id: string }) => q.id)).toEqual(['tmx-q2']);

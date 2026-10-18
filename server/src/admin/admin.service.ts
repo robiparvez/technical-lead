@@ -60,12 +60,26 @@ interface QuestionRow {
     sortOrder: number;
 }
 
-/** postgres.js wraps driver errors (DrizzleQueryError), so walk the chain. */
-function isUniqueViolation(error: unknown, depth = 0): boolean {
-    if (typeof error !== 'object' || error === null || depth > 4) return false;
-    if ((error as { code?: unknown }).code === '23505') return true;
-    return isUniqueViolation((error as { cause?: unknown }).cause, depth + 1);
+/**
+ * The violated constraint of a Postgres unique violation (23505), unwrapping
+ * the DrizzleQueryError chain postgres.js wraps driver errors in. Branching
+ * on the name keeps the two unique indexes apart: the primary key is the
+ * D16 backstop (409), the partial takeaway index is a validation failure
+ * (422 with fields.keyTakeaway, like the restore path). postgres.js
+ * surfaces PG's `constraint` field as `constraint_name`.
+ */
+function uniqueViolationConstraint(error: unknown, depth = 0): string | undefined {
+    if (typeof error !== 'object' || error === null || depth > 4) return undefined;
+    const candidate = error as { code?: unknown; constraint_name?: unknown; constraint?: unknown };
+    if (candidate.code === '23505') {
+        const name = candidate.constraint_name ?? candidate.constraint;
+        if (typeof name === 'string' && name) return name;
+    }
+    return uniqueViolationConstraint((error as { cause?: unknown }).cause, depth + 1);
 }
+
+/** The partial unique index keeping live key takeaways distinct per topic. */
+const TAKEAWAY_LIVE_INDEX = 'questions_topic_slug_key_takeaway_live_idx';
 
 /**
  * Content management (plan: API endpoints, admin rows). Every write runs in
@@ -197,9 +211,15 @@ export class AdminService {
             this.cache.clear();
             return created;
         } catch (error) {
-            if (isUniqueViolation(error)) {
-                // Backstop: a concurrent create won the race (plan: D16 note).
+            const constraint = uniqueViolationConstraint(error);
+            if (constraint === 'topics_pkey') {
+                // Backstop: a concurrent create won the slug race (the
+                // pre-check above already covers the normal path).
                 throw new ConflictException('the topic already exists');
+            }
+            if (constraint !== undefined) {
+                // The question_id_prefix unique index lost a race.
+                throw new ConflictException('the question id prefix is already taken');
             }
             throw error;
         }
@@ -338,11 +358,18 @@ export class AdminService {
             this.cache.clear();
             return result;
         } catch (error) {
-            if (isUniqueViolation(error)) {
+            const constraint = uniqueViolationConstraint(error);
+            if (constraint === 'questions_pkey') {
                 // Primary-key backstop (plan: D16). Unreachable unless the
                 // advisory lock is bypassed; a retry cannot live inside the
                 // aborted transaction.
-                throw new ConflictException(`question id clash creating in "${body.topicSlug}"`);
+                throw new ConflictException(`question id clash creating in "${topicSlug}"`);
+            }
+            if (constraint === TAKEAWAY_LIVE_INDEX) {
+                // The insert lost the race with the partial unique index
+                // before the shared validator ran; same contract as the
+                // validator's 422 (fields map naming the field).
+                throw await this.takeawayClashException(topicSlug, body.keyTakeaway, 'created');
             }
             throw error;
         }
@@ -350,54 +377,66 @@ export class AdminService {
 
     async updateQuestion(id: string, body: QuestionWriteDto): Promise<SavedQuestionDto> {
         const { db } = getDb();
-        const result = await db.transaction(async (tx) => {
-            const [row] = await tx.select().from(questions).where(eq(questions.id, id));
-            if (!row || row.deletedAt) throw new NotFoundException(`question "${id}" not found`);
+        let topicSlug = '';
+        try {
+            const result = await db.transaction(async (tx) => {
+                const [row] = await tx.select().from(questions).where(eq(questions.id, id));
+                if (!row || row.deletedAt) throw new NotFoundException(`question "${id}" not found`);
+                topicSlug = row.topicSlug;
 
-            if (body.id !== undefined && body.id !== id) {
-                throw new UnprocessableException(
-                    { id: 'The id cannot change. Readers’ saved progress uses it.' },
-                    'The question was not saved.',
-                );
-            }
-            if (body.topicSlug !== undefined && body.topicSlug !== row.topicSlug) {
-                throw new UnprocessableException(
-                    { topicSlug: 'A question cannot move to another topic.' },
-                    'The question was not saved.',
-                );
-            }
+                if (body.id !== undefined && body.id !== id) {
+                    throw new UnprocessableException(
+                        { id: 'The id cannot change. Readers’ saved progress uses it.' },
+                        'The question was not saved.',
+                    );
+                }
+                if (body.topicSlug !== undefined && body.topicSlug !== row.topicSlug) {
+                    throw new UnprocessableException(
+                        { topicSlug: 'A question cannot move to another topic.' },
+                        'The question was not saved.',
+                    );
+                }
 
-            await tx
-                .update(questions)
-                .set({
-                    difficulty: body.difficulty,
-                    tags: body.tags,
-                    question: body.question,
-                    answer: body.answer,
-                    code: body.code ?? null,
-                    keyTakeaway: body.keyTakeaway,
-                    diagram: body.diagram ?? null,
-                    ...(body.sortOrder !== undefined ? { sortOrder: body.sortOrder } : {}),
-                })
-                .where(eq(questions.id, id));
-            await this.outbox.recordWrite(tx, 'question-updated');
-            return {
-                topic: await this.loadTopicDetail(tx, row.topicSlug),
-                saved: {
-                    id,
-                    difficulty: body.difficulty,
-                    tags: body.tags,
-                    question: body.question,
-                    answer: body.answer,
-                    code: body.code ?? null,
-                    keyTakeaway: body.keyTakeaway,
-                    diagram: body.diagram ?? null,
-                    sortOrder: body.sortOrder ?? row.sortOrder,
-                },
-            };
-        });
-        this.cache.clear();
-        return result;
+                await tx
+                    .update(questions)
+                    .set({
+                        difficulty: body.difficulty,
+                        tags: body.tags,
+                        question: body.question,
+                        answer: body.answer,
+                        code: body.code ?? null,
+                        keyTakeaway: body.keyTakeaway,
+                        diagram: body.diagram ?? null,
+                        ...(body.sortOrder !== undefined ? { sortOrder: body.sortOrder } : {}),
+                    })
+                    .where(eq(questions.id, id));
+                await this.outbox.recordWrite(tx, 'question-updated');
+                return {
+                    topic: await this.loadTopicDetail(tx, row.topicSlug),
+                    saved: {
+                        id,
+                        difficulty: body.difficulty,
+                        tags: body.tags,
+                        question: body.question,
+                        answer: body.answer,
+                        code: body.code ?? null,
+                        keyTakeaway: body.keyTakeaway,
+                        diagram: body.diagram ?? null,
+                        sortOrder: body.sortOrder ?? row.sortOrder,
+                    },
+                };
+            });
+            this.cache.clear();
+            return result;
+        } catch (error) {
+            if (uniqueViolationConstraint(error) === TAKEAWAY_LIVE_INDEX) {
+                // PATCHing a takeaway onto a live duplicate hits the partial
+                // unique index before the shared validator's 422 can; same
+                // fields-map contract as the validator and restore paths.
+                throw await this.takeawayClashException(topicSlug, body.keyTakeaway, 'saved');
+            }
+            throw error;
+        }
     }
 
     /** Soft delete: the row, its id and every user row stay (plan: admin row). */
@@ -469,6 +508,41 @@ export class AdminService {
             );
         }
         return row.groupSortOrder;
+    }
+
+    /**
+     * The 422 for a key takeaway that a live question in the topic already
+     * has — thrown when the partial unique index rejects the write before
+     * the shared validator's 422 could fire. Same fields-map contract as the
+     * validator and the restore path: names the clashing question when the
+     * (post-rollback) lookup still finds it.
+     */
+    private async takeawayClashException(
+        topicSlug: string,
+        takeaway: string,
+        verb: 'created' | 'saved',
+    ): Promise<UnprocessableException> {
+        const { db } = getDb();
+        const [clash] = await db
+            .select({ id: questions.id })
+            .from(questions)
+            .where(
+                and(
+                    eq(questions.topicSlug, topicSlug),
+                    eq(questions.keyTakeaway, takeaway),
+                    isNull(questions.deletedAt),
+                ),
+            )
+            .limit(1);
+        const who = clash
+            ? `${clash.id} already has this key takeaway.`
+            : 'Another live question in this topic already has this key takeaway.';
+        return new UnprocessableException(
+            {
+                keyTakeaway: `${who} The quiz needs each takeaway to differ, so change one of them.`,
+            },
+            `The question was not ${verb}.`,
+        );
     }
 
     /** Topic detail from inside (or outside) a write transaction. */
