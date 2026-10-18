@@ -8,6 +8,8 @@ export default function TextField({
     multiline,
     rows = 4,
     mono,
+    type = 'text',
+    autoComplete,
     error,
     readOnly,
     onChange,
@@ -21,6 +23,10 @@ export default function TextField({
     multiline?: boolean;
     rows?: number;
     mono?: boolean;
+    /** text (default), email or password — password inputs mask as usual */
+    type?: 'text' | 'email' | 'password';
+    /** passthrough for the login form's credential fields */
+    autoComplete?: string;
     error?: string;
     readOnly?: boolean;
     onChange: (value: string) => void;
@@ -32,6 +38,7 @@ export default function TextField({
         className: `input${mono ? ' input-mono' : ''}`,
         value,
         readOnly,
+        autoComplete,
         'aria-invalid': Boolean(error),
         'aria-describedby': describedBy || undefined,
         onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => onChange(e.target.value),
@@ -48,7 +55,11 @@ export default function TextField({
                     {hint}
                 </p>
             )}
-            {multiline ? <textarea rows={rows} {...props} /> : <input type='text' {...props} />}
+            {multiline ? (
+                <textarea rows={rows} {...props} />
+            ) : (
+                <input type={type} {...props} />
+            )}
             <div className='field-foot'>
                 {error ? (
                     <p className='field-error' id={`${id}-error`}>

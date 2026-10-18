@@ -13,6 +13,12 @@ export interface Attempt {
     answered: number;
     correct: number;
     points: number;
+    /**
+     * Client-assigned uuid (quiz sync, plan: Frontend additions); ties this
+     * local attempt to its attempt_started/answer_recorded events. Absent on
+     * attempts saved before sync existed — those never produce events.
+     */
+    clientAttemptId?: string;
 }
 
 export interface TopicScore {
@@ -76,7 +82,12 @@ function sanitize(raw: unknown): Scores {
     return clean;
 }
 
-const store = createStore<Scores>('tl-quiz-scores', emptyScores, sanitize);
+/**
+ * Exported so the sync provider can drive it (plan: Frontend additions): the
+ * server snapshot stays empty, and the provider writes the server-authoritative
+ * totals after sign-in.
+ */
+export const scoresStore = createStore<Scores>('tl-quiz-scores', emptyScores, sanitize);
 
 export function totalScore(scores: Scores): number {
     return Object.values(scores).reduce((sum, s) => sum + s.score, 0);
@@ -87,11 +98,11 @@ export function totalScore(scores: Scores): number {
  * empty, so scores appear only after hydration without mismatches.
  */
 export function useQuizScores() {
-    const scores = store.useValue();
+    const scores = scoresStore.useValue();
 
     /** Logs a new attempt before its first answer, so abandoned ones still count. */
     const startAttempt = useCallback((slug: string, questionIds: string[]) => {
-        const current = store.get();
+        const current = scoresStore.get();
         const prev = current[slug] ?? emptyTopic;
         const attempt: Attempt = {
             number: prev.attemptCount + 1,
@@ -100,8 +111,12 @@ export function useQuizScores() {
             answered: 0,
             correct: 0,
             points: 0,
+            clientAttemptId:
+                typeof crypto !== 'undefined' && 'randomUUID' in crypto
+                    ? crypto.randomUUID()
+                    : undefined,
         };
-        store.set({
+        scoresStore.set({
             ...current,
             [slug]: {
                 ...prev,
@@ -114,7 +129,7 @@ export function useQuizScores() {
 
     /** Adds one answer to the topic totals and to the latest attempt. */
     const record = useCallback((slug: string, points: number, isCorrect: boolean) => {
-        const current = store.get();
+        const current = scoresStore.get();
         const prev = current[slug] ?? emptyTopic;
         const attempts = prev.attempts.map((a, i) =>
             i === prev.attempts.length - 1
@@ -126,7 +141,7 @@ export function useQuizScores() {
                   }
                 : a,
         );
-        store.set({
+        scoresStore.set({
             ...current,
             [slug]: {
                 ...prev,
@@ -138,7 +153,7 @@ export function useQuizScores() {
         });
     }, []);
 
-    const reset = useCallback(() => store.set(emptyScores), []);
+    const reset = useCallback(() => scoresStore.set(emptyScores), []);
 
     return { scores, startAttempt, record, reset };
 }
