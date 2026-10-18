@@ -1,59 +1,57 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { Topic } from './types';
-import microservices from './topics/microservices.json';
-import apiDesign from './topics/api-design.json';
-import databases from './topics/databases.json';
-import stripePayments from './topics/stripe-payments.json';
-import eventDriven from './topics/event-driven.json';
-import frontEnd from './topics/front-end.json';
-import reactNextjs from './topics/react-nextjs.json';
-import backendRuntime from './topics/backend-runtime.json';
-import cloudServerless from './topics/cloud-serverless.json';
-import cicdRelease from './topics/cicd-release.json';
-import automatedTesting from './topics/automated-testing.json';
-import systemDesign from './topics/system-design.json';
-import systemDesignExercises from './topics/system-design-exercises.json';
-import techLeadership from './topics/tech-leadership.json';
-import codeReview from './topics/code-review.json';
-import mentoring from './topics/mentoring.json';
-import agileTeams from './topics/agile-teams.json';
-import stakeholders from './topics/stakeholders.json';
-import security from './topics/security.json';
-import hrRound from './topics/hr-round.json';
+import manifest from './manifest.json';
+
+// Registry loader over src/data/manifest.json (plan: "Rebuild pipeline" step
+// 3). The manifest — written by scripts/fetch-content.mjs from GET /v1/export
+// — carries the group labels, the group order and the topic slugs; each
+// topic is then read from src/data/topics/<slug>.json. Adding or removing a
+// topic changes only JSON, never this file.
+//
+// Every runtime consumer of this module is a server component prerendered by
+// `next build` (output: "export"), so the reads happen in Node during the
+// build; client files import types from '@/data' or '@/data/types' only.
+// The JSON is DB-owned after cutover (D2): hand edits stop, and `next dev`
+// picks file changes up after a restart.
+
+const DATA_DIR = join(process.cwd(), 'src', 'data');
+
+function loadTopics(): Map<string, Topic> {
+    const bySlug = new Map<string, Topic>();
+    for (const group of manifest.groups) {
+        for (const slug of group.topicSlugs) {
+            if (bySlug.has(slug)) {
+                throw new Error(`manifest lists topic "${slug}" in more than one group`);
+            }
+            const path = join(DATA_DIR, 'topics', `${slug}.json`);
+            let topic: Topic;
+            try {
+                topic = JSON.parse(readFileSync(path, 'utf8')) as Topic;
+            } catch (error) {
+                throw new Error(`manifest lists topic "${slug}" but its file failed to load (${path}): ${error}`);
+            }
+            if (topic.slug !== slug) {
+                throw new Error(`topic file "${slug}.json" declares slug "${topic.slug}"`);
+            }
+            bySlug.set(slug, topic);
+        }
+    }
+    return bySlug;
+}
+
+const topicsBySlug = loadTopics();
 
 // Sidebar sections: core technical skills first, then leadership and
 // behavioral round preparation. TOPICS stays the flat, ordered list.
-export const TOPIC_GROUPS: { label: string; topics: Topic[] }[] = [
-    {
-        label: 'Technical',
-        topics: [
-                        microservices as Topic,
-                        apiDesign as Topic,
-                        databases as Topic,
-                        stripePayments as Topic,
-                        eventDriven as Topic,
-                        frontEnd as Topic,
-                        reactNextjs as Topic,
-                        backendRuntime as Topic,
-                        cloudServerless as Topic,
-                        cicdRelease as Topic,
-                        automatedTesting as Topic,
-                        systemDesign as Topic,
-                        systemDesignExercises as Topic,
-                        security as Topic,
-        ],
-    },
-    {
-        label: 'Leadership & behavioral',
-        topics: [
-                        techLeadership as Topic,
-                        codeReview as Topic,
-                        mentoring as Topic,
-                        agileTeams as Topic,
-                        stakeholders as Topic,
-                        hrRound as Topic,
-        ],
-    },
-];
+export const TOPIC_GROUPS: { label: string; topics: Topic[] }[] = manifest.groups.map((group) => ({
+    label: group.label,
+    topics: group.topicSlugs.map((slug) => {
+        const topic = topicsBySlug.get(slug);
+        if (!topic) throw new Error(`manifest lists topic "${slug}" but it failed to load`);
+        return topic;
+    }),
+}));
 
 export const TOPICS: Topic[] = TOPIC_GROUPS.flatMap((group) => group.topics);
 
