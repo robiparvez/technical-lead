@@ -71,6 +71,9 @@ const ANIMATED: Record<string, AnimatedDef> = {
     },
 };
 
+/** The string ids a question's `diagram` may use, with their labels (for the admin editor). */
+export const DIAGRAM_OPTIONS = Object.entries(ANIMATED).map(([id, def]) => ({ id, label: def.label }));
+
 /**
  * Renders a question's diagram as a looping Remotion animation: a string id
  * resolves against the hand-built registry above; a DiagramSpec object plays
