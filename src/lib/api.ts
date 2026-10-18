@@ -60,7 +60,7 @@ async function parseErrorEnvelope(response: Response): Promise<ApiError> {
 
 export async function apiFetch<T>(
     path: string,
-    options: { method?: 'GET' | 'POST'; body?: unknown } = {},
+    options: { method?: 'GET' | 'POST' | 'PATCH' | 'DELETE'; body?: unknown } = {},
 ): Promise<T> {
     const token = getStoredToken();
     const headers: Record<string, string> = {};

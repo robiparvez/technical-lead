@@ -1,16 +1,15 @@
+import { apiFetch, type ApiError } from '@/lib/api';
 import type { DiagramSpec, Question, Topic } from '@/data/types';
 
 /**
- * Admin content API for the /admin page.
- *
- * PREVIEW MOCK: the NestJS server in docs/BACKEND_PLAN.md does not exist yet,
- * so every function below runs against an in-memory copy of the committed
- * topic JSON. Edits live in this browser tab only and are gone on reload.
- * Each function names the endpoint it stands in for; swap the bodies for
- * fetch calls once those endpoints exist. Nothing here is sent anywhere.
+ * Admin content API for the /admin page (plan: P3). Every call goes through
+ * the typed bearer client in lib/api.ts against the NestJS admin endpoints.
+ * DTOs are hand-synced with server/src/admin/admin.schemas.ts and
+ * server/src/rebuild/rebuild.controller.ts; 422 responses carry the plan's
+ * `fields` map, which the forms show beside each field.
  */
 
-export const IS_MOCK = true;
+export type { ApiError };
 
 export interface AdminTopicSummary {
     slug: string;
@@ -18,31 +17,32 @@ export interface AdminTopicSummary {
     requirement: string;
     group: string;
     questionCount: number;
+    /** Live topic with zero live questions: out of /export until it has one. */
+    draft: boolean;
+    deleted: boolean;
 }
 
 export interface AdminTopic extends Topic {
     group: string;
+    draft: boolean;
+    deleted: boolean;
 }
 
 export type TopicDetails = Pick<AdminTopic, 'title' | 'requirement' | 'group'>;
 
-/** The plan's error envelope, plus per-field messages for 422 responses. */
-export interface ApiError {
-    statusCode: number;
-    message: string;
-    error: string;
-    fields?: Record<string, string>;
-}
-
 export interface RebuildStatus {
+    /** Saved changes not dispatched yet (pending + claimed). */
     pending: number;
-    lastSavedAt: number | null;
-    requestedAt: number | null;
+    /** ISO timestamp of the last admin save. */
+    lastSavedAt: string | null;
+    /** ISO timestamp of the last dispatch (the rebuild request). */
+    requestedAt: string | null;
+    /** Dispatches whose retries are exhausted: the pipeline is dead. */
+    failed: number;
 }
 
 // rebuild debounce from the plan's outbox worker
 export const REBUILD_DEBOUNCE_MS = 30_000;
-const LATENCY_MS = 350;
 
 export const GROUPS = ['Technical', 'Leadership & behavioral'];
 export const LANGUAGES = ['typescript', 'tsx', 'javascript', 'python', 'java', 'sql', 'bash', 'yaml'];
@@ -59,7 +59,7 @@ export const LIMITS = {
     diagramJson: 6000,
 };
 
-// ---------- validation (the client runs it live; the mock server runs it again on save) ----------
+// ---------- validation (the client runs it live; the server runs it again on save) ----------
 
 // existing tags include "n+1", so allow + . # after the first character
 const TAG_PATTERN = /^[a-z0-9][a-z0-9+.#-]*$/;
@@ -87,14 +87,6 @@ export interface Check {
 export interface CheckResult {
     fields: Record<string, string>;
     checks: Check[];
-}
-
-/** Next `<prefix>-q<N>` id: one above the highest number used by a live or deleted question, so no id is reused. */
-function nextQuestionId(topic: AdminTopic, deletedQuestions: Question[]): string {
-    const all = [...topic.questions, ...deletedQuestions];
-    const prefix = all[0]?.id.replace(/-q\d+$/, '') ?? topic.slug;
-    const max = Math.max(0, ...all.map((q) => Number(q.id.match(/-q(\d+)$/)?.[1] ?? 0)));
-    return `${prefix}-q${max + 1}`;
 }
 
 export function parseTags(raw: string): string[] {
@@ -218,166 +210,158 @@ export function checkTopicDetails(d: TopicDetails): Record<string, string> {
     return fields;
 }
 
-// ---------- mock store ----------
+// ---------- server DTOs (hand-synced with server/src/admin) ----------
 
-let summaries: AdminTopicSummary[] = [];
-const topics = new Map<string, AdminTopic>();
-let failNext = false;
-const rebuild: RebuildStatus = { pending: 0, lastSavedAt: null, requestedAt: null };
-
-/** Seeds the mock with the summaries the page rendered at build time. */
-export function seedMock(initial: AdminTopicSummary[]) {
-    if (summaries.length === 0) summaries = initial.map((s) => ({ ...s }));
+interface AdminQuestionDto {
+    id: string;
+    difficulty: Question['difficulty'];
+    tags: string[];
+    question: string;
+    answer: string;
+    code: { language: string; snippet: string } | null;
+    keyTakeaway: string;
+    diagram: string | DiagramSpec | null;
+    sortOrder: number;
 }
 
-/** Preview control: the next write fails with a server error. */
-export function setFailNextWrite(value: boolean) {
-    failNext = value;
+interface AdminTopicDetailDto {
+    slug: string;
+    title: string;
+    requirement: string;
+    groupLabel: string;
+    draft: boolean;
+    deleted: boolean;
+    questions: AdminQuestionDto[];
 }
 
-function delay() {
-    return new Promise((resolve) => setTimeout(resolve, LATENCY_MS));
+function toQuestion(dto: AdminQuestionDto): Question {
+    const question: Question = {
+        id: dto.id,
+        difficulty: dto.difficulty,
+        tags: dto.tags,
+        question: dto.question,
+        answer: dto.answer,
+        keyTakeaway: dto.keyTakeaway,
+    };
+    if (dto.code) question.code = dto.code;
+    if (dto.diagram) question.diagram = dto.diagram;
+    return question;
 }
 
-async function write<T>(run: () => T): Promise<T> {
-    await delay();
-    if (failNext) {
-        failNext = false;
-        throw {
-            statusCode: 503,
-            message: 'The content service did not respond.',
-            error: 'Service Unavailable',
-        } satisfies ApiError;
-    }
-    const result = run();
-    rebuild.pending += 1;
-    rebuild.lastSavedAt = Date.now();
-    rebuild.requestedAt = null;
-    return result;
+function toTopic(dto: AdminTopicDetailDto): AdminTopic {
+    return {
+        slug: dto.slug,
+        title: dto.title,
+        requirement: dto.requirement,
+        questions: dto.questions.map(toQuestion),
+        group: dto.groupLabel,
+        draft: dto.draft,
+        deleted: dto.deleted,
+    };
 }
 
-function invalid(fields: Record<string, string>): ApiError {
-    return { statusCode: 422, message: 'Some fields need changes.', error: 'Unprocessable Entity', fields };
+/** The question fields the write endpoints accept (never an id on create). */
+function questionPayload(q: Question): Record<string, unknown> {
+    const payload: Record<string, unknown> = {
+        difficulty: q.difficulty,
+        tags: q.tags,
+        question: q.question,
+        answer: q.answer,
+        keyTakeaway: q.keyTakeaway,
+        code: q.code ?? null,
+        diagram: q.diagram ?? null,
+    };
+    return payload;
 }
 
-/** Stands in for GET /v1/topics. */
+export interface DeletedQuestion {
+    question: Question;
+    deletedAt: string;
+}
+
+// ---------- endpoints ----------
+
+/** GET /v1/admin/topics: every topic, drafts and soft-deleted included. */
 export async function listTopics(): Promise<AdminTopicSummary[]> {
-    await delay();
-    return summaries.map((s) => ({ ...s }));
+    const response = await apiFetch<{ topics: (Omit<AdminTopicSummary, 'group'> & { groupLabel: string })[] }>(
+        '/v1/admin/topics',
+    );
+    return response.topics.map((topic) => ({
+        slug: topic.slug,
+        title: topic.title,
+        requirement: topic.requirement,
+        group: topic.groupLabel,
+        questionCount: topic.questionCount,
+        draft: topic.draft,
+        deleted: topic.deleted,
+    }));
 }
 
-/** Stands in for GET /v1/topics/:slug; loads the committed JSON for the topic on first use. */
+/** GET /v1/admin/topics/:slug: the editor's topic load (drafts stay reachable). */
 export async function getTopic(slug: string): Promise<AdminTopic> {
-    await delay();
-    let topic = topics.get(slug);
-    if (!topic) {
-        const summary = summaries.find((s) => s.slug === slug);
-        if (!summary) throw { statusCode: 404, message: `No topic "${slug}".`, error: 'Not Found' } satisfies ApiError;
-        const data = ((await import(`@/data/topics/${slug}.json`)) as { default: Topic }).default;
-        topic = { ...structuredClone(data), group: summary.group };
-        topics.set(slug, topic);
-    }
-    return structuredClone(topic);
+    const dto = await apiFetch<AdminTopicDetailDto>(`/v1/admin/topics/${slug}`);
+    return toTopic(dto);
 }
 
-/** Stands in for PATCH /v1/admin/topics/:slug. */
+/** PATCH /v1/admin/topics/:slug (title/requirement/group; slug and prefix immutable). */
 export async function updateTopic(slug: string, details: TopicDetails): Promise<AdminTopic> {
-    return write(() => {
-        const fields = checkTopicDetails(details);
-        if (Object.keys(fields).length) throw invalid(fields);
-        const topic = topics.get(slug)!;
-        Object.assign(topic, details);
-        Object.assign(summaries.find((s) => s.slug === slug)!, details);
-        return structuredClone(topic);
+    const dto = await apiFetch<AdminTopicDetailDto>(`/v1/admin/topics/${slug}`, {
+        method: 'PATCH',
+        body: { title: details.title, requirement: details.requirement, group: details.group },
     });
+    return toTopic(dto);
 }
 
 /**
- * Stands in for POST /v1/admin/questions (create) and PATCH /v1/admin/questions/:id (update).
- * Like the real server, a create ignores any id the client sends and assigns the next one.
+ * POST /v1/admin/questions (create) or PATCH /v1/admin/questions/:id (update).
+ * The server assigns the id on create (D16) and returns it as `saved`.
  */
 export async function saveQuestion(
     slug: string,
     q: Question,
     ctx: CheckContext,
 ): Promise<{ topic: AdminTopic; saved: Question }> {
-    return write(() => {
-        const { fields } = checkQuestion(q, ctx);
-        if (Object.keys(fields).length) throw invalid(fields);
-        const topic = topics.get(slug)!;
-        const index = topic.questions.findIndex((o) => o.id === ctx.originalId);
-        const saved =
-            index === -1
-                ? { ...q, id: nextQuestionId(topic, (deleted.get(slug) ?? []).map((d) => d.question)) }
-                : q;
-        if (index === -1) topic.questions.push(saved);
-        else topic.questions[index] = saved;
-        summaries.find((s) => s.slug === slug)!.questionCount = topic.questions.length;
-        return { topic: structuredClone(topic), saved };
-    });
+    const isUpdate = Boolean(ctx.originalId);
+    const dto = await apiFetch<{ topic: AdminTopicDetailDto; saved: AdminQuestionDto }>(
+        isUpdate ? `/v1/admin/questions/${ctx.originalId}` : '/v1/admin/questions',
+        {
+            method: isUpdate ? 'PATCH' : 'POST',
+            // the client never sends an id on create (D16)
+            body: isUpdate ? { ...questionPayload(q), id: ctx.originalId } : { ...questionPayload(q), topicSlug: slug },
+        },
+    );
+    return { topic: toTopic(dto.topic), saved: toQuestion(dto.saved) };
 }
 
-/**
- * Stands in for DELETE /v1/admin/questions/:id. The delete is soft: the
- * question moves to the topic's deleted list and its id stays reserved.
- */
+/** DELETE /v1/admin/questions/:id: soft; the id stays reserved. */
 export async function deleteQuestion(slug: string, id: string): Promise<AdminTopic> {
-    return write(() => {
-        const topic = topics.get(slug)!;
-        if (topic.questions.length === 1)
-            throw invalid({ delete: 'A topic needs at least one question. Add another before you delete this one.' });
-        const question = topic.questions.find((q) => q.id === id)!;
-        topic.questions = topic.questions.filter((q) => q.id !== id);
-        deleted.set(slug, [{ question, deletedAt: Date.now() }, ...(deleted.get(slug) ?? [])]);
-        summaries.find((s) => s.slug === slug)!.questionCount = topic.questions.length;
-        return structuredClone(topic);
-    });
+    const dto = await apiFetch<AdminTopicDetailDto>(`/v1/admin/questions/${id}`, { method: 'DELETE' });
+    void slug; // the id addresses the question; the slug keeps the UI signature
+    return toTopic(dto);
 }
 
-export interface DeletedQuestion {
-    question: Question;
-    deletedAt: number;
-}
-
-const deleted = new Map<string, DeletedQuestion[]>();
-
-/** Stands in for GET /v1/admin/topics/:slug/deleted: soft-deleted questions, newest first. */
+/** GET /v1/admin/topics/:slug/deleted: soft-deleted questions, newest first. */
 export async function listDeleted(slug: string): Promise<DeletedQuestion[]> {
-    await delay();
-    return structuredClone(deleted.get(slug) ?? []);
+    const rows = await apiFetch<{ question: AdminQuestionDto; deletedAt: string }[]>(
+        `/v1/admin/topics/${slug}/deleted`,
+    );
+    return rows.map((row) => ({ question: toQuestion(row.question), deletedAt: row.deletedAt }));
 }
 
 /**
- * Stands in for POST /v1/admin/questions/:id/restore. Clears deleted_at, so
- * the question returns under its original id. Fails with 422 when another
- * question took the same key takeaway while this one was deleted.
+ * POST /v1/admin/questions/:id/restore: clears deleted_at, so the question
+ * returns under its original id. Fails with 422 fields.restore when a live
+ * question in the topic now has the same key takeaway.
  */
 export async function restoreQuestion(slug: string, id: string): Promise<AdminTopic> {
-    return write(() => {
-        const topic = topics.get(slug)!;
-        const entry = deleted.get(slug)?.find((d) => d.question.id === id);
-        if (!entry) throw { statusCode: 404, message: `${id} is not deleted.`, error: 'Not Found' } satisfies ApiError;
-        const takeaway = entry.question.keyTakeaway.trim().toLowerCase();
-        const clash = topic.questions.find((q) => q.keyTakeaway.trim().toLowerCase() === takeaway);
-        if (clash)
-            throw invalid({
-                restore: `${clash.id} now has the same key takeaway. Change one of them first, because the quiz needs each takeaway to differ.`,
-            });
-        topic.questions.push(entry.question);
-        deleted.set(slug, deleted.get(slug)!.filter((d) => d.question.id !== id));
-        summaries.find((s) => s.slug === slug)!.questionCount = topic.questions.length;
-        return structuredClone(topic);
+    const dto = await apiFetch<AdminTopicDetailDto>(`/v1/admin/questions/${id}/restore`, {
+        method: 'POST',
     });
+    void slug;
+    return toTopic(dto);
 }
 
-/**
- * Stands in for GET /v1/admin/rebuild, an endpoint the plan does not define
- * yet. The mock marks the rebuild requested once saves stop for the debounce window.
- */
+/** GET /v1/admin/rebuild: the outbox summary for the rebuild line. */
 export async function getRebuildStatus(): Promise<RebuildStatus> {
-    if (rebuild.pending && rebuild.lastSavedAt && Date.now() - rebuild.lastSavedAt >= REBUILD_DEBOUNCE_MS) {
-        rebuild.requestedAt = rebuild.lastSavedAt + REBUILD_DEBOUNCE_MS;
-        rebuild.pending = 0;
-    }
-    return { ...rebuild };
+    return apiFetch<RebuildStatus>('/v1/admin/rebuild');
 }

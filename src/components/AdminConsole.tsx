@@ -6,7 +6,6 @@ import { Skeleton } from '@/components/Skeleton';
 import TextField from '@/components/TextField';
 import {
     GROUPS,
-    IS_MOCK,
     LIMITS,
     REBUILD_DEBOUNCE_MS,
     checkTopicDetails,
@@ -15,8 +14,6 @@ import {
     listDeleted,
     listTopics,
     restoreQuestion,
-    seedMock,
-    setFailNextWrite,
     updateTopic,
     type AdminTopic,
     type AdminTopicSummary,
@@ -25,25 +22,29 @@ import {
     type RebuildStatus,
     type TopicDetails,
 } from '@/lib/adminApi';
+import { authClient, getStoredToken } from '@/lib/auth';
 import { DIFFICULTIES, DIFFICULTY_LABELS } from '@/lib/quiz';
 import type { Difficulty, Question } from '@/data/types';
 
 type View = { kind: 'list' } | { kind: 'edit'; id?: string };
 
+type Access = 'checking' | 'allowed' | 'denied' | 'signed-out' | 'error';
+
 /**
- * Content admin: pick a topic, edit its details, and add, edit, or delete
- * its questions. Every call goes through lib/adminApi, which is a mock
- * until the backend exists.
+ * Content admin: check the admin role, then pick a topic, edit its details,
+ * and add, edit, or delete its questions. Every call goes through
+ * lib/adminApi against the real admin endpoints; while the role is unknown
+ * the topic-list skeleton shows (plan: Loading states, /admin role check).
  */
 export default function AdminConsole({
-    topics,
     techTagCounts,
     techTagLabels,
 }: {
-    topics: AdminTopicSummary[];
     techTagCounts: Record<string, number>;
     techTagLabels: Record<string, string>;
 }) {
+    const [access, setAccess] = useState<Access>('checking');
+    const [accessAttempt, setAccessAttempt] = useState(0);
     const [summaries, setSummaries] = useState<AdminTopicSummary[] | null>(null);
     const [listFailed, setListFailed] = useState(false);
     const [listAttempt, setListAttempt] = useState(0);
@@ -58,16 +59,39 @@ export default function AdminConsole({
     const [difficulty, setDifficulty] = useState<'' | Difficulty>('');
     const returnFocus = useRef<string | null>(null);
 
-    // fetch on mount, as the real page will; the mock resolves after a short delay
+    // role check (only when a token is stored; plan: /admin role check row)
     useEffect(() => {
-        seedMock(topics);
+        let live = true;
+        const check = async (): Promise<Access> => {
+            if (!getStoredToken()) return 'signed-out';
+            try {
+                const { data } = await authClient.getSession();
+                if (!data?.user) return 'signed-out';
+                // role is our server-side column; the stock client type omits it
+                const role = (data.user as { role?: string }).role;
+                return role === 'admin' ? 'allowed' : 'denied';
+            } catch {
+                return 'error';
+            }
+        };
+        check().then((next) => {
+            if (live) setAccess(next);
+        });
+        return () => {
+            live = false;
+        };
+    }, [accessAttempt]);
+
+    // fetch the topic list once the role is known
+    useEffect(() => {
+        if (access !== 'allowed') return;
         listTopics()
             .then((list) => {
                 setSummaries(list);
                 setSlug((s) => s || list[0]?.slug || '');
             })
             .catch(() => setListFailed(true));
-    }, [topics, listAttempt]);
+    }, [access, listAttempt]);
     const retryList = () => {
         setListFailed(false);
         setListAttempt((a) => a + 1);
@@ -157,14 +181,68 @@ export default function AdminConsole({
             return matches && (!difficulty || q.difficulty === difficulty);
         }) ?? [];
 
+    if (access === 'checking') return <Skeleton label='Checking admin access' field rows={6} />;
+
+    if (access === 'signed-out')
+        return (
+            <div className='admin'>
+                <header className='topic-header admin-header'>
+                    <h1 className='topic-title'>Content admin</h1>
+                </header>
+                <div className='admin-state'>
+                    <p>Sign in with the admin account to edit the site content here.</p>
+                    <p>
+                        <a className='text-link' href='/login/'>
+                            Go to the sign-in page
+                        </a>
+                    </p>
+                </div>
+            </div>
+        );
+
+    if (access === 'denied')
+        return (
+            <div className='admin'>
+                <header className='topic-header admin-header'>
+                    <h1 className='topic-title'>Content admin</h1>
+                </header>
+                <div className='admin-state'>
+                    <p>
+                        This account cannot edit content. Only the site owner holds the admin role, and it is
+                        granted from the server, not from this page.
+                    </p>
+                </div>
+            </div>
+        );
+
+    if (access === 'error')
+        return (
+            <div className='admin'>
+                <header className='topic-header admin-header'>
+                    <h1 className='topic-title'>Content admin</h1>
+                </header>
+                <div className='admin-state' role='alert'>
+                    <p>The sign-in check did not answer. Check that the content service is running, then try again.</p>
+                    <button
+                        type='button'
+                        className='btn'
+                        onClick={() => {
+                            setAccess('checking');
+                            setAccessAttempt((a) => a + 1);
+                        }}
+                    >
+                        Try again
+                    </button>
+                </div>
+            </div>
+        );
+
     return (
         <div className='admin'>
             <header className='topic-header admin-header'>
                 <h1 className='topic-title'>Content admin</h1>
                 <RebuildLine />
             </header>
-
-            {IS_MOCK && <PreviewNotice />}
 
             {listFailed ? (
                 <div className='admin-state' role='alert'>
@@ -210,6 +288,8 @@ export default function AdminConsole({
                                         .map((s) => (
                                             <option key={s.slug} value={s.slug}>
                                                 {s.title} ({s.questionCount})
+                                                {s.draft ? ' — draft' : ''}
+                                                {s.deleted ? ' — deleted' : ''}
                                             </option>
                                         ))}
                                 </optgroup>
@@ -406,7 +486,7 @@ function DeletedQuestions({
             setBusyId(null);
         }
     };
-    const time = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const time = (stamp: string) => new Date(stamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     return (
         <section className='admin-section' aria-labelledby='deleted-heading'>
@@ -472,7 +552,7 @@ function RebuildLine() {
     }, []);
 
     if (!status) return <Skeleton label='Loading rebuild status' line />;
-    const time = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const time = (stamp: string) => new Date(stamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     let text = 'The live site matches the saved content.';
     if (status.pending)
         text = `${status.pending} saved ${status.pending === 1 ? 'change waits' : 'changes wait'} for the site rebuild. It starts ${REBUILD_DEBOUNCE_MS / 1000} seconds after your last save.`;
@@ -482,32 +562,14 @@ function RebuildLine() {
     return (
         <p className='topic-meta admin-rebuild' data-pending={status.pending > 0} role='status'>
             {text}
+            {status.failed > 0 && (
+                <span className='admin-rebuild-failed'>
+                    {' '}
+                    {status.failed} {status.failed === 1 ? 'change failed' : 'changes failed'} to reach the rebuild
+                    pipeline. Check the server logs, then save again.
+                </span>
+            )}
         </p>
-    );
-}
-
-function PreviewNotice() {
-    const [fail, setFail] = useState(false);
-    return (
-        <aside className='admin-preview' aria-label='Preview mode'>
-            <p>
-                <strong>Preview mode.</strong> The content API is not built yet, so this page edits a copy of the
-                committed content in this browser tab. Reloading discards every change, and the live site does not
-                change.
-            </p>
-            <label className='check'>
-                <input
-                    type='checkbox'
-                    className='check-box'
-                    checked={fail}
-                    onChange={(e) => {
-                        setFail(e.target.checked);
-                        setFailNextWrite(e.target.checked);
-                    }}
-                />
-                <span>Make the next save fail, to review the error state</span>
-            </label>
-        </aside>
     );
 }
 
