@@ -21,11 +21,13 @@ import { OutboxService } from './outbox.service.js';
  *      window instead of losing or doubling it).
  *   4. Dispatch: send ONE repository_dispatch whose client_payload carries
  *      the current content_version, then mark the row `dispatched` and fold
- *      every newer `pending` row into the same dispatch (they are marked
- *      dispatched with it). A failure puts the row back to `pending` with
- *      attempts+1 and an exponential backoff in next_attempt_at, or to
- *      `failed` once the retries are exhausted — never touching the admin
- *      write response, which committed long before.
+ *      every `pending` row whose content_version MATCHES the dispatched one
+ *      (they are marked dispatched with it). A row written while the fetch
+ *      was in flight carries a different version and stays pending, so its
+ *      rebuild is not silently stranded. A failure puts the row back to
+ *      `pending` with attempts+1 and an exponential backoff in
+ *      next_attempt_at, or to `failed` once the retries are exhausted —
+ *      never touching the admin write response, which committed long before.
  *
  * While DISPATCH_ENABLED=false (the default until P6) step 4 logs the payload
  * and marks the row dispatched without any network call.
@@ -195,8 +197,10 @@ export class DispatcherService implements OnApplicationBootstrap, OnApplicationS
             return 'stopped';
         }
 
-        // The dispatch carries the CURRENT content version, so edits saved
-        // after this row was claimed ride the same dispatch.
+        // The dispatch carries the CURRENT content version, snapshotted here
+        // (before the fetch). markDispatched folds only rows with this same
+        // version; a write committing while the fetch is in flight has a
+        // different version and waits for the next cycle.
         const { db } = getDb();
         const contentVersion = await this.outbox.currentContentVersion(db);
         const sent = await this.sendDispatch(contentVersion);
@@ -256,9 +260,12 @@ export class DispatcherService implements OnApplicationBootstrap, OnApplicationS
     }
 
     /**
-     * Marks the claimed row dispatched and folds every other pending row
-     * into the same dispatch (the send carries the current content version,
-     * so any row still pending rides it; created_at ties included).
+     * Marks the claimed row dispatched and folds the pending rows whose
+     * content_version MATCHES the dispatched one: their content is exactly
+     * what this dispatch carries, so they ride it (created_at ties included).
+     * A row written while the fetch was in flight has a different version —
+     * its content is NOT in the dispatched payload — so it stays pending for
+     * the next cycle instead of being silently marked dispatched.
      */
     private async markDispatched(claimed: ClaimedRow, contentVersion: string): Promise<void> {
         const { db } = getDb();
@@ -271,14 +278,16 @@ export class DispatcherService implements OnApplicationBootstrap, OnApplicationS
             const newer = (await tx.execute(sql`
                 update rebuild_outbox
                 set status = 'dispatched', dispatched_at = now()
-                where status = 'pending' and id <> ${claimed.id}
+                where status = 'pending'
+                  and id <> ${claimed.id}
+                  and content_version = ${contentVersion}
                 returning id
             `)) as unknown as { id: string }[];
             return newer.length;
         });
         this.logger.log(
             `rebuild dispatched (content_version=${contentVersion.slice(0, 12)}…)` +
-                (folded > 0 ? `, ${folded} newer pending row(s) folded into the same dispatch` : ''),
+                (folded > 0 ? `, ${folded} matching pending row(s) folded into the same dispatch` : ''),
         );
     }
 

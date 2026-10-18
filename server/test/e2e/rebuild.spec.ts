@@ -199,6 +199,51 @@ describe('the dispatcher', () => {
         }
     });
 
+    it('does NOT fold a row written while the fetch was in flight (different content_version)', async () => {
+        process.env.DISPATCH_ENABLED = 'true';
+        dispatchCalls.length = 0;
+        // A draft-topic title patch does not change the export, so the
+        // in-flight write must touch LIVE content to carry a new version.
+        const hrDetail = await admin.get('/v1/admin/topics/hr-round').expect(200);
+        const originalTitle = hrDetail.body.title as string;
+        try {
+            await adminWrite(); // row A: the oldest pending row (seed version)
+
+            // An admin write commits WHILE the (mocked) GitHub fetch runs —
+            // after dispatchClaimed snapshotted the version, before
+            // markDispatched — so its content is not in the payload.
+            fetchMock.mockImplementationOnce(async (url: unknown, init?: { body?: string }) => {
+                recordCall(url, init);
+                await admin
+                    .patch('/v1/admin/topics/hr-round')
+                    .send({ title: `${originalTitle} (in-flight e2e)` })
+                    .expect(200); // row B: a NEW content version
+                return { ok: true, status: 204, statusText: 'No Content' };
+            });
+
+            await dispatcher.tick(); // claims A, snapshots, fetches (B lands), dispatches
+
+            expect(dispatchCalls).toHaveLength(1);
+            const rows = await pg`select status, content_version from rebuild_outbox order by created_at, id`;
+            expect(rows).toHaveLength(2);
+            expect(rows[0]!.status).toBe('dispatched'); // A rode its own dispatch
+            expect(rows[1]!.status).toBe('pending'); // B is NOT folded away
+            expect(rows[1]!.content_version).not.toBe(dispatchCalls[0]!.body.client_payload.content_version);
+            expect(rows[1]!.content_version).not.toBe(rows[0]!.content_version);
+
+            // B's rebuild is not stranded: the next cycle dispatches it
+            await dispatcher.tick();
+            expect(dispatchCalls).toHaveLength(2);
+            const [retryRow] = await pg`select status from rebuild_outbox where content_version = ${rows[1]!.content_version}`;
+            expect(retryRow.status).toBe('dispatched');
+            expect(dispatchCalls[1]!.body.client_payload.content_version).toBe(rows[1]!.content_version);
+        } finally {
+            process.env.DISPATCH_ENABLED = 'false';
+            await admin.patch('/v1/admin/topics/hr-round').send({ title: originalTitle }).expect(200);
+            await pg`delete from rebuild_outbox`;
+        }
+    });
+
     it('keeps a failed dispatch for retry with backoff, while the admin write already succeeded', async () => {
         process.env.DISPATCH_ENABLED = 'true';
         dispatchCalls.length = 0;
