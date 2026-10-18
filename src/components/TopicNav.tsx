@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Fragment } from 'react';
+import { Skeleton } from '@/components/Skeleton';
+import { useSync } from '@/components/SyncProvider';
 import { useKnownQuestions } from '@/lib/progress';
 import { formatPoints } from '@/lib/quiz';
 import { totalScore, useQuizScores } from '@/lib/scores';
@@ -36,6 +38,10 @@ export default function TopicNav({
     const pathname = usePathname().replace(/(.)\/$/, '$1');
     const { known } = useKnownQuestions();
     const { scores } = useQuizScores();
+    // while the first known-questions sync runs, each count is a placeholder
+    // (plan: Loading states); signed out, counts render at once
+    const { status } = useSync();
+    const countsPending = status === 'checking';
 
     return (
         <nav className='nav' aria-label='Topics and technologies'>
@@ -57,8 +63,18 @@ export default function TopicNav({
                             >
                                 <span>{t.title}</span>
                                 <span className='nav-count'>
-                                    {knownCount}/{t.questionIds.length}
-                                    <span className='sr-only'> known</span>
+                                    {countsPending ? (
+                                        <Skeleton
+                                            as='span'
+                                            label={`Loading ${t.title} progress`}
+                                            count
+                                        />
+                                    ) : (
+                                        <>
+                                            {knownCount}/{t.questionIds.length}
+                                            <span className='sr-only'> known</span>
+                                        </>
+                                    )}
                                 </span>
                             </Link>
                         );
@@ -80,8 +96,14 @@ export default function TopicNav({
                     >
                         <span>{t.label}</span>
                         <span className='nav-count'>
-                            {knownCount}/{t.questionIds.length}
-                            <span className='sr-only'> known</span>
+                            {countsPending ? (
+                                <Skeleton as='span' label={`Loading ${t.label} progress`} count />
+                            ) : (
+                                <>
+                                    {knownCount}/{t.questionIds.length}
+                                    <span className='sr-only'> known</span>
+                                </>
+                            )}
                         </span>
                     </Link>
                 );
@@ -93,7 +115,13 @@ export default function TopicNav({
                 aria-current={pathname.startsWith('/quiz') ? 'page' : undefined}
             >
                 <span>Quiz</span>
-                <span className='nav-count'>{formatPoints(totalScore(scores))} pts</span>
+                <span className='nav-count'>
+                    {countsPending ? (
+                        <Skeleton as='span' label='Loading quiz score' count />
+                    ) : (
+                        <>{formatPoints(totalScore(scores))} pts</>
+                    )}
+                </span>
             </Link>
             <Link
                 className='nav-link'

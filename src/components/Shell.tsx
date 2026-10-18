@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { FOCUS_SEARCH_EVENT, REVEAL_SEARCH_EVENT } from '@/components/SearchBox';
+import AccountControl from '@/components/AccountControl';
+import { SyncProvider } from '@/components/SyncProvider';
 
 // matches the sidebar breakpoint in app.css
 const DESKTOP_QUERY = '(min-width: 60rem)';
@@ -15,6 +17,8 @@ const DESKTOP_QUERY = '(min-width: 60rem)';
  * is collapsed. Phone: top bar with hamburger and search buttons opening
  * in-flow panels, plus the theme toggle.
  * "/" reveals the search for the current layout and focuses it.
+ * SyncProvider wraps everything: it starts after mount and drives the
+ * progress/score stores from the API once a stored token checks out.
  */
 export default function Shell({
     nav,
@@ -96,7 +100,7 @@ export default function Shell({
     }, [sidebarOpen]);
 
     return (
-        <>
+        <SyncProvider>
             <header className='topbar'>
                 <button
                     type='button'
@@ -133,6 +137,7 @@ export default function Shell({
                 }}
             >
                 {nav}
+                <AccountControl />
             </div>
             <div id='phone-search' className='phone-panel' data-open={panel === 'search'}>
                 {search}
@@ -175,6 +180,7 @@ export default function Shell({
                             </button>
                         </div>
                         {nav}
+                        <AccountControl />
                     </aside>
                 )}
                 <div className='app-main'>
@@ -187,7 +193,7 @@ export default function Shell({
                     </main>
                 </div>
             </div>
-        </>
+        </SyncProvider>
     );
 }
 

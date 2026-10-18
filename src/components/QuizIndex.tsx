@@ -3,6 +3,9 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import PointsTable from '@/components/PointsTable';
+import { Skeleton } from '@/components/Skeleton';
+import { useSync } from '@/components/SyncProvider';
+import SyncErrorNotice from '@/components/SyncErrorNotice';
 import { formatPoints } from '@/lib/quiz';
 import { totalScore, useQuizScores } from '@/lib/scores';
 
@@ -15,16 +18,25 @@ interface QuizTopic {
 /** Quiz home: total score, scoring rules, and one card per topic. */
 export default function QuizIndex({ topics }: { topics: QuizTopic[] }) {
     const { scores, reset } = useQuizScores();
+    // score lines are skeletons until the first GET /quiz/state answers
+    // (plan: Loading states); signed out, local scores render at once
+    const { status } = useSync();
+    const scoresPending = status === 'checking';
 
     return (
         <div>
             <header className='topic-header'>
                 <h1 className='topic-title'>Quiz</h1>
                 <div className='topic-meta topic-meta-row'>
-                    <p className='label'>Total score {formatPoints(totalScore(scores))}</p>
+                    {scoresPending ? (
+                        <Skeleton label='Loading total score' line />
+                    ) : (
+                        <p className='label'>Total score {formatPoints(totalScore(scores))}</p>
+                    )}
                     <ResetScores hasScores={Object.keys(scores).length > 0} onReset={reset} />
                 </div>
             </header>
+            <SyncErrorNotice />
             <p className='quiz-lede'>
                 Each attempt asks a random set of under half a topic&rsquo;s questions, none of
                 them from your previous attempt, and offers four key takeaways per question.
@@ -40,13 +52,29 @@ export default function QuizIndex({ topics }: { topics: QuizTopic[] }) {
                                 <span className='index-head'>
                                     <span className='index-title'>{t.title}</span>
                                     <span className='index-meta'>
-                                        {formatPoints(s?.score ?? 0)} pts
+                                        {scoresPending ? (
+                                            <Skeleton
+                                                as='span'
+                                                label={`Loading ${t.title} score`}
+                                                count
+                                            />
+                                        ) : (
+                                            <>{formatPoints(s?.score ?? 0)} pts</>
+                                        )}
                                     </span>
                                 </span>
                                 <span className='index-requirement'>
-                                    {s && s.attemptCount > 0
-                                        ? `${s.attemptCount} ${s.attemptCount === 1 ? 'attempt' : 'attempts'}, ${s.correct} correct, ${s.wrong} wrong`
-                                        : `${t.questionCount} questions, not played yet`}
+                                    {scoresPending ? (
+                                        <Skeleton
+                                            as='span'
+                                            label={`Loading ${t.title} attempts`}
+                                            count
+                                        />
+                                    ) : s && s.attemptCount > 0 ? (
+                                        `${s.attemptCount} ${s.attemptCount === 1 ? 'attempt' : 'attempts'}, ${s.correct} correct, ${s.wrong} wrong`
+                                    ) : (
+                                        `${t.questionCount} questions, not played yet`
+                                    )}
                                 </span>
                             </Link>
                         </li>

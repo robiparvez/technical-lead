@@ -4,6 +4,9 @@ import Link from 'next/link';
 import { useEffect, useId, useRef, useState } from 'react';
 import PointsTable from '@/components/PointsTable';
 import ResultMark from '@/components/ResultMark';
+import { Skeleton } from '@/components/Skeleton';
+import { useSync } from '@/components/SyncProvider';
+import SyncErrorNotice from '@/components/SyncErrorNotice';
 import {
     POINTS,
     attemptSize,
@@ -37,6 +40,10 @@ export default function QuizRunner({
     const attemptCount = scores[slug]?.attemptCount ?? 0;
     const attempts = scores[slug]?.attempts ?? [];
     const size = attemptSize(source.length);
+    // topic score lines are skeletons until the first GET /quiz/state answers
+    // (plan: Loading states); signed out, local scores render at once
+    const { status } = useSync();
+    const scoresPending = status === 'checking';
 
     const [phase, setPhase] = useState<Phase>('intro');
     const [round, setRound] = useState<QuizItem[]>([]);
@@ -107,8 +114,15 @@ export default function QuizRunner({
                         </span>
                     </p>
                     <h1 className='topic-title'>{title}</h1>
-                    <TopicStats score={topicScore} attemptCount={attemptCount} />
+                    {scoresPending ? (
+                        <div className='topic-meta topic-meta-row'>
+                            <Skeleton label='Loading topic score' line />
+                        </div>
+                    ) : (
+                        <TopicStats score={topicScore} attemptCount={attemptCount} />
+                    )}
                 </header>
+                <SyncErrorNotice />
                 <p className='quiz-lede'>
                     Each attempt asks {size} questions in random order, none of them from your
                     previous attempt. Pick the key takeaway that answers each one. Correct answers
@@ -155,7 +169,13 @@ export default function QuizRunner({
                     </div>
                     <div>
                         <dt className='label'>Topic score</dt>
-                        <dd>{formatPoints(topicScore)}</dd>
+                        <dd>
+                            {scoresPending ? (
+                                <Skeleton as='span' label='Loading topic score' count />
+                            ) : (
+                                formatPoints(topicScore)
+                            )}
+                        </dd>
                     </div>
                 </dl>
                 <div className='quiz-actions'>

@@ -4,6 +4,9 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { highlight } from 'sugar-high';
 import type { Question } from '@/data/types';
+import { useSync } from '@/components/SyncProvider';
+import { Skeleton } from '@/components/Skeleton';
+import SyncErrorNotice from '@/components/SyncErrorNotice';
 import { useKnownQuestions } from '@/lib/progress';
 import Diagram from '@/components/Diagram';
 import ResultMark from '@/components/ResultMark';
@@ -12,7 +15,9 @@ import { DIFFICULTIES, DIFFICULTY_LABELS } from '@/lib/quiz';
 /**
  * Difficulty rail: one vertical accent line per topic, three labeled
  * stations drawn as rings, questions hanging from the line as nodes in
- * order. Known questions show a checked node.
+ * order. Known questions show a checked node. While the first sync runs
+ * (a stored token exists), each mark and count is a small outlined
+ * placeholder (plan: Loading states).
  */
 export default function QuestionRail({
     questions,
@@ -23,9 +28,12 @@ export default function QuestionRail({
     topicLabels?: Record<string, string>;
 }) {
     const { known, toggle } = useKnownQuestions();
+    const { status } = useSync();
+    const marksPending = status === 'checking';
 
     return (
         <div className='rail'>
+            <SyncErrorNotice />
             {DIFFICULTIES.map((difficulty) => {
                 const stationQuestions = questions.filter((q) => q.difficulty === difficulty);
                 if (stationQuestions.length === 0) return null;
@@ -40,15 +48,23 @@ export default function QuestionRail({
                             <span className='station-ring' aria-hidden='true' />
                             <span>{DIFFICULTY_LABELS[difficulty]}</span>
                             <span className='station-count'>
-                                {stationKnown === 0
-                                    ? `${stationQuestions.length} questions`
-                                    : `${stationKnown}/${stationQuestions.length} known`}
+                                {marksPending ? (
+                                    <Skeleton
+                                        as='span'
+                                        label={`Loading ${DIFFICULTY_LABELS[difficulty]} progress`}
+                                        count
+                                    />
+                                ) : stationKnown === 0 ? (
+                                    `${stationQuestions.length} questions`
+                                ) : (
+                                    `${stationKnown}/${stationQuestions.length} known`
+                                )}
                             </span>
                         </h2>
                         <ul className='rail-list'>
                             {stationQuestions.map((q) => (
                                 <li key={q.id}>
-                                    <RailNode known={known.has(q.id)} />
+                                    <RailNode known={known.has(q.id)} pending={marksPending} />
                                     <QuestionCard
                                         question={q}
                                         topic={topicLabels?.[q.id]}
@@ -154,18 +170,27 @@ function QuestionCard({
     );
 }
 
-/** Question node on the rail: hollow ring, checked once known. */
-function RailNode({ known }: { known: boolean }) {
+/**
+ * Question node on the rail: hollow ring, checked once known. While the first
+ * sync runs, a small dashed outline stands in for the mark — a Skeleton div
+ * cannot live inside an <svg>, so this is the same outline vocabulary
+ * (--color-border-subtle, pulse) drawn as an svg circle.
+ */
+function RailNode({ known, pending }: { known: boolean; pending: boolean }) {
     return (
         <svg
             className='q-node'
-            data-known={known}
+            data-known={pending ? undefined : known}
             viewBox='0 0 14 14'
             aria-hidden='true'
             focusable='false'
         >
             <circle className='ring' cx='7' cy='7' r='6' fill='none' strokeWidth='2' />
-            {known && <ResultMark result='correct' />}
+            {pending ? (
+                <circle className='skeleton-mark-ring' cx='7' cy='7' r='3.5' />
+            ) : (
+                known && <ResultMark result='correct' />
+            )}
         </svg>
     );
 }
