@@ -21,6 +21,8 @@ import { grantAdmin } from '../../scripts/grant-admin.js';
 const TEST_URL =
     process.env.DATABASE_URL ?? 'postgres://postgres@127.0.0.1:5432/technical_lead_test';
 const EXPORT_TOKEN = process.env.EXPORT_TOKEN ?? '';
+import { DispatcherService } from '../../src/rebuild/dispatcher.service.js';
+
 const TMP_SLUG_PREFIX = 'tmp-admin-';
 
 const questionBody = (takeaway: string, overrides: Record<string, unknown> = {}) => ({
@@ -42,6 +44,9 @@ const createdTopics: string[] = [];
 
 beforeAll(async () => {
     app = await bootApp();
+    // Keep outbox rows pending for deterministic assertions (rebuild.spec
+    // runs the worker itself).
+    await app.get(DispatcherService, { strict: false }).stop();
     // Keep outbox rows pending for deterministic assertions.
 
 

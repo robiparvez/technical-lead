@@ -22,6 +22,16 @@ export const envSchema = z.object({
     EXPORT_TOKEN: z.string().min(16, 'must be at least 16 characters'),
     DISPATCH_ENABLED: z.enum(['true', 'false']).optional(),
     GITHUB_REPO_DISPATCH_TOKEN: z.string().optional(),
+    // repository_dispatch target while DISPATCH_ENABLED=true (P3/P6):
+    // "owner/repo", e.g. robiparvez/technical-lead. Unused while disabled.
+    GITHUB_REPO: z
+        .string()
+        .regex(/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/, 'must be "owner/repo"')
+        .optional(),
+    // Dispatcher interval overrides (milliseconds), mainly for the test
+    // suite; production keeps the defaults (poll 5 s, debounce 30 s).
+    REBUILD_POLL_MS: z.string().regex(/^\d+$/, 'must be a number').optional(),
+    REBUILD_DEBOUNCE_MS: z.string().regex(/^\d+$/, 'must be a number').optional(),
     // Directory holding technologies.json + diagram-ids.json for the shared
     // content validator (P2, D9). Relative paths resolve against server/.
     CONTENT_RULES_DIR: z.string().optional(),
