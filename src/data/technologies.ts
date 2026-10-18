@@ -1,4 +1,5 @@
 import { TOPICS } from './index';
+import technologies from './technologies.json';
 import type { Question } from './types';
 
 export interface Technology {
@@ -8,28 +9,11 @@ export interface Technology {
 }
 
 // Question tags mix tools ("kafka") with concepts ("caching"), so each
-// technology lists the tags that name it. Register new entries by hand.
-export const TECHNOLOGIES: Technology[] = [
-    { slug: 'kafka', label: 'Kafka', tags: ['kafka'] },
-    { slug: 'kubernetes', label: 'Kubernetes', tags: ['kubernetes'] },
-    { slug: 'docker', label: 'Docker', tags: ['docker'] },
-    { slug: 'terraform', label: 'Terraform', tags: ['terraform'] },
-    { slug: 'react', label: 'React', tags: ['react'] },
-    { slug: 'nextjs', label: 'Next.js', tags: ['next'] },
-    { slug: 'nodejs', label: 'Node.js', tags: ['node'] },
-    { slug: 'python', label: 'Python', tags: ['python', 'gil', 'free-threading'] },
-    { slug: 'java', label: 'Java', tags: ['java'] },
-    { slug: 'graphql', label: 'GraphQL', tags: ['graphql'] },
-    { slug: 'grpc', label: 'gRPC', tags: ['grpc'] },
-    { slug: 'stripe', label: 'Stripe', tags: ['stripe'] },
-    { slug: 'oauth-jwt', label: 'OAuth/JWT', tags: ['oauth', 'jwt'] },
-    // no "aws" tag exists; list the AWS service tags instead
-    {
-        slug: 'aws',
-        label: 'AWS',
-        tags: ['lambda', 's3', 'sqs', 'rds', 'aurora', 'dynamodb', 'fargate', 'iam', 'vpc'],
-    },
-];
+// technology lists the tags that name it. Register new entries by hand in
+// technologies.json: adding a technology is a code change, and the rebuild
+// pipeline never writes this file (D9; scripts/fetch-content.mjs owns only
+// manifest.json and topics/*.json).
+export const TECHNOLOGIES: Technology[] = technologies;
 
 // A technology page needs enough questions to be worth a click.
 const MIN_QUESTIONS = 3;

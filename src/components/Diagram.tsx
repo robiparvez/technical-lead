@@ -2,6 +2,7 @@
 
 import { Component, ComponentType, Suspense, lazy, useEffect, useState } from 'react';
 import type { PlayerRef } from '@remotion/player';
+import diagramIds from '@/data/diagram-ids.json';
 import type { DiagramSpec } from '@/data/types';
 import RequestFlow from '@/components/diagrams/RequestFlow';
 import SagaFlow from '@/components/diagrams/SagaFlow';
@@ -10,6 +11,9 @@ import SpecDiagram, { specDescription, specFrames, specHeight } from '@/componen
 import { RestVsGraphQL, BTreeIndex, ContainerDeploy } from '@/components/diagrams/StaticDiagrams';
 
 const LazyPlayer = lazy(() => import('@remotion/player').then((m) => ({ default: m.Player })));
+
+/** The hand-built string ids (src/data/diagram-ids.json), as a literal union. */
+export type DiagramId = keyof typeof diagramIds;
 
 interface AnimatedDef {
     component: ComponentType | ComponentType<{ spec: DiagramSpec }>;
@@ -23,7 +27,9 @@ interface AnimatedDef {
     inputProps?: { spec: DiagramSpec };
 }
 
-const ANIMATED: Record<string, AnimatedDef> = {
+// Typed against diagram-ids.json: an id listed there with no component here
+// (or a component for an id that file does not list) fails type-checking.
+const ANIMATED: Record<DiagramId, AnimatedDef> = {
     'request-flow': {
         component: RequestFlow,
         label: 'Request flow through an API gateway to the orders service',
@@ -96,7 +102,7 @@ export default function Diagram({ diagram }: { diagram: string | DiagramSpec }) 
         );
     }
 
-    const animated = ANIMATED[diagram];
+    const animated = ANIMATED[diagram as DiagramId];
     if (!animated) return null;
     return <AnimatedDiagram def={animated} />;
 }
