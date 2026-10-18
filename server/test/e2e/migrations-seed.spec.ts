@@ -39,6 +39,7 @@ describe('migrations + seed', () => {
             'quiz_events',
             'quiz_state',
             'quiz_topic_totals',
+            'rate_limit',
             'rebuild_outbox',
             'session',
             'topics',
