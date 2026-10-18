@@ -22,6 +22,9 @@ export const envSchema = z.object({
     EXPORT_TOKEN: z.string().min(16, 'must be at least 16 characters'),
     DISPATCH_ENABLED: z.enum(['true', 'false']).optional(),
     GITHUB_REPO_DISPATCH_TOKEN: z.string().optional(),
+    // Directory holding technologies.json + diagram-ids.json for the shared
+    // content validator (P2, D9). Relative paths resolve against server/.
+    CONTENT_RULES_DIR: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
