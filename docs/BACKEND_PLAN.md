@@ -1,14 +1,17 @@
 # Backend Plan: NestJS + PostgreSQL for `technical-lead`
 
-> **Status:** Pending approval · **Date:** 2026-10-18 · **Branch:** `feat/nestjs-backend` (all work)
+> **Status:** Approved 2026-10-18, executing in batches · **Date:** 2026-10-18 · **Branch:** `feat/nestjs-backend` (all work)
 >
-> Revision 9. Revisions 1 to 3 merged a `nestjs-best-practices` review, three codebase reviews
+> Revision 11. Revisions 1 to 3 merged a `nestjs-best-practices` review, three codebase reviews
 > (frontend/data, backend/security, deploy pipeline) and a verification pass. Revision 4 recorded
 > the owner's decisions D1 to D5 and fixed eight findings from the revision 3 review. Revision 5
 > recorded the revision 4 defaults as D6 to D10. Revision 6 added D11 to D14 and the gaps they
 > exposed. Revision 7 adds the endpoints the `/admin` page design needs. Revision 8 adds D15,
-> skeleton loading states for API calls. Revision 9 adds D16, server-assigned readable ids for new questions. The list
-> of changes is at the bottom.
+> skeleton loading states for API calls. Revision 9 adds D16, server-assigned readable ids for
+> new questions. Revision 10 folds in a review of revision 9: topic delete and create rules,
+> safer id assignment and outbox claiming, quiz event edge cases, and three wording fixes.
+> Revision 11 folds in the three residuals from the revision 10 verification. The list of
+> changes is at the bottom.
 
 ## Decisions
 
@@ -29,7 +32,7 @@
 | D13 | **Limits.** Session `expiresIn` 24 h, refreshed while in use. Public GETs: 60 requests per minute per IP. Auth routes: better-auth defaults. Cache TTL 5 min (a backstop, since writes invalidate). Event batch: 100. Delta arrays: 1,000 ids each (above the 532 questions, so a first sign-in fits one call). Request body: 100 KB. Used in P1 and P4. | Decided |
 | D14 | **No sanitizer library.** Admin writes are stored as written and escaped on output. Code snippets must keep characters such as `<script>`, so an HTML sanitizer would damage them. Writes get length limits and reject control characters. Used in P3. | Decided |
 | D15 | **Skeleton loading.** Every view that waits on an API call with nothing to show yet renders `<Skeleton>` (`src/components/Skeleton.tsx`), shaped like the content it stands in for. Not `loading.tsx`: Next lists static export as unsupported for it (`node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/loading.md:134`), because it needs streaming. Skeletons render in a client component's loading branch or as a `<Suspense>` fallback. See Loading states. Used in P3 and P4; `/admin` already has it. | Decided |
-| D16 | **New question ids stay readable and are assigned by the server.** `POST /admin/questions` ignores any id the client sends and assigns `<prefix>-q<N>`, where N is one above the highest number among all of the topic's questions, deleted ones included (so no id is reused). The prefix comes from the topic's existing ids. This keeps ids short in `#question-id` links, DB rows and logs, and in the same form as the 532 existing ids such as `hr-q1`. Two concurrent creates in one topic can pick the same N: the primary key rejects the second, and the server retries once with a fresh N inside the transaction. The editor shows the id read-only ("Assigned when you save"). History: the owner asked for UUIDs from the `uuid` package, then for the built-in `crypto.randomUUID()`, then chose readable ids after the readability cost was shown. No package was added, so D10 holds. Used in P3. | Decided |
+| D16 | **New question ids stay readable and are assigned by the server.** `POST /admin/questions` ignores any id the client sends and assigns `<prefix>-q<N>`, where N is one above the highest number among all of the topic's questions, deleted ones included (so no id is reused). The prefix is the topic's `question_id_prefix` column. This keeps ids short in `#question-id` links, DB rows and logs, and in the same form as the 532 existing ids such as `hr-q1`. The create transaction first takes `pg_advisory_xact_lock(hashtext(topic_slug))`, so two creates in one topic run one after the other and cannot pick the same N. A retry would not work here, because a unique violation aborts the whole PostgreSQL transaction, outbox row included. The primary key stays as a backstop: a violation returns 409. The editor shows the id read-only ("Assigned when you save"). History: the owner asked for UUIDs from the `uuid` package, then for the built-in `crypto.randomUUID()`, then chose readable ids after the readability cost was shown. No package was added, so D10 holds. Used in P3. | Decided |
 
 **Warning for D5.** After the untrack commit, `CLAUDE.md` is an ignored file on this branch, but
 `master` still tracks it. Git overwrites ignored files without asking. If you check out `master`,
@@ -58,7 +61,7 @@ commit-back needs only `contents: write` on its job. Check again at P6.
 | ORM | **Drizzle ORM** + postgres.js, drizzle-kit migrations | Reconfirmed over TypeORM in revision 3 |
 | Database | **PostgreSQL 18**, the local install (D1). Two databases: `technical_lead` and `technical_lead_test`. | Production host: P6 |
 | Auth | **better-auth 1.7.x**, email/password, **bearer plugin**, `trustedOrigins` | Bearer tokens because cookie sessions break cross-origin from GitHub Pages. OAuth is deferred. |
-| Hardening | `@nestjs/throttler`, `helmet`, **zod** with a global hand-written `ZodValidationPipe` (D12), global exception filter (`{ statusCode, message, error }`), env validation with `@nestjs/config` and a schema | The throttler exempts only `/health/*`. `/export` uses the build token instead. |
+| Hardening | `@nestjs/throttler`, `helmet`, **zod** with a global hand-written `ZodValidationPipe` (D12), global exception filter (`{ statusCode, message, error }`), env validation with `@nestjs/config` and a schema | The throttler exempts `/health/*` and `/export`. `/export` is outside the throttler and the build token protects it (compared in constant time). |
 | Logging | **nestjs-pino** 5.3.x + `app.enableShutdownHooks()` | Peers `@nestjs/* ^11.0.8 \|\| ^12.0.2`, Node `>=22.12.0` (checked on npm) |
 | Caching | In-memory TTL cache on public content endpoints, invalidated on admin writes | Valid for one instance. A second instance needs a DB version stamp instead. |
 | Docs | `@nestjs/swagger` at `/docs` | Disabled in production. zod DTOs carry no Swagger metadata, so see Open details. |
@@ -112,20 +115,20 @@ the community package `@thallesp/nestjs-better-auth`.
 Mirrors `src/data/types.ts` and the two localStorage stores.
 
 - **better-auth tables**: `user` (plus `role: 'user' | 'admin'`, default `user`), `session`, `account`, `verification`
-- **`topics`**: slug (PK, immutable), title, requirement, group_label, group_sort_order, sort_order (D11). The topic JSON has no group data today, so the seed reads groups from `src/data/manifest.json` (see Seed). All topics with the same `group_label` must share one `group_sort_order`; the validator checks it.
+- **`topics`**: slug (PK, immutable, never reused), title, requirement, group_label, group_sort_order, sort_order (D11), `question_id_prefix` (unique, immutable; the `<prefix>` in D16, because it is not always the slug), `deleted_at` (soft delete). The topic JSON has no group data today, so the seed reads groups from `src/data/manifest.json` (see Seed). All topics with the same `group_label` must share one `group_sort_order`; the validator checks it.
 - **`questions`**: id text PK (immutable, never reused; the server assigns new ids as `<prefix>-q<N>`, D16), topic_slug FK (indexed, `ON UPDATE CASCADE`), difficulty enum, tags text[], question, answer, code jsonb, key_takeaway, diagram jsonb, sort_order, `deleted_at`. **`unique (topic_slug, key_takeaway) WHERE deleted_at IS NULL`**, a partial index so soft-deleted rows do not block reuse. The quiz uses takeaways as options and React keys. Deletes are soft only.
 - **`user_known_questions`**: (user_id, question_id) PK, marked_at. `question_id` has an FK to `questions.id`. An unmark deletes the row.
 - **`quiz_attempts`**: id, user_id, topic_slug, `client_attempt_id` uuid, number, started_at, question_ids text[], answered, correct, points. **`unique(user_id, topic_slug, number)`** and **`unique(user_id, client_attempt_id)`**. The server assigns `number` on insert. Retention keeps the newest 20 per user and topic (the client's `HISTORY_LIMIT`). Totals live in `quiz_topic_totals`, so pruning loses no score.
 - **`quiz_events`**: (user_id, event_id uuid) unique, plus `client_ts`. Stores applied events so a retry is a no-op. Retention keeps 90 days. The API rejects an event whose `client_ts` is older than 90 days, because its replay guard may already be gone.
 - **`quiz_topic_totals`**: (user_id, topic_slug): score, correct, wrong, attempt_count. Updated in the same transaction as the event.
 - **`quiz_state`**: user_id PK, `reset_epoch` integer, `imported_at` timestamp. `import_local` runs only while `imported_at` is null. Retention never prunes this table.
-- **`rebuild_outbox`**: id, status, payload, content_version, attempts, next_attempt_at, created_at, dispatched_at. Index on `(status, next_attempt_at)`.
+- **`rebuild_outbox`**: id, status (`pending`, `claimed`, `dispatched`, `failed`), payload, content_version, attempts, next_attempt_at, created_at, dispatched_at. Index on `(status, next_attempt_at)`.
 
 **Seed.** P1 first writes `src/data/manifest.json` by hand from `TOPIC_GROUPS` in
 `src/data/index.ts`: group labels, group order, and topic slugs in order. `seed.ts` reads the
 manifest and the 20 topic JSONs (532 questions, counted on 2026-10-18), so the server never
 imports frontend TypeScript. It inserts missing rows and never overwrites existing ones, so a
-re-run cannot erase admin edits. P2 then switches `src/data/index.ts` to the same manifest.
+re-run cannot erase admin edits. It sets each topic's `question_id_prefix` from its existing question ids (the part before `-q<N>`). P2 then switches `src/data/index.ts` to the same manifest.
 
 ## Auth
 
@@ -169,11 +172,12 @@ re-run cannot erase admin edits. P2 then switches `src/data/index.ts` to the sam
 | `GET /progress/known` | user | `{ questionIds: string[] }` |
 | `POST /progress/known` | user | `{ add: string[], remove: string[] }`. Ids are validated against `questions`, arrays are capped, and unknown ids are dropped. |
 | `GET /quiz/state` | user | scores snapshot plus `reset_epoch` |
-| `POST /quiz/events` | user | capped batch of events, each with a client `event_id` and `client_ts`. Types: `attempt_started` (carries `client_attempt_id`, returns the server number), `answer_recorded` (references `client_attempt_id`), `reset`, `import_local` (one time, guarded by `quiz_state.imported_at`). Validated: `correct <= answered`, bounded `points`, question ids belong to the topic, `client_ts` within 90 days. |
-| `GET /admin/rebuild` | admin | outbox summary for the `/admin` page: `{ pending, lastSavedAt, requestedAt }`. Added for the admin page design; not built. |
+| `POST /quiz/events` | user | capped batch of events, each with a client `event_id` and `client_ts`. The batch is not all-or-nothing: the response lists one result per event, `applied`, `duplicate` (a replayed `event_id`) or `rejected` with a reason, and a client drops a rejected event. Types: `attempt_started` (carries `client_attempt_id`, returns the server number), `answer_recorded` (references `client_attempt_id`; if the server has no such attempt, because the start event was lost or retention removed it, the event is `rejected` with 422), `reset` (for one topic, in one transaction: delete the user's `quiz_attempts` for the topic, set its `quiz_topic_totals` to zero, and increase `reset_epoch`; `quiz_events` rows stay, because they are the replay guard), `import_local` (one time, guarded by `quiz_state.imported_at`). Events run in order. Every quiz event carries the client's `reset_epoch`; on a mismatch with `quiz_state` the event comes back `rejected` with 409 and the client refetches `GET /quiz/state`. Per-event statuses (`applied`, `duplicate`, `rejected` with 422 or 409) are result codes inside the 200 batch response, not HTTP statuses. Validated: `correct <= answered`, bounded `points`, question ids belong to the topic, `client_ts` within 90 days. |
+| `GET /admin/topics` | admin | topic list for the `/admin` page: every topic, including drafts (no live question) and soft-deleted ones, each with `draft` and `deleted` flags and question counts. The public `GET /topics` omits them. Added in revision 11. |
+| `GET /admin/rebuild` | admin | outbox summary for the `/admin` page: `{ pending, lastSavedAt, requestedAt, failed }`, where `failed` counts rows whose retries are exhausted, so a dead pipeline is visible on the page. Added for the admin page design; `failed` added in revision 11. |
 | `GET /admin/topics/:slug/deleted` | admin | soft-deleted questions of one topic, newest first: `{ question, deletedAt }[]`. Added for the admin page; not built. |
 | `POST /admin/questions/:id/restore` | admin | clears `deleted_at`, so the question returns under its original id. Returns 422 with `fields.restore` when a live question in the topic now has the same key takeaway (the partial unique index would reject it). Runs the shared validator and inserts an outbox row in the same transaction, like every admin write. Added for the admin page; not built. |
-| `POST/PATCH/DELETE /admin/topics[/:slug]`, `/admin/questions[/:id]` | admin | content management. `POST /admin/questions` assigns the next readable id (D16) and ignores a client id, so a client cannot choose or collide one. `PATCH` rejects id and slug changes. `DELETE` is soft. Writes run the shared validator and return 422 on failure. Each write inserts an outbox row in the same transaction. |
+| `POST/PATCH/DELETE /admin/topics[/:slug]`, `/admin/questions[/:id]` | admin | content management. `POST /admin/topics` needs `slug`, `title`, `requirement`, group, and `questionIdPrefix` (unique, lowercase letters, numbers and single hyphens), and may have no questions yet. Such a draft topic stays out of `/export` and the public endpoints until it has a live question. `POST /admin/questions` assigns the next readable id (D16) and ignores a client id, so a client cannot choose or collide one. `PATCH` rejects id, slug and prefix changes. `DELETE` is soft for topics (`deleted_at`) and for questions. A soft-deleted topic keeps its questions and every user row (known marks, attempts, totals), leaves `/export` and the public endpoints, and keeps its slug reserved. A topic restore endpoint is not in v1. Writes run the shared validator and return 422 on failure. Each write inserts an outbox row in the same transaction. |
 
 A 422 response adds `fields: Record<string, string>` (field name to message) to the error
 envelope, so the admin form can show each message beside its field.
@@ -194,7 +198,7 @@ mirror `src/data/types.ts` (D12). Sequence `from`/`to` indexes must be in range.
   - `keyTakeaway` is non-empty and unique per topic
   - string diagram ids exist in `diagram-ids.json`
   - all committed question ids still exist
-  - no topic is empty
+  - no exported topic is empty (a draft topic with no live question is left out of `/export`, so the build never sees an empty topic)
   - topics in one group share one `group_sort_order`
 - The server's `content/` module imports the same file and reads the two JSON files from a path
   set by `CONTENT_RULES_DIR`. The P6 Dockerfile copies them into the image. One implementation
@@ -207,8 +211,12 @@ On this branch the pipeline runs locally. GitHub Actions cannot reach a local AP
 Actions part goes live in P6.
 
 1. **Admin edit.** One transaction updates content and inserts an outbox row. A worker claims
-   rows with `FOR UPDATE SKIP LOCKED`, waits for the debounce window (~30s, computed from
-   `created_at` so a restart does not lose it), and sends one `repository_dispatch`. It retries
+   rows with `FOR UPDATE SKIP LOCKED` and marks them `claimed` in a short transaction, then
+   commits, so no lock or connection stays open. Outside any transaction it waits for the
+   debounce window (~30s, computed from `created_at` so a restart does not lose it), checks for
+   newer pending rows (it folds them into the same dispatch), and sends one
+   `repository_dispatch`. A `claimed` row older than 5 minutes returns to `pending`, so a crashed
+   worker loses nothing. It retries
    with backoff using `attempts` and `next_attempt_at`, and a cleanup job removes old dispatched
    rows. Failures stay in the outbox and never reach the admin response. The `client_payload`
    carries `content_version`. While `DISPATCH_ENABLED=false` (the default until P6), the worker
@@ -217,7 +225,7 @@ Actions part goes live in P6.
 2. **Fetch.** `scripts/fetch-content.mjs` calls `GET /export` with the build token, a timeout and
    3 retries. It checks the response against the `Topic` schema, asserts `content_version` when
    one is given, runs the validator, writes `manifest.json` and `src/data/topics/*.json`, and
-   deletes topic files that are no longer in the DB. On this branch you run it against
+   deletes topic files for topics that `/export` no longer lists (soft-deleted topics included). It never writes `technologies.json`: the technology list is a hand-kept file, and adding a technology is a code change. A question tag that is not in that file is fine, because it just is not a technology page. On this branch you run it against
    `http://localhost:3001`, then run `npm run build`.
 3. **Registry refactor.** `src/data/index.ts` becomes a loader over `manifest.json` with the same
    exports (`TOPIC_GROUPS`, `TOPICS`, `getTopic`, `getSearchIndex`). The manifest carries group
@@ -237,7 +245,7 @@ Actions part goes live in P6.
 - `src/lib/api.ts`: typed fetch wrapper (bearer token). DTO types are kept in sync with the server by hand.
 - `src/lib/auth.ts`: better-auth `createAuthClient` with the bearer plugin client.
 - `/login` page (client component, export-safe; wrap any `useSearchParams` use in `Suspense`) and an account control in the sidebar. It follows the CSS rules: tokens only, no fills.
-- A client sync provider inside `Shell`, started after mount (the store server snapshot is empty by design). Export the stores from `progress.ts` and `scores.ts` so it can reach them.
+- A client sync provider inside `Shell`, started after mount (the store server snapshot is empty by design). Export the stores from `progress.ts` and `scores.ts` so it can reach them. **Signed-out rule:** if no token is stored, the user is signed out at once. The provider renders local data with no skeleton and makes no session call. Only a stored token starts the session check, and only then do the P4 skeletons show.
 - **Known questions sync.** The client keeps a queue of pending `add`/`remove` operations in localStorage. On sign-in it GETs the server set, applies the queue on top, and POSTs the result. Operations replay in order, so an unmark is never undone by a stale device. First sign-in uploads the local set as `add` operations.
 - **Quiz sync.** The client assigns a local `client_attempt_id` (uuid) and shows its local number at once. It queues events in localStorage and flushes them when online. The server returns the canonical number, and the client reconciles it. If the server answers 409 for a stale `reset_epoch`, the client refetches `GET /quiz/state`. Queued events older than 90 days are dropped with a notice. First sign-in sends one `import_local` event. For a signed-in user, server totals are authoritative.
 - Signed out or offline: today's behavior, exactly.
@@ -257,7 +265,7 @@ A slow opacity pulse stops under `prefers-reduced-motion`. An error replaces the
 
 | Where | API call | Skeleton | Phase |
 |---|---|---|---|
-| `/admin` topic list | `GET /topics` | topic field and 6 rows | done (mock) |
+| `/admin` topic list | `GET /admin/topics` (revision 11) | topic field and 6 rows | done (mock) |
 | `/admin` questions | `GET /topics/:slug` | 6 rows | done (mock) |
 | `/admin` header | `GET /admin/rebuild` | one line | done (mock) |
 | `/admin` role check | session check | the topic-list skeleton, until the role is known | P3 |
@@ -281,11 +289,11 @@ so it runs without touching `master`.
 2. **Unit and e2e (Supertest, `TEST_DATABASE_URL`, schema reset per run):**
    - auth, including `GET /api/auth/ok`; a signup with the admin address gets no admin role; bearer revocation; auth rate limit
    - progress deltas: unknown ids dropped, unmark survives a stale-client sync
-   - quiz: idempotent replay of the same `event_id`; concurrent `attempt_started` hits the unique constraint and retries; stale `reset_epoch` returns 409; an event older than 90 days is rejected; `import_local` runs once, even after `quiz_events` pruning; attempt retention keeps 20
-   - admin: non-admin rejected; id and slug changes rejected; delete is soft; a tag removal that would break `technologies.json` returns 422
+   - quiz: idempotent replay of the same `event_id`; concurrent `attempt_started` hits the unique constraint and retries; stale `reset_epoch` returns 409; an event older than 90 days is rejected; `import_local` runs once, even after `quiz_events` pruning; attempt retention keeps 20; `answer_recorded` for an unknown attempt is `rejected` with 422 and the rest of the batch still applies; `reset` clears attempts and totals for the topic, bumps the epoch, and keeps `quiz_events`
+   - admin: non-admin rejected; id and slug changes rejected; delete is soft; a tag removal that would break `technologies.json` returns 422; a soft-deleted topic leaves `/export` and the public GETs but keeps its questions and all user rows, and its slug cannot be reused; `GET /admin/topics` lists drafts and soft-deleted topics that `GET /topics` omits; a new topic needs a unique `questionIdPrefix`, and an empty draft topic stays out of `/export`; the new-question id skips a deleted question's number, ignores a client id, and N concurrent creates in one topic all succeed with different ids (advisory lock)
    - admin restore: a deleted question appears in the deleted list and comes back under its id; a restore whose key takeaway a live question now uses returns 422 with `fields.restore`; a new question cannot take a deleted question's id
    - `/export` without the build token returns 401; public GETs return 429 past the limit
-   - outbox: SKIP LOCKED claim, backoff, dispatch mocked, content write succeeds when GitHub fails, `DISPATCH_ENABLED=false` makes no network call
+   - outbox: SKIP LOCKED claim that commits before the debounce wait, a stale `claimed` row returns to `pending`, newer rows fold into one dispatch, backoff, dispatch mocked, content write succeeds when GitHub fails, `DISPATCH_ENABLED=false` makes no network call
    - validator: each rule has a failing fixture
    - exception-filter envelope; CORS preflight from `http://localhost:3000`
    - migrations apply cleanly; `seed.ts` run twice changes nothing
@@ -299,7 +307,7 @@ so it runs without touching `master`.
 | P0 | Branch setup: untrack `CLAUDE.md`, root toolchain guards, local databases | none |
 | P1 | Hand-written `src/data/manifest.json`, `server/` skeleton, `ZodValidationPipe`, schema, migrations, seed, `/health/*`, `/topics`, `/questions`, `/export` (build token), `server-ci.yml` | P0 |
 | P2 | Content-rules JSON, `validate-content.mjs`, manifest refactor, `fetch-content.mjs` | P1 |
-| P3 | Admin API (including `GET /admin/rebuild`, the deleted list, and restore), outbox, dispatcher (`DISPATCH_ENABLED=false`), local pipeline test. Then switch `src/lib/adminApi.ts` from the mock to `fetch` calls and add the admin role check to `/admin` (needs P4 auth). | P2 |
+| P3 | Admin API (including `GET /admin/topics`, `GET /admin/rebuild`, the deleted list, and restore), outbox, dispatcher (`DISPATCH_ENABLED=false`), local pipeline test. Then switch `src/lib/adminApi.ts` from the mock to `fetch` calls and add the admin role check to `/admin` (needs P4 auth). | P2 |
 | P4 | Auth, progress sync, quiz events, login UI, sync provider, `csp-hashes.mjs`, the P4 skeletons (D15) | P1 |
 | P5 | Docs | P3, P4 |
 | P6 | **Later, with the owner's approval.** Choose the production host and Postgres, deploy with the Dockerfile, add `https://robiparvez.github.io` to CORS and `trustedOrigins`, set `vars.API_URL`, `EXPORT_TOKEN` and the dispatch PAT, set `DISPATCH_ENABLED=true`, merge to `master`, then verify a dispatch-triggered Pages build in the Actions log. | P5 |
@@ -316,6 +324,28 @@ P3 and P4 can run in parallel, except the last P3 step (the admin role check on 
 - **Bearer token in localStorage.** An XSS can read it. The per-page CSP and output escaping reduce the risk.
 - **Offline queue has a 90-day limit.** Older queued quiz events are dropped.
 - **No live rebuild before P6.** The dispatch pipeline runs only locally and in tests until hosting and the merge.
+
+## Changes in revision 11
+
+The owner approved the plan and the three residuals from the revision 10 verification.
+
+1. `GET /admin/topics` (admin): every topic including drafts and soft-deleted ones, with flags and counts. The `/admin` topic list uses it instead of public `GET /topics`, so a newly created draft topic stays reachable and editable.
+2. `GET /admin/rebuild` adds `failed`, so exhausted retries are visible on the admin page.
+3. Quiz events carry `reset_epoch`, and the per-event statuses are result codes inside the 200 batch response.
+
+## Changes in revision 10
+
+A review of revision 9 gave nine findings. Eight are fixed. One is partly rejected.
+
+1. **Topic delete (high).** Topics get `deleted_at`. A soft-deleted topic leaves `/export` and the public GETs, and keeps its questions, user rows and slug. No topic restore in v1. Fetch removes the files of topics that `/export` no longer lists.
+2. **Topic create.** `POST /admin/topics` needs a `questionIdPrefix`, stored in a new unique column, because the prefix is not always the slug. A topic may start empty as a draft that stays out of `/export`. The seed fills the prefix from the existing ids.
+3. **Tag map: rejected in part.** The review asked for a rule that every question tag must be in the map. That rule would be wrong: question tags are free text, and the map lists only technologies (a tag that is not a technology is normal). What was true: the rebuild never updates the map. The plan now says so, and says that adding a technology is a code change.
+4. **Concurrent creates.** A retry inside the transaction cannot work in PostgreSQL, because a unique violation aborts the whole transaction. The create takes a per-topic advisory lock, so creates run in turn. The primary key stays as a backstop and returns 409.
+5. **Unknown attempt.** `answer_recorded` for an attempt the server does not have is rejected with 422. The batch returns one result per event and is not all-or-nothing.
+6. **Reset.** The event clears the topic's attempts and totals and bumps `reset_epoch` in one transaction. `quiz_events` stay as the replay guard.
+7. **`/export` and the throttler.** The two statements are now one: `/export` is outside the throttler, and the build token protects it.
+8. **Signed-out rendering.** No stored token means signed out at once, with no skeleton and no session call.
+9. **Outbox lock.** The worker claims rows with a status change, commits, waits outside any transaction, then folds in newer rows before it dispatches. A stale `claimed` row returns to `pending`.
 
 ## Changes in revision 9
 
