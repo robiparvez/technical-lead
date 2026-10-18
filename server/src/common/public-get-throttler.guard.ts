@@ -24,7 +24,9 @@ export class PublicGetThrottlerGuard extends ThrottlerGuard {
             path.startsWith('/v1/health/') ||
             path === '/v1/export' ||
             path.startsWith('/v1/progress/') ||
-            path.startsWith('/v1/quiz/')
+            path.startsWith('/v1/quiz/') ||
+            // authenticated admin routes are not public content either
+            path.startsWith('/v1/admin/')
         );
     }
 

@@ -42,7 +42,33 @@ export function authed(app: INestApplication, token: string) {
     return {
         get: (path: string) => client(app).get(path).set('Authorization', authorization),
         post: (path: string) => client(app).post(path).set('Authorization', authorization),
+        patch: (path: string) => client(app).patch(path).set('Authorization', authorization),
+        del: (path: string) => client(app).delete(path).set('Authorization', authorization),
     };
+}
+
+/** Polls until the predicate holds (throws the last value's error on timeout). */
+export async function waitFor<T>(
+    probe: () => Promise<T>,
+    options: { timeoutMs?: number; intervalMs?: number } = {},
+): Promise<T> {
+    const timeoutMs = options.timeoutMs ?? 5000;
+    const intervalMs = options.intervalMs ?? 50;
+    const deadline = Date.now() + timeoutMs;
+    let lastError: unknown;
+    for (;;) {
+        try {
+            return await probe();
+        } catch (error) {
+            lastError = error;
+        }
+        if (Date.now() > deadline) {
+            throw new Error(
+                `waitFor timed out after ${timeoutMs}ms: ${String(lastError)}`,
+            );
+        }
+        await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    }
 }
 
 export function isoDaysAgo(days: number): string {

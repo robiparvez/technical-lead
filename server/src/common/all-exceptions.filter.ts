@@ -7,17 +7,21 @@ import {
     Logger,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import { isFieldsMap } from './fields.exception.js';
 
 interface ErrorEnvelope {
     statusCode: number;
     message: string | string[];
     error: string;
+    fields?: Record<string, string>;
 }
 
 /**
  * Global exception filter (plan: Hardening). Every error leaves the API as
- * `{ statusCode, message, error }`. HttpExceptions keep their payload; anything
- * else becomes a logged 500 with no internals leaked.
+ * `{ statusCode, message, error }`; a 422 additionally carries `fields`
+ * (field name to message) when the HttpException payload has one, so the
+ * admin forms can show each message beside its field. Anything else becomes
+ * a logged 500 with no internals leaked.
  */
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -41,7 +45,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
                       : exception.message;
             const error =
                 payload.error ?? HttpStatus[statusCode]?.replaceAll('_', ' ') ?? exception.name;
-            response.status(statusCode).json({ statusCode, message: reason, error });
+            const fields = isFieldsMap(payload.fields) ? { fields: payload.fields } : {};
+            response.status(statusCode).json({ statusCode, message: reason, error, ...fields });
             return;
         }
 
