@@ -7,14 +7,17 @@ import { json } from 'express';
 import helmet from 'helmet';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module.js';
+import { AUTH } from './auth/auth.tokens.js';
+import { mountBetterAuth } from './auth/auth.mount.js';
 import { AllExceptionsFilter } from './common/all-exceptions.filter.js';
 import { parseTrustedOrigins } from './common/env.schema.js';
 
 /**
  * Creates the fully wired app (also used by the e2e suite via supertest).
- * Middleware order: helmet, then the 100 KB json body parser (plan: D13),
- * then Nest routes under the /v1 prefix. better-auth's raw handler mounts
- * before these in P4 (plan: Server structure).
+ * Middleware order (plan: Server structure): helmet, CORS (before the auth
+ * mount so preflights get the allowlist), the raw better-auth handler at
+ * /api/auth (streams its own bodies), then the 100 KB json parser (D13) for
+ * the Nest routes under /v1.
  */
 export async function createApp(): Promise<INestApplication> {
     const app = await NestFactory.create(AppModule, {
@@ -30,16 +33,20 @@ export async function createApp(): Promise<INestApplication> {
     app.use(
         helmet({
             // The API serves JSON to cross-origin fetches, not documents;
-            // CSP belongs to the static site (per-page hashes, P4).
+            // CSP belongs to the static site (per-page hashes, D6).
             contentSecurityPolicy: false,
             crossOriginResourcePolicy: { policy: 'cross-origin' },
         }),
     );
-    app.use(json({ limit: '100kb' }));
 
     app.enableCors({
         origin: parseTrustedOrigins(process.env.TRUSTED_ORIGINS),
     });
+
+    // The raw better-auth handler, outside Nest's router (see auth.mount.ts).
+    mountBetterAuth(app, app.get(AUTH));
+
+    app.use(json({ limit: '100kb' }));
 
     app.setGlobalPrefix('v1');
     app.useGlobalFilters(new AllExceptionsFilter());

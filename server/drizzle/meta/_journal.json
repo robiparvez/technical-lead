@@ -8,6 +8,13 @@
       "when": 1792319386942,
       "tag": "0000_serious_valkyrie",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792323197993,
+      "tag": "0001_zippy_taskmaster",
+      "breakpoints": true
     }
   ]
 }

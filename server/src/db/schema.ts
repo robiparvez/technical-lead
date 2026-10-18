@@ -1,5 +1,6 @@
 import { relations, sql } from 'drizzle-orm';
 import {
+    bigint,
     boolean,
     index,
     integer,
@@ -87,6 +88,16 @@ export const verification = pgTable('verification', {
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
+});
+
+// better-auth's rate-limit storage when rateLimit.storage = "database" (plan:
+// Auth). `lastRequest` is epoch milliseconds; bigint/number matches the
+// better-auth field type (bigint: true), not a timestamp.
+export const rateLimit = pgTable('rate_limit', {
+    id: text('id').primaryKey(),
+    key: text('key').notNull().unique(),
+    count: integer('count').notNull(),
+    lastRequest: bigint('last_request', { mode: 'number' }).notNull(),
 });
 
 // --- content ---

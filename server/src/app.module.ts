@@ -6,6 +6,9 @@ import { LoggerModule } from 'nestjs-pino';
 import { ExportModule } from './export/export.module.js';
 import { HealthModule } from './health/health.module.js';
 import { TopicsModule } from './topics/topics.module.js';
+import { AuthModule } from './auth/auth.module.js';
+import { ProgressModule } from './progress/progress.module.js';
+import { QuizModule } from './quiz/quiz.module.js';
 import { PublicGetThrottlerGuard } from './common/public-get-throttler.guard.js';
 import { CommonModule } from './common/common.module.js';
 import { validateEnv } from './common/env.schema.js';
@@ -38,6 +41,9 @@ import { closeDb } from './db/client.js';
         TopicsModule,
         ExportModule,
         CommonModule,
+        AuthModule,
+        ProgressModule,
+        QuizModule,
     ],
     providers: [
         {
