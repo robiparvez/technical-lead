@@ -3,7 +3,9 @@ import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
+import { ExportModule } from './export/export.module.js';
 import { HealthModule } from './health/health.module.js';
+import { TopicsModule } from './topics/topics.module.js';
 import { PublicGetThrottlerGuard } from './common/public-get-throttler.guard.js';
 import { CommonModule } from './common/common.module.js';
 import { validateEnv } from './common/env.schema.js';
@@ -33,6 +35,8 @@ import { closeDb } from './db/client.js';
             throttlers: [{ name: 'public-get', ttl: 60_000, limit: 60 }],
         }),
         HealthModule,
+        TopicsModule,
+        ExportModule,
         CommonModule,
     ],
     providers: [
