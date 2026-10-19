@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, eq, isNull, sql } from 'drizzle-orm';
-import { getDb } from '../db/client.js';
+import type { Database } from '../db/client.js';
+import { DB } from '../db/db.module.js';
 import { questions, topics } from '../db/schema.js';
 import { TtlCacheService } from '../common/ttl-cache.service.js';
 import { questionDtoSchema } from '../common/content.schemas.js';
@@ -16,7 +17,10 @@ const topicDetailKey = (slug: string) => `topic:${slug}`;
 
 @Injectable()
 export class TopicsService {
-    constructor(private readonly cache: TtlCacheService) {}
+    constructor(
+        @Inject(DB) private readonly db: Database,
+        private readonly cache: TtlCacheService,
+    ) {}
 
     /**
      * Public topic list: live topics with live question counts. Soft-deleted
@@ -26,7 +30,7 @@ export class TopicsService {
         const cached = this.cache.get<TopicListItemDto[]>(LIST_CACHE_KEY);
         if (cached) return cached;
 
-        const { db } = getDb();
+        const db = this.db;
         const rows = await db
             .select({
                 slug: topics.slug,
@@ -59,7 +63,7 @@ export class TopicsService {
         const cached = this.cache.get<TopicDetailDto>(topicDetailKey(slug));
         if (cached) return cached;
 
-        const { db } = getDb();
+        const db = this.db;
         const [topic] = await db
             .select()
             .from(topics)

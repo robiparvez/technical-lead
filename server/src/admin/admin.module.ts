@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ContentModule } from '../content/content.module.js';
 import { AdminController } from './admin.controller.js';
-import { AdminService } from './admin.service.js';
+import { AdminQuestionsService } from './admin-questions.service.js';
+import { AdminTopicsService } from './admin-topics.service.js';
 
 /**
  * Admin content management (plan: P3). Imports ContentModule for the shared
@@ -11,6 +12,6 @@ import { AdminService } from './admin.service.js';
 @Module({
     imports: [ContentModule],
     controllers: [AdminController],
-    providers: [AdminService],
+    providers: [AdminTopicsService, AdminQuestionsService],
 })
 export class AdminModule {}

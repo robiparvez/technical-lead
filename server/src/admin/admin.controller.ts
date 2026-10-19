@@ -24,7 +24,9 @@ import {
     type TopicCreateDto,
     type TopicUpdateDto,
 } from './admin.schemas.js';
-import { AdminService, type AdminTopicDetailDto, type SavedQuestionDto } from './admin.service.js';
+import { AdminQuestionsService } from './admin-questions.service.js';
+import { AdminTopicsService } from './admin-topics.service.js';
+import type { AdminTopicDetailDto, SavedQuestionDto } from './admin-detail.js';
 
 /**
  * Admin content management (plan: API endpoints, admin rows). AuthGuard
@@ -35,13 +37,16 @@ import { AdminService, type AdminTopicDetailDto, type SavedQuestionDto } from '.
 @Controller('admin')
 @UseGuards(AuthGuard, AdminGuard)
 export class AdminController {
-    constructor(private readonly admin: AdminService) {}
+    constructor(
+        private readonly topics: AdminTopicsService,
+        private readonly questions: AdminQuestionsService,
+    ) {}
 
     // --- topics ---------------------------------------------------------------
 
     @Get('topics')
     async listTopics(): Promise<{ topics: AdminTopicListItemDto[] }> {
-        return { topics: await this.admin.listTopics() };
+        return { topics: await this.topics.listTopics() };
     }
 
     /** The editor's topic load: drafts and soft-deleted topics stay reachable. */
@@ -49,14 +54,14 @@ export class AdminController {
     async getTopic(
         @Param('slug', new ZodValidationPipe(slugParamSchema)) slug: string,
     ): Promise<AdminTopicDetailDto> {
-        return this.admin.getTopic(slug);
+        return this.topics.getTopic(slug);
     }
 
     @Post('topics')
     async createTopic(
         @Body(new ZodFieldsValidationPipe(topicCreateSchema)) body: TopicCreateDto,
     ): Promise<AdminTopicDetailDto> {
-        return this.admin.createTopic(body);
+        return this.topics.createTopic(body);
     }
 
     @Patch('topics/:slug')
@@ -64,21 +69,21 @@ export class AdminController {
         @Param('slug', new ZodValidationPipe(slugParamSchema)) slug: string,
         @Body(new ZodFieldsValidationPipe(topicUpdateSchema)) body: TopicUpdateDto,
     ): Promise<AdminTopicDetailDto> {
-        return this.admin.updateTopic(slug, body);
+        return this.topics.updateTopic(slug, body);
     }
 
     @Delete('topics/:slug')
     async deleteTopic(
         @Param('slug', new ZodValidationPipe(slugParamSchema)) slug: string,
     ): Promise<AdminTopicDetailDto> {
-        return this.admin.deleteTopic(slug);
+        return this.topics.deleteTopic(slug);
     }
 
     @Get('topics/:slug/deleted')
     async listDeletedQuestions(
         @Param('slug', new ZodValidationPipe(slugParamSchema)) slug: string,
     ): Promise<{ question: unknown; deletedAt: Date }[]> {
-        return this.admin.listDeletedQuestions(slug);
+        return this.questions.listDeletedQuestions(slug);
     }
 
     // --- questions ------------------------------------------------------------
@@ -87,7 +92,7 @@ export class AdminController {
     async createQuestion(
         @Body(new ZodFieldsValidationPipe(questionWriteSchema)) body: QuestionWriteDto,
     ): Promise<SavedQuestionDto> {
-        return this.admin.createQuestion(body);
+        return this.questions.createQuestion(body);
     }
 
     @Patch('questions/:id')
@@ -95,14 +100,14 @@ export class AdminController {
         @Param('id', new ZodValidationPipe(questionIdParamSchema)) id: string,
         @Body(new ZodFieldsValidationPipe(questionWriteSchema)) body: QuestionWriteDto,
     ): Promise<SavedQuestionDto> {
-        return this.admin.updateQuestion(id, body);
+        return this.questions.updateQuestion(id, body);
     }
 
     @Delete('questions/:id')
     async deleteQuestion(
         @Param('id', new ZodValidationPipe(questionIdParamSchema)) id: string,
     ): Promise<AdminTopicDetailDto> {
-        return this.admin.deleteQuestion(id);
+        return this.questions.deleteQuestion(id);
     }
 
     @Post('questions/:id/restore')
@@ -110,6 +115,6 @@ export class AdminController {
     async restoreQuestion(
         @Param('id', new ZodValidationPipe(questionIdParamSchema)) id: string,
     ): Promise<AdminTopicDetailDto> {
-        return this.admin.restoreQuestion(id);
+        return this.questions.restoreQuestion(id);
     }
 }

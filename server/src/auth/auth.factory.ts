@@ -1,7 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { bearer } from 'better-auth/plugins';
-import { parseTrustedOrigins } from '../common/env.schema.js';
+import { parseTrustedOrigins, parseTrustedProxies } from '../common/env.schema.js';
 import { createAuthMiddleware } from 'better-auth/api';
 import { sendPasswordChangedMail, sendResetPasswordMail } from './auth-mail.js';
 import { getDb } from '../db/client.js';
@@ -49,10 +49,7 @@ export type AuthInstance = ReturnType<typeof buildAuth>;
  */
 export function buildAuth(overrides: AuthFactoryOverrides = {}) {
     const { db } = getDb();
-    const trustedProxies = (process.env.TRUSTED_PROXIES ?? '')
-        .split(',')
-        .map((entry) => entry.trim())
-        .filter(Boolean);
+    const trustedProxies = parseTrustedProxies(process.env.TRUSTED_PROXIES);
     return betterAuth({
         database: drizzleAdapter(db, {
             provider: 'pg',

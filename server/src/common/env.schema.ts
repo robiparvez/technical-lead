@@ -54,6 +54,18 @@ export function parseTrustedOrigins(value: string | undefined): string[] {
         .filter(Boolean);
 }
 
+/**
+ * Reverse proxies in front of the API: comma-separated IPs or CIDR ranges.
+ * Empty means no proxy, so no forwarded header is trusted (a client could
+ * forge it). The auth rate limiter and Express (req.ip) both read this list.
+ */
+export function parseTrustedProxies(value: string | undefined): string[] {
+    return (value ?? '')
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+}
+
 export function parseFlag(value: string | undefined, fallback = false): boolean {
     if (value === undefined) return fallback;
     return value === 'true';

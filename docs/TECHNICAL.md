@@ -34,7 +34,7 @@ npm test                  # vitest unit + e2e against technical_lead_test
 npm run admin:grant -- <email>   # the only path to the admin role
 ```
 
-Routes — global prefix `/v1`; better-auth mounts raw at `/api/auth/*` (outside the prefix, with `GET /api/auth/ok` as a smoke test); Swagger at `/docs` outside production:
+Routes — global prefix `/v1`; better-auth mounts raw at `/api/auth/*` (outside the prefix, with `GET /api/auth/ok` as a smoke test); Swagger at `/docs` only when `NODE_ENV=development`:
 
 - Public GETs, throttled 60 requests/min/IP, in-memory cache with a 5 min TTL that admin writes invalidate: `GET /v1/topics`, `GET /v1/topics/:slug`, `GET /v1/questions?tag=&difficulty=&limit=&cursor=` (`limit` 1–100, default 20). Draft topics (no live question) and soft-deleted rows are omitted.
 - `GET /v1/export` — all groups, topics, questions and technologies in one payload with a `content_version` hash (groups and topics only). Exempt from the throttler; protected by the build token (`x-export-token` header, compared in constant time). Read by `src/lib/content.ts` on every page request.

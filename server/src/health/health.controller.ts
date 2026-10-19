@@ -1,9 +1,12 @@
-import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
+import { Controller, Get, Inject, ServiceUnavailableException } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
-import { getDb } from '../db/client.js';
+import type { Database } from '../db/client.js';
+import { DB } from '../db/db.module.js';
 
 @Controller('health')
 export class HealthController {
+    constructor(@Inject(DB) private readonly db: Database) {}
+
     /** Liveness: the process is up. No database touch, never throttled. */
     @Get('live')
     live(): { status: 'ok' } {
@@ -14,7 +17,7 @@ export class HealthController {
     @Get('ready')
     async ready(): Promise<{ status: 'ok'; db: 'up' }> {
         try {
-            await getDb().db.execute(sql`select 1`);
+            await this.db.execute(sql`select 1`);
         } catch (error) {
             throw new ServiceUnavailableException({
                 message: 'database unavailable',

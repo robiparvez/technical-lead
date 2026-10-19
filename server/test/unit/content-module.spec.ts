@@ -1,3 +1,4 @@
+import { ConfigService } from '@nestjs/config';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -23,13 +24,13 @@ afterEach(() => {
 describe('content module wrapper (CONTENT_RULES_DIR)', () => {
     it('defaults to the repo src/data rules', () => {
         expect(defaultContentRulesDir).toBe(join(repoRoot, 'src', 'data'));
-        const service = new ContentService();
+        const service = new ContentService(new ConfigService());
         expect(service.rulesDir()).toBe(join(repoRoot, 'src', 'data'));
     });
 
     it('resolves a relative CONTENT_RULES_DIR against server/', () => {
         process.env.CONTENT_RULES_DIR = '../src/data';
-        const service = new ContentService();
+        const service = new ContentService(new ConfigService());
         expect(service.rulesDir()).toBe(join(repoRoot, 'src', 'data'));
     });
 
@@ -39,7 +40,7 @@ describe('content module wrapper (CONTENT_RULES_DIR)', () => {
             writeFileSync(join(dir, 'diagram-ids.json'), JSON.stringify({ 'request-flow': true }));
 
             process.env.CONTENT_RULES_DIR = dir;
-            const service = new ContentService();
+            const service = new ContentService(new ConfigService());
             const loaded = service.loadRules();
             expect(loaded.dir).toBe(dir);
             expect(loaded.diagramIds).toEqual(['request-flow']);
@@ -102,7 +103,7 @@ describe('content module wrapper (CONTENT_RULES_DIR)', () => {
     });
 
     it('validates against a technology list passed in (the technologies table).', () => {
-        const service = new ContentService();
+        const service = new ContentService(new ConfigService());
         const topic = {
             slug: 't',
             title: 'T',
@@ -121,7 +122,7 @@ describe('content module wrapper (CONTENT_RULES_DIR)', () => {
     });
 
     it('loads the real repo rules through the default dir and validates them', () => {
-        const service = new ContentService();
+        const service = new ContentService(new ConfigService());
         const loaded = service.loadRules(true);
         expect(loaded.dir).toBe(join(repoRoot, 'src', 'data'));
         expect(loaded.diagramIds).toContain('request-flow');
@@ -129,7 +130,7 @@ describe('content module wrapper (CONTENT_RULES_DIR)', () => {
 
     it('throws a readable error when the rules dir is wrong', () => {
         process.env.CONTENT_RULES_DIR = join(repoRoot, 'does-not-exist');
-        const service = new ContentService();
+        const service = new ContentService(new ConfigService());
         expect(() => service.loadRules()).toThrow(/CONTENT_RULES_DIR/);
     });
 });

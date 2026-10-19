@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { collectContentState, type Executor } from '../export/export.service.js';
 import { UnprocessableException, validationErrorsToFields } from '../common/fields.exception.js';
 import {
@@ -43,12 +44,14 @@ export interface ContentRules {
 export class ContentService {
     private cache?: ContentRules;
 
+    constructor(private readonly config: ConfigService) {}
+
     /**
      * CONTENT_RULES_DIR, or the repo's src/data when unset. Relative values
      * resolve against server/ (where .env lives), so "../src/data" works.
      */
     rulesDir(): string {
-        const configured = process.env.CONTENT_RULES_DIR?.trim();
+        const configured = this.config.get<string>('CONTENT_RULES_DIR')?.trim();
         if (!configured) return defaultContentRulesDir;
         return isAbsolute(configured) ? configured : join(serverRoot, configured);
     }

@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { and, eq, inArray, isNull } from 'drizzle-orm';
-import { getDb } from '../db/client.js';
+import type { Database } from '../db/client.js';
+import { DB } from '../db/db.module.js';
 import { questions, userKnownQuestions } from '../db/schema.js';
 import type { KnownDelta } from './progress.schemas.js';
 
@@ -10,9 +11,11 @@ import type { KnownDelta } from './progress.schemas.js';
  */
 @Injectable()
 export class ProgressService {
+    constructor(@Inject(DB) private readonly db: Database) {}
+
     /** The user's full set of known question ids, ordered for stable diffs. */
     async getKnown(userId: string): Promise<string[]> {
-        const { db } = getDb();
+        const db = this.db;
         const rows = await db
             .select({ questionId: userKnownQuestions.questionId })
             .from(userKnownQuestions)
@@ -29,7 +32,7 @@ export class ProgressService {
      * Returns the resulting set.
      */
     async applyDelta(userId: string, delta: KnownDelta): Promise<string[]> {
-        const { db } = getDb();
+        const db = this.db;
         const add = [...new Set(delta.add)].filter((id) => !delta.remove.includes(id));
         const remove = [...new Set(delta.remove)];
 

@@ -120,6 +120,16 @@ describe('POST /v1/quiz/events', () => {
         expect(first.number).not.toBe(second.number);
     });
 
+    it('the same client_attempt_id under a new event_id is a duplicate with the server number, not a 500', async () => {
+        const clientAttemptId = randomUUID();
+        const first = await sendEvents([started(topicSlug, { client_attempt_id: clientAttemptId })]);
+        const again = await sendEvents([started(topicSlug, { client_attempt_id: clientAttemptId })]);
+        expect(again.body.results[0]).toMatchObject({
+            status: 'duplicate',
+            number: first.body.results[0].number,
+        });
+    });
+
     it('replaying the same event_id is a duplicate that answers with the number', async () => {
         const attempt = started(topicSlug);
         const first = await sendEvents([attempt]);

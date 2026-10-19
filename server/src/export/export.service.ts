@@ -1,11 +1,12 @@
 import { createHash } from 'node:crypto';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import type { ExtractTablesWithRelations } from 'drizzle-orm';
 import type { NodePgQueryResultHKT } from 'drizzle-orm/node-postgres';
 import type { PgTransaction } from 'drizzle-orm/pg-core';
 import { z } from 'zod';
-import { getDb, type Database } from '../db/client.js';
+import type { Database } from '../db/client.js';
+import { DB } from '../db/db.module.js';
 import type * as schema from '../db/schema.js';
 import { questions, technologies, topics } from '../db/schema.js';
 import { exportedQuestionSchema } from '../common/content.schemas.js';
@@ -187,7 +188,10 @@ export function hashContentVersion(exportBody: ContentState['exportBody']): stri
  */
 @Injectable()
 export class ExportService {
-    constructor(private readonly cache: TtlCacheService) {}
+    constructor(
+        @Inject(DB) private readonly db: Database,
+        private readonly cache: TtlCacheService,
+    ) {}
 
     /**
      * The whole site is read through this on every page request, so the result
@@ -197,7 +201,7 @@ export class ExportService {
     async buildExport(): Promise<ExportResponseDto> {
         const cached = this.cache.get<ExportResponseDto>(EXPORT_CACHE_KEY);
         if (cached) return cached;
-        const { db } = getDb();
+        const db = this.db;
         const { exportBody, technologies: technologyList } = await collectContentState(db);
         const result = exportResponseSchema.parse({
             contentVersion: hashContentVersion(exportBody),
