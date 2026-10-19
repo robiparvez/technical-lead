@@ -44,13 +44,13 @@ describe('GET /v1/export (D7)', () => {
             { label: 'Technical', topicSlugs: expect.any(Array) },
             { label: 'Leadership & behavioral', topicSlugs: expect.any(Array) },
         ]);
-        expect(response.body.topics).toHaveLength(20);
+        expect(response.body.topics).toHaveLength(21);
         expect(
             response.body.topics.reduce(
                 (sum: number, t: { questions: unknown[] }) => sum + t.questions.length,
                 0,
             ),
-        ).toBe(532);
+        ).toBe(592);
     });
 });
 

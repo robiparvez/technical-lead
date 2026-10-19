@@ -147,7 +147,7 @@ describe('topics: drafts, uniqueness, immutability', () => {
             exported.body.topics.some((t: { slug: string }) => t.slug === `${TMP_SLUG_PREFIX}draft`),
         ).toBe(false);
         // still a full export: the draft changes nothing
-        expect(exported.body.topics).toHaveLength(20);
+        expect(exported.body.topics).toHaveLength(21);
     });
 
     it('rejects a duplicate questionIdPrefix with 422 fields', async () => {

@@ -49,7 +49,7 @@ describe('soft-delete exclusions', () => {
                 (sum: number, t: { questionCount: number }) => sum + t.questionCount,
                 0,
             ),
-        ).toBe(531);
+        ).toBe(591);
     });
 
     it('GET /v1/questions omits the soft-deleted question', async () => {
@@ -61,11 +61,11 @@ describe('soft-delete exclusions', () => {
             seen.push(...response.body.items.map((item: { id: string }) => item.id));
             cursor = response.body.nextCursor;
         } while (cursor);
-        expect(seen).toHaveLength(531);
+        expect(seen).toHaveLength(591);
         expect(seen).not.toContain('hr-q1');
     });
 
-    it('GET /v1/export omits the soft-deleted question and reports 531', async () => {
+    it('GET /v1/export omits the soft-deleted question and reports 591', async () => {
         const response = await client(app)
             .get('/v1/export')
             .set('x-export-token', EXPORT_TOKEN)
@@ -73,7 +73,7 @@ describe('soft-delete exclusions', () => {
         const all = response.body.topics.flatMap((t: { questions: { id: string }[] }) =>
             t.questions.map((q) => q.id),
         );
-        expect(all).toHaveLength(531);
+        expect(all).toHaveLength(591);
         expect(all).not.toContain('hr-q1');
         expect(response.body.contentVersion).toMatch(/^[0-9a-f]{64}$/);
     });

@@ -25,18 +25,18 @@ describe('GET /v1/health', () => {
 });
 
 describe('GET /v1/topics', () => {
-    it('lists 20 live topics in site order with live-question counts', async () => {
+    it('lists 21 live topics in site order with live-question counts', async () => {
         const response = await client(app).get('/v1/topics').expect(200);
         const topics = response.body.topics;
-        expect(topics).toHaveLength(20);
+        expect(topics).toHaveLength(21);
         expect(topics[0]).toMatchObject({ slug: 'microservices', groupLabel: 'Technical' });
-        expect(topics[19]).toMatchObject({ slug: 'hr-round', groupLabel: 'Leadership & behavioral' });
-        expect(topics.reduce((sum: number, t: { questionCount: number }) => sum + t.questionCount, 0)).toBe(532);
+        expect(topics[20]).toMatchObject({ slug: 'hr-round', groupLabel: 'Leadership & behavioral' });
+        expect(topics.reduce((sum: number, t: { questionCount: number }) => sum + t.questionCount, 0)).toBe(592);
         // Site order: group order first, then topic order.
         expect(topics.map((t: { slug: string }) => t.slug)).toEqual([
             'microservices', 'api-design', 'databases', 'stripe-payments', 'event-driven',
             'front-end', 'react-nextjs', 'backend-runtime', 'cloud-serverless', 'cicd-release',
-            'automated-testing', 'system-design', 'system-design-exercises', 'security',
+            'automated-testing', 'system-design', 'system-design-exercises', 'security', 'nestjs',
             'tech-leadership', 'code-review', 'mentoring', 'agile-teams', 'stakeholders', 'hr-round',
         ]);
     });
@@ -86,8 +86,8 @@ describe('GET /v1/questions', () => {
             pages += 1;
         } while (cursor && pages < 10);
 
-        expect(seen).toHaveLength(532);
-        expect(new Set(seen).size).toBe(532);
+        expect(seen).toHaveLength(592);
+        expect(new Set(seen).size).toBe(592);
         // First question of the catalog is the first question of the first topic.
         expect(seen[0]).toBe('microservices-q1');
         // Ordered by topic order then question order: no api-design question before microservices ones.

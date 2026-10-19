@@ -63,15 +63,15 @@ describe('migrations + seed', () => {
         expect(result).toHaveLength(1);
     });
 
-    it('seeds 20 topics and 532 questions with prefixes and group order', async () => {
+    it('seeds 21 topics and 592 questions with prefixes and group order', async () => {
         const [topicCount] = await db
             .select({ value: sql<number>`count(*)::int` })
             .from(schema.topics);
         const [questionCount] = await db
             .select({ value: sql<number>`count(*)::int` })
             .from(schema.questions);
-        expect(topicCount?.value).toBe(20);
-        expect(questionCount?.value).toBe(532);
+        expect(topicCount?.value).toBe(21);
+        expect(questionCount?.value).toBe(592);
 
         const prefixes = await db
             .select({ prefix: schema.topics.questionIdPrefix })
@@ -79,7 +79,7 @@ describe('migrations + seed', () => {
         // Prefixes are not always the slug (plan, D11/D16 context).
         expect(prefixes).toContainEqual({ prefix: 'hr' });
         expect(prefixes).toContainEqual({ prefix: 'stripe' });
-        expect(new Set(prefixes.map((p) => p.prefix)).size).toBe(20);
+        expect(new Set(prefixes.map((p) => p.prefix)).size).toBe(21);
 
         const groups = await db
             .selectDistinct({
@@ -104,8 +104,8 @@ describe('migrations + seed', () => {
 
         expect(result.topicsInserted).toBe(0);
         expect(result.questionsInserted).toBe(0);
-        expect(result.topicsTotal).toBe(20);
-        expect(result.questionsTotal).toBe(532);
+        expect(result.topicsTotal).toBe(21);
+        expect(result.questionsTotal).toBe(592);
 
         const after = await db
             .select({ id: schema.questions.id, takeaway: schema.questions.keyTakeaway, deleted: schema.questions.deletedAt })
