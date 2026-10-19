@@ -31,17 +31,23 @@
  * - frame-ancestors is omitted: the CSP spec ignores it inside a meta tag,
  *   so listing it would only pretend protection.
  *
- * Plain ESM, no dependencies: node scripts/csp-hashes.mjs
+ * Plain ESM; the only import beyond node is @next/env, which ships with next:
+ * node scripts/csp-hashes.mjs
  */
 
 import { createHash } from 'node:crypto';
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import nextEnv from '@next/env';
 
 // out/ lives beside this script's parent directory (the repo root), whatever
 // the current working directory is
 const OUT_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'out');
+
+// next build reads .env.local and friends; plain node does not. Load them the
+// same way so the CSP names the API origin the bundle was built with.
+nextEnv.loadEnvConfig(join(OUT_DIR, '..'));
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
