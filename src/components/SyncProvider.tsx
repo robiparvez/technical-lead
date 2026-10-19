@@ -7,6 +7,7 @@ import {
     initSyncListeners,
     runSync,
     SYNC_DIRTY_EVENT,
+    SyncCancelledError,
     UnauthorizedSyncError,
 } from '@/lib/sync';
 
@@ -61,77 +62,102 @@ const FLUSH_DELAY_MS = 3_000;
 export function SyncProvider({ children }: { children: React.ReactNode }) {
     const [state, setState] = useState<Omit<SyncState, 'retry' | 'signOut'>>(DEFAULT_STATE);
     const runningRef = useRef(false);
+    // a run() requested while one is in flight; it replays when that one ends
+    const rerunRef = useRef(false);
     // 'checking' shows skeletons only until the FIRST sync answers; later
     // background flushes keep the signed-in UI stable
     const syncedOnceRef = useRef(false);
     const flushTimerRef = useRef<number | null>(null);
 
-    const run = useCallback(async () => {
-        if (runningRef.current) return;
-        runningRef.current = true;
+    const runOnce = useCallback(async () => {
+        if (getStoredToken() === null) {
+            syncedOnceRef.current = false;
+            setState({ status: 'signed-out', email: null, notice: null, error: null });
+            return;
+        }
+
+        if (!syncedOnceRef.current) {
+            setState((s) => ({ ...s, status: 'checking', error: null }));
+        }
+
+        let session: Awaited<ReturnType<typeof authClient.getSession>>;
         try {
-            if (getStoredToken() === null) {
-                syncedOnceRef.current = false;
-                setState({ status: 'signed-out', email: null, notice: null, error: null });
-                return;
-            }
+            session = await authClient.getSession();
+        } catch {
+            // network failure: keep the local data and offer a retry
+            setState((s) => ({
+                ...s,
+                status: 'error',
+                error: 'The study server could not be reached. Your progress is saved on this device.',
+            }));
+            return;
+        }
 
-            if (!syncedOnceRef.current) {
-                setState((s) => ({ ...s, status: 'checking', error: null }));
-            }
+        // an HTTP error (500, 502, 429) is a sick server, not a dead
+        // session: keep the data and offer a retry
+        if (session.error && session.error.status !== 401) {
+            setState((s) => ({
+                ...s,
+                status: 'error',
+                error: 'The study server could not be reached. Your progress is saved on this device.',
+            }));
+            return;
+        }
 
-            let session: Awaited<ReturnType<typeof authClient.getSession>>;
-            try {
-                session = await authClient.getSession();
-            } catch {
-                // network failure: keep the local data and offer a retry
-                setState((s) => ({
-                    ...s,
-                    status: 'error',
-                    error: 'The study server could not be reached. Your progress is saved on this device.',
-                }));
-                return;
-            }
+        const user = session.data?.user;
+        if (!user) {
+            // a stored token the server does not accept: signed out for
+            // real, and the local data goes with it (plan: Auth)
+            clearStoredToken();
+            clearSyncData();
+            syncedOnceRef.current = false;
+            setState({ status: 'signed-out', email: null, notice: null, error: null });
+            return;
+        }
 
-            const user = session.data?.user;
-            if (!user) {
-                // a stored token the server does not accept: signed out for
-                // real, and the local data goes with it (plan: Auth)
+        try {
+            const outcome = await runSync();
+            syncedOnceRef.current = true;
+            setState({
+                status: 'signed-in',
+                email: user.email,
+                notice: outcome.notice,
+                error: null,
+            });
+        } catch (error) {
+            // sign-out made this run stale; the queued re-run sets the state
+            if (error instanceof SyncCancelledError) return;
+            if (error instanceof UnauthorizedSyncError) {
                 clearStoredToken();
                 clearSyncData();
                 syncedOnceRef.current = false;
                 setState({ status: 'signed-out', email: null, notice: null, error: null });
                 return;
             }
+            setState({
+                status: 'error',
+                email: user.email,
+                notice: null,
+                error: 'Progress could not be synced. Your data is saved on this device.',
+            });
+        }
+    }, []);
 
-            try {
-                const outcome = await runSync();
-                syncedOnceRef.current = true;
-                setState({
-                    status: 'signed-in',
-                    email: user.email,
-                    notice: outcome.notice,
-                    error: null,
-                });
-            } catch (error) {
-                if (error instanceof UnauthorizedSyncError) {
-                    clearStoredToken();
-                    clearSyncData();
-                    syncedOnceRef.current = false;
-                    setState({ status: 'signed-out', email: null, notice: null, error: null });
-                    return;
-                }
-                setState({
-                    status: 'error',
-                    email: user.email,
-                    notice: null,
-                    error: 'Progress could not be synced. Your data is saved on this device.',
-                });
-            }
+    const run = useCallback(async () => {
+        if (runningRef.current) {
+            rerunRef.current = true;
+            return;
+        }
+        runningRef.current = true;
+        try {
+            do {
+                rerunRef.current = false;
+                await runOnce();
+            } while (rerunRef.current);
         } finally {
             runningRef.current = false;
         }
-    }, []);
+    }, [runOnce]);
 
     const retry = useCallback(() => {
         void run();

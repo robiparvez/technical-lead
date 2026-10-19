@@ -48,6 +48,22 @@ const FIELD_INPUT: Record<string, string> = {
     diagramJson: 'q-diagram-json',
 };
 
+/** Routes a server 422 `fields` map onto form inputs; the rest has no input. */
+function mapServerFields(fields: Record<string, string>, customDiagram: boolean) {
+    const mapped: Record<string, string> = {};
+    const unmapped: string[] = [];
+    for (const [key, message] of Object.entries(fields)) {
+        let field = key;
+        if (key.startsWith('tags')) field = 'tags';
+        else if (key === 'code.language') field = 'codeLanguage';
+        else if (key.startsWith('code')) field = 'codeSnippet';
+        else if (key.startsWith('diagram')) field = customDiagram ? 'diagramJson' : 'diagram';
+        if (FIELD_ORDER.includes(field)) mapped[field] ??= message;
+        else unmapped.push(message);
+    }
+    return { mapped, unmapped };
+}
+
 function toDraft(q: Question | undefined): Draft {
     return {
         id: q?.id ?? '',
@@ -166,7 +182,10 @@ export default function QuestionEditor({
         } catch (err) {
             const apiError = err as ApiError;
             if (apiError.fields) {
-                setServerFields(apiError.fields);
+                const { mapped, unmapped } = mapServerFields(apiError.fields, draft.diagramMode === 'custom');
+                setServerFields(mapped);
+                // keys with no input on this form (form, difficulty, ...) would vanish otherwise
+                if (unmapped.length) setSaveError(`Not saved. ${unmapped.join(' ')}`);
                 requestAnimationFrame(() => summaryRef.current?.focus());
             } else setSaveError(`Not saved. ${apiError.message} Your edits are still here, so try again.`);
             setBusy(null);

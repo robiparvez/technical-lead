@@ -19,6 +19,14 @@ export function createStore<T>(
     const listeners = new Set<(next: T, prev: T) => void>();
     let cache: T | null = null;
 
+    // Drop the cache when another tab writes, even if nothing here subscribes
+    // (the sync queues don't): a stale queue would overwrite the other tab's ops.
+    if (typeof window !== 'undefined') {
+        window.addEventListener('storage', (e) => {
+            if (e.key === key) cache = null;
+        });
+    }
+
     function get(): T {
         if (cache === null) {
             try {

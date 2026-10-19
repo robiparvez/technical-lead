@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useId, useRef, useState } from 'react';
 import QuestionEditor from '@/components/QuestionEditor';
 import { Skeleton } from '@/components/Skeleton';
@@ -192,9 +193,9 @@ export default function AdminConsole({
                 <div className='admin-state'>
                     <p>Sign in with the admin account to edit the site content here.</p>
                     <p>
-                        <a className='text-link' href='/login/'>
+                        <Link className='text-link' href='/login?next=/admin'>
                             Go to the sign-in page
-                        </a>
+                        </Link>
                     </p>
                 </div>
             </div>

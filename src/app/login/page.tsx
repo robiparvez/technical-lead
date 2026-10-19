@@ -21,8 +21,15 @@ import { authClient } from '@/lib/auth';
 
 /** Only same-app paths, so a crafted ?next= cannot redirect off-site. */
 function safeNext(raw: string | null): string {
-    if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return '/';
-    return raw;
+    // Resolve like a browser does ("/\evil.com" and "/<tab>/evil.com" become
+    // "//evil.com"), then accept only a result that stayed on the dummy origin.
+    const base = 'http://app.invalid';
+    try {
+        const url = new URL(raw ?? '/', base);
+        return url.origin === base ? url.pathname + url.search + url.hash : '/';
+    } catch {
+        return '/';
+    }
 }
 
 export default function LoginPage() {

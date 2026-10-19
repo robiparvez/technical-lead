@@ -233,13 +233,33 @@ export function initSyncListeners(): void {
  * clears the token first.
  */
 export function clearSyncData(): void {
+    generation += 1; // a sync still in flight must not write its results back
     withSuppress(() => {
         knownQueueStore.set({ ops: [] });
         quizQueueStore.set({ events: [] });
         epochStore.set(0);
+        // the next account uploads this browser's signed-out marks again
+        knownBootstrapStore.set(false);
         knownStore.set(new Set<string>());
         scoresStore.set({});
     });
+}
+
+/** Bumped by clearSyncData; a run that began under an older value is stale. */
+let generation = 0;
+let runGeneration = 0;
+
+/** Thrown inside a run that sign-out or a dead session made stale. */
+export class SyncCancelledError extends Error {
+    constructor() {
+        super('The sync was cancelled by sign-out');
+        this.name = 'SyncCancelledError';
+    }
+}
+
+/** Call after every await that precedes a store or queue write. */
+function ensureCurrent(): void {
+    if (runGeneration !== generation) throw new SyncCancelledError();
 }
 
 // ---------- the sync run ----------
@@ -255,6 +275,12 @@ export interface SyncOutcome {
  * network/API errors (the caller keeps the local data and offers a retry).
  */
 export async function runSync(): Promise<SyncOutcome> {
+    // one sync at a time across tabs, so two tabs never replay the same queue
+    return navigator.locks ? await navigator.locks.request('tl-sync', runLocked) : runLocked();
+}
+
+async function runLocked(): Promise<SyncOutcome> {
+    runGeneration = generation;
     const notices: string[] = [];
     try {
         await syncKnown();
@@ -272,6 +298,7 @@ export async function runSync(): Promise<SyncOutcome> {
 async function syncKnown(): Promise<void> {
     const counterBefore = knownEnqueueCount;
     const serverIds = new Set((await getKnownSet()).questionIds);
+    ensureCurrent();
     const ops = knownQueueStore.get().ops;
 
     const merged = new Set(serverIds);
@@ -296,6 +323,7 @@ async function syncKnown(): Promise<void> {
                 remove: remove.slice(i, i + DELTA_CHUNK),
             });
             authoritative = new Set(response.questionIds);
+            ensureCurrent();
         }
     }
 
@@ -312,6 +340,7 @@ async function syncKnown(): Promise<void> {
 /** Import on first sign-in, flush queued events, then overlay server totals. */
 async function syncQuiz(notices: string[]): Promise<void> {
     const state = await getQuizState();
+    ensureCurrent();
     epochStore.set(state.resetEpoch);
 
     // drop events too old for the server's 90-day window, with a notice
@@ -336,6 +365,7 @@ async function syncQuiz(notices: string[]): Promise<void> {
     // raced the refetch (its event is still queued and settles next flush)
     const counterBefore = quizEnqueueCount;
     const finalState = await getQuizState();
+    ensureCurrent();
     epochStore.set(finalState.resetEpoch);
     if (quizEnqueueCount === counterBefore) {
         overlayTotals(finalState.topics);
@@ -367,6 +397,7 @@ async function importLocalTotals(state: { resetEpoch: number }): Promise<void> {
         reset_epoch: state.resetEpoch,
     };
     const { results } = await postQuizEvents([event]);
+    ensureCurrent();
     const result = results[0];
     if (result && (result.status === 'applied' || result.status === 'duplicate')) {
         // every event queued before the snapshot is inside the import
@@ -388,6 +419,7 @@ async function flushQuizEvents(notices: string[]): Promise<void> {
         try {
             ({ results } = await postQuizEvents(batch));
         } catch (error) {
+            ensureCurrent();
             if (isApiError(error) && (error.statusCode === 400 || error.statusCode === 422)) {
                 // the batch itself is malformed (a client bug): drop it, not the queue
                 quizQueueStore.set({ events: quizQueueStore.get().events.slice(batch.length) });
@@ -397,6 +429,7 @@ async function flushQuizEvents(notices: string[]): Promise<void> {
             throw error;
         }
 
+        ensureCurrent();
         const byId = new Map(results.map((r) => [r.event_id, r]));
         let consumed = 0;
         let rejected = 0;
@@ -436,6 +469,7 @@ async function flushQuizEvents(notices: string[]): Promise<void> {
                 throw new Error('quiz events kept conflicting with the server reset epoch');
             }
             const state = await getQuizState();
+            ensureCurrent();
             epochStore.set(state.resetEpoch);
             // re-tag what is still queued and try again with the fresh epoch
             quizQueueStore.set({
@@ -472,15 +506,18 @@ function reconcileAttemptNumber(clientAttemptId: string, number: number): void {
 function overlayTotals(topics: Record<string, { score: number; correct: number; wrong: number; attemptCount: number }>): void {
     const current = scoresStore.get();
     const next: Scores = {};
-    for (const [slug, local] of Object.entries(current)) {
+    // server topics too: a new device has no local entry for them yet
+    for (const slug of new Set([...Object.keys(current), ...Object.keys(topics)])) {
+        const localAttempts = current[slug]?.attempts ?? [];
         const total = topics[slug];
         const attemptCount = total?.attemptCount ?? 0;
+        if (!current[slug] && attemptCount === 0 && !total?.score) continue; // nothing to show
         next[slug] = {
             score: total?.score ?? 0,
             correct: total?.correct ?? 0,
             wrong: total?.wrong ?? 0,
             attemptCount,
-            attempts: attemptCount === 0 ? [] : local.attempts.slice(-Math.min(local.attempts.length, attemptCount)),
+            attempts: attemptCount === 0 ? [] : localAttempts.slice(-Math.min(localAttempts.length, attemptCount)),
         };
     }
     withSuppress(() => scoresStore.set(next));
