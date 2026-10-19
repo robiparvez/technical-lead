@@ -352,11 +352,13 @@ export class QuizService {
                 })
                 .onConflictDoUpdate({
                     target: [quizTopicTotals.userId, quizTopicTotals.topicSlug],
+                    // add, never replace: the user may already have synced
+                    // totals from another device
                     set: {
-                        score: total.score,
-                        correct: total.correct,
-                        wrong: total.wrong,
-                        attemptCount: total.attempt_count,
+                        score: sql`${quizTopicTotals.score} + ${total.score}`,
+                        correct: sql`${quizTopicTotals.correct} + ${total.correct}`,
+                        wrong: sql`${quizTopicTotals.wrong} + ${total.wrong}`,
+                        attemptCount: sql`${quizTopicTotals.attemptCount} + ${total.attempt_count}`,
                     },
                 });
         }

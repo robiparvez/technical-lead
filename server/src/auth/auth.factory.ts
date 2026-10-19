@@ -47,6 +47,10 @@ export type AuthInstance = ReturnType<typeof buildAuth>;
  */
 export function buildAuth(overrides: AuthFactoryOverrides = {}) {
     const { db } = getDb();
+    const trustedProxies = (process.env.TRUSTED_PROXIES ?? '')
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter(Boolean);
     return betterAuth({
         database: drizzleAdapter(db, {
             provider: 'pg',
@@ -74,13 +78,15 @@ export function buildAuth(overrides: AuthFactoryOverrides = {}) {
             enabled: overrides.rateLimitEnabled ?? process.env.NODE_ENV !== 'test',
         },
         advanced: {
-            ipAddress: {
-                // Local dev sits behind no proxy: never trust forwarded
-                // headers (a client could spoof x-forwarded-for for its own
-                // bucket). P6 sits behind a real proxy and sets these then.
-                ipAddressHeaders: [],
-                trustedProxies: [],
-            },
+            ipAddress: trustedProxies.length
+                ? // Behind a proxy: better-auth walks x-forwarded-for from the
+                  // right, skips these hops, and rate-limits the first other IP.
+                  { ipAddressHeaders: ['x-forwarded-for'], trustedProxies }
+                : // No proxy (local dev): trust no forwarded header, since a
+                  // client could spoof x-forwarded-for. Outside dev and test
+                  // every client then shares one bucket, so set TRUSTED_PROXIES
+                  // before deploying behind a proxy (P6).
+                  { ipAddressHeaders: [], trustedProxies: [] },
         },
         user: {
             // `role` is our column on the better-auth user table. input:false

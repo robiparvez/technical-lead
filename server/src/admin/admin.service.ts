@@ -487,6 +487,19 @@ export class AdminService {
             await tx.update(questions).set({ deletedAt: null }).where(eq(questions.id, id));
             await this.outbox.recordWrite(tx, 'question-restored');
             return this.loadTopicDetail(tx, row.topicSlug);
+        }).catch((error: unknown) => {
+            // A live question took this takeaway after the check above; the
+            // partial unique index rejected the update. Same 422 as the check.
+            if (uniqueViolationConstraint(error) === TAKEAWAY_LIVE_INDEX) {
+                throw new UnprocessableException(
+                    {
+                        restore:
+                            'Another live question now has the same key takeaway. Change one of them first, because the quiz needs each takeaway to differ.',
+                    },
+                    'The question was not restored.',
+                );
+            }
+            throw error;
         });
         this.cache.clear();
         return result;

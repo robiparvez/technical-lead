@@ -199,6 +199,34 @@ describe('the dispatcher', () => {
         }
     });
 
+    it('folds a burst of rows with intermediate content versions into one dispatch', async () => {
+        process.env.DISPATCH_ENABLED = 'true';
+        dispatchCalls.length = 0;
+        try {
+            const exported = await client(app)
+                .get('/v1/export')
+                .set('x-export-token', EXPORT_TOKEN)
+                .expect(200);
+            // Three edits in one burst: two superseded versions, then the current one.
+            await pg`
+                insert into rebuild_outbox (status, payload, content_version, created_at) values
+                    ('pending', '{}', 'old-1', now() - interval '3 seconds'),
+                    ('pending', '{}', 'old-2', now() - interval '2 seconds'),
+                    ('pending', '{}', ${exported.body.contentVersion}, now() - interval '1 second')`;
+
+            await dispatcher.tick();
+            await dispatcher.tick(); // a second cycle must find nothing left to send
+
+            expect(dispatchCalls).toHaveLength(1);
+            const statuses = await pg`select status from rebuild_outbox`;
+            expect(statuses).toHaveLength(3);
+            for (const row of statuses) expect(row.status).toBe('dispatched');
+        } finally {
+            process.env.DISPATCH_ENABLED = 'false';
+            await pg`delete from rebuild_outbox`;
+        }
+    });
+
     it('does NOT fold a row written while the fetch was in flight (different content_version)', async () => {
         process.env.DISPATCH_ENABLED = 'true';
         dispatchCalls.length = 0;

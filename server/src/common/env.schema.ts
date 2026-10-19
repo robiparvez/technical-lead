@@ -19,6 +19,9 @@ export const envSchema = z.object({
     TEST_DATABASE_URL: postgresUrl.optional(),
     BETTER_AUTH_SECRET: z.string().min(32, 'must be at least 32 characters'),
     TRUSTED_ORIGINS: z.string().optional(),
+    // Comma-separated IPs or CIDR ranges of the reverse proxies in front of the
+    // API. Needed for per-client sign-in rate limits outside dev (P6).
+    TRUSTED_PROXIES: z.string().optional(),
     EXPORT_TOKEN: z.string().min(16, 'must be at least 16 characters'),
     DISPATCH_ENABLED: z.enum(['true', 'false']).optional(),
     GITHUB_REPO_DISPATCH_TOKEN: z.string().optional(),
@@ -35,6 +38,13 @@ export const envSchema = z.object({
     // Directory holding technologies.json + diagram-ids.json for the shared
     // content validator (P2, D9). Relative paths resolve against server/.
     CONTENT_RULES_DIR: z.string().optional(),
+}).superRefine((env, ctx) => {
+    if (env.DISPATCH_ENABLED !== 'true') return;
+    for (const key of ['GITHUB_REPO', 'GITHUB_REPO_DISPATCH_TOKEN'] as const) {
+        if (!env[key]?.trim()) {
+            ctx.addIssue({ code: 'custom', path: [key], message: 'is required when DISPATCH_ENABLED=true' });
+        }
+    }
 });
 
 export type Env = z.infer<typeof envSchema>;

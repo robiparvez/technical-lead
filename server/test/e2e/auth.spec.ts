@@ -1,5 +1,5 @@
 import http from 'node:http';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { INestApplication } from '@nestjs/common';
 import { eq, sql } from 'drizzle-orm';
 import { toNodeHandler } from 'better-auth/node';
@@ -106,6 +106,14 @@ describe('bearer flow', () => {
             .expect(401);
     });
 
+    it('answers get-session with 200 and null for a dead token (the web client treats that as signed out)', async () => {
+        const response = await client(app)
+            .get('/api/auth/get-session')
+            .set('Authorization', 'Bearer not-a-session-token')
+            .expect(200);
+        expect(response.body).toBeNull();
+    });
+
     it('rejects a revoked token with 401', async () => {
         const { token } = await signUp(app, uniqueEmail('revoke'));
         await authed(app, token).get('/v1/progress/known').expect(200);
@@ -122,6 +130,75 @@ describe('guards resolve from the DI container', () => {
         expect(app.get(AUTH)).toBeDefined();
         expect(app.get(AuthGuard)).toBeInstanceOf(AuthGuard);
         expect(app.get(AdminGuard)).toBeInstanceOf(AdminGuard);
+    });
+});
+
+describe('sign-in rate limit outside dev and test', () => {
+    // counts live in the database for 10 s; later tests must not inherit them
+    afterEach(async () => {
+        await getDb().db.execute(sql`delete from rate_limit`);
+    });
+
+    /** Four sign-ins through a limiter-on instance, each with its own x-forwarded-for. */
+    async function signInStatuses(forwardedFor: string[]): Promise<number[]> {
+        const server = http.createServer(toNodeHandler(buildAuth({ rateLimitEnabled: true })));
+        await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+        const port = (server.address() as { port: number }).port;
+        try {
+            const statuses: number[] = [];
+            for (const ip of forwardedFor) {
+                const response = await fetch(`http://127.0.0.1:${port}/api/auth/sign-in/email`, {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json', 'x-forwarded-for': ip },
+                    body: JSON.stringify({ email: uniqueEmail('lim'), password: 'x'.repeat(8) }),
+                });
+                statuses.push(response.status);
+            }
+            return statuses;
+        } finally {
+            await new Promise<void>((resolve) => server.close(() => resolve()));
+        }
+    }
+
+    /** Runs `body` as production (no localhost fallback for the client IP) with the given proxies. */
+    async function asProduction<T>(trustedProxies: string | undefined, body: () => Promise<T>): Promise<T> {
+        const saved = { env: process.env.NODE_ENV, proxies: process.env.TRUSTED_PROXIES };
+        process.env.NODE_ENV = 'production';
+        if (trustedProxies === undefined) delete process.env.TRUSTED_PROXIES;
+        else process.env.TRUSTED_PROXIES = trustedProxies;
+        try {
+            return await body();
+        } finally {
+            process.env.NODE_ENV = saved.env;
+            if (saved.proxies === undefined) delete process.env.TRUSTED_PROXIES;
+            else process.env.TRUSTED_PROXIES = saved.proxies;
+        }
+    }
+
+    it('without TRUSTED_PROXIES every client shares one bucket (the limitation the setting removes)', async () => {
+        const statuses = await asProduction(undefined, () =>
+            signInStatuses(['9.9.1.1', '9.9.1.2', '9.9.1.3', '9.9.1.4']),
+        );
+        expect(statuses).toEqual([401, 401, 401, 429]);
+    });
+
+    it('with TRUSTED_PROXIES each client IP gets its own bucket', async () => {
+        const statuses = await asProduction('127.0.0.1', () =>
+            signInStatuses(['9.9.2.1', '9.9.2.2', '9.9.2.3', '9.9.2.4']),
+        );
+        expect(statuses).toEqual([401, 401, 401, 401]);
+    });
+
+    it('with TRUSTED_PROXIES one client is still limited, and spoofed leading hops do not help', async () => {
+        const same = await asProduction('127.0.0.1', () =>
+            signInStatuses(['9.9.3.1', '9.9.3.1', '9.9.3.1', '9.9.3.1']),
+        );
+        expect(same).toEqual([401, 401, 401, 429]);
+        // the proxy appends the real client IP on the right; the client controls only the left
+        const spoofed = await asProduction('127.0.0.1', () =>
+            signInStatuses(['1.1.1.1, 9.9.4.1', '2.2.2.2, 9.9.4.1', '3.3.3.3, 9.9.4.1', '4.4.4.4, 9.9.4.1']),
+        );
+        expect(spoofed).toEqual([401, 401, 401, 429]);
     });
 });
 

@@ -21,10 +21,10 @@ import { OutboxService } from './outbox.service.js';
  *      window instead of losing or doubling it).
  *   4. Dispatch: send ONE repository_dispatch whose client_payload carries
  *      the current content_version, then mark the row `dispatched` and fold
- *      every `pending` row whose content_version MATCHES the dispatched one
- *      (they are marked dispatched with it). A row written while the fetch
- *      was in flight carries a different version and stays pending, so its
- *      rebuild is not silently stranded. A failure puts the row back to
+ *      every `pending` row written no later than the newest row with that
+ *      version (they are marked dispatched with it). A row written while the
+ *      fetch was in flight is newer and stays pending, so its rebuild is not
+ *      silently stranded. A failure puts the row back to
  *      `pending` with attempts+1 and an exponential backoff in
  *      next_attempt_at, or to `failed` once the retries are exhausted —
  *      never touching the admin write response, which committed long before.
@@ -260,12 +260,13 @@ export class DispatcherService implements OnApplicationBootstrap, OnApplicationS
     }
 
     /**
-     * Marks the claimed row dispatched and folds the pending rows whose
-     * content_version MATCHES the dispatched one: their content is exactly
-     * what this dispatch carries, so they ride it (created_at ties included).
-     * A row written while the fetch was in flight has a different version —
-     * its content is NOT in the dispatched payload — so it stays pending for
-     * the next cycle instead of being silently marked dispatched.
+     * Marks the claimed row dispatched and folds the pending rows written no
+     * later than the newest row carrying the dispatched content_version: every
+     * earlier edit (including intermediate versions of a burst) is contained
+     * in that version, so they ride this dispatch. A row written while the
+     * fetch was in flight is newer than every row with the dispatched version
+     * — its content is NOT in the payload — so it stays pending for the next
+     * cycle instead of being silently marked dispatched.
      */
     private async markDispatched(claimed: ClaimedRow, contentVersion: string): Promise<void> {
         const { db } = getDb();
@@ -280,7 +281,9 @@ export class DispatcherService implements OnApplicationBootstrap, OnApplicationS
                 set status = 'dispatched', dispatched_at = now()
                 where status = 'pending'
                   and id <> ${claimed.id}
-                  and content_version = ${contentVersion}
+                  and created_at <= (
+                      select max(created_at) from rebuild_outbox where content_version = ${contentVersion}
+                  )
                 returning id
             `)) as unknown as { id: string }[];
             return newer.length;

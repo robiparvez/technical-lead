@@ -313,6 +313,37 @@ describe('import_local', () => {
     });
 });
 
+describe('import_local on an account that already has totals', () => {
+    it('adds the imported totals to the synced ones instead of replacing them', async () => {
+        const other = await signUp(app, uniqueEmail('quiz-import'));
+        const asOther = authed(app, other.token);
+        const attempt = started(topicSlug);
+        await asOther
+            .post('/v1/quiz/events')
+            .send({ events: [attempt, answered(topicSlug, attempt.client_attempt_id as string)] })
+            .expect(200);
+
+        const res = await asOther
+            .post('/v1/quiz/events')
+            .send({
+                events: [
+                    {
+                        event_id: randomUUID(),
+                        client_ts: isoNow(),
+                        reset_epoch: 0,
+                        type: 'import_local',
+                        totals: [{ topic_slug: topicSlug, score: 42, correct: 4, wrong: 1, attempt_count: 5 }],
+                    },
+                ],
+            })
+            .expect(200);
+        expect(res.body.results[0].status).toBe('applied');
+
+        const state = await asOther.get('/v1/quiz/state').expect(200);
+        expect(state.body.topics[topicSlug]).toEqual({ score: 52, correct: 5, wrong: 1, attemptCount: 6 });
+    });
+});
+
 describe('retention (D8)', () => {
     it('keeps the newest 20 attempts per topic', async () => {
         const epoch = (await getState()).body.resetEpoch as number;
