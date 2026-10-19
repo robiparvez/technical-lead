@@ -8,8 +8,12 @@ import TopicNav from '@/components/TopicNav';
 import SearchBox from '@/components/SearchBox';
 import FullscreenToggle from '@/components/FullscreenToggle';
 import ThemeSwitch from '@/components/ThemeSwitch';
-import { TOPIC_GROUPS } from '@/data';
 import { getTechnologySummaries } from '@/data/technologies';
+import { getContentOrNull } from '@/lib/content';
+
+// The site reads PostgreSQL through the API on every request (lib/content.ts),
+// so no page is prerendered at build time.
+export const dynamic = 'force-dynamic';
 
 // Applies a saved theme choice before first paint, so a dark reader never
 // sees a light flash. The key and JSON format match ThemeSwitch's store.
@@ -30,8 +34,10 @@ export const metadata: Metadata = {
     description: 'Interview questions and model answers from a technical lead position profile.',
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-    const groups = TOPIC_GROUPS.map((group) => ({
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+    // with the API down the shell still renders (empty nav); each page then shows its own error
+    const content = await getContentOrNull();
+    const groups = (content?.groups ?? []).map((group) => ({
         label: group.label,
         topics: group.topics.map((t) => ({
             slug: t.slug,
@@ -39,6 +45,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             questionIds: t.questions.map((q) => q.id),
         })),
     }));
+    const technologies = content ? await getTechnologySummaries() : [];
 
     return (
         // data-theme is set by the script below before hydration
@@ -51,7 +58,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                     Skip to content
                 </a>
                 <Shell
-                    nav={<TopicNav key='nav' groups={groups} technologies={getTechnologySummaries()} />}
+                    nav={<TopicNav key='nav' groups={groups} technologies={technologies} />}
                     search={<SearchBox key='search' />}
                     // Shell renders this slot in the header and the phone top bar
                     theme={

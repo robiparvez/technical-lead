@@ -1,11 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import QuizRunner from '@/components/QuizRunner';
-import { getTopic, TOPICS } from '@/data';
-
-export function generateStaticParams() {
-    return TOPICS.map((t) => ({ slug: t.slug }));
-}
+import { getTopic } from '@/data';
 
 export async function generateMetadata({
     params,
@@ -13,13 +9,13 @@ export async function generateMetadata({
     params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
     const { slug } = await params;
-    const topic = getTopic(slug);
+    const topic = await getTopic(slug);
     return { title: topic ? `${topic.title} quiz - Technical Lead Study Guide` : 'Quiz' };
 }
 
 export default async function TopicQuizPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
-    const topic = getTopic(slug);
+    const topic = await getTopic(slug);
     if (!topic) notFound();
 
     // send only what the quiz needs, not full answers and code

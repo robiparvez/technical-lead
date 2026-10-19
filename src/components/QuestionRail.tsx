@@ -8,6 +8,7 @@ import { useSync } from '@/components/SyncProvider';
 import { Skeleton } from '@/components/Skeleton';
 import SyncErrorNotice from '@/components/SyncErrorNotice';
 import { useKnownQuestions } from '@/lib/progress';
+import ChevronGlyph from '@/components/ChevronGlyph';
 import Diagram from '@/components/Diagram';
 import ResultMark from '@/components/ResultMark';
 import { DIFFICULTIES, DIFFICULTY_LABELS } from '@/lib/quiz';
@@ -211,20 +212,5 @@ function CodeSnippet({ language, snippet }: { language: string; snippet: string 
         <pre className='code'>
             <code dangerouslySetInnerHTML={{ __html: highlight(snippet) }} />
         </pre>
-    );
-}
-
-function ChevronGlyph() {
-    return (
-        <svg className='q-chevron' viewBox='0 0 14 26' aria-hidden='true' focusable='false'>
-            <path
-                d='M3 11 L7 15 L11 11'
-                fill='none'
-                stroke='currentColor'
-                strokeWidth='1.75'
-                strokeLinecap='round'
-                strokeLinejoin='round'
-            />
-        </svg>
     );
 }

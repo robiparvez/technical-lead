@@ -126,6 +126,10 @@ main {
     max-width: 50rem;
     margin-inline: auto;
 }
+/* dashboards (admin) get a wider column */
+.content[data-wide='true'] {
+    max-width: 72rem;
+}
 
 /* sidebar is desktop-only; phone uses the menu panel */
 .sidebar {
@@ -170,6 +174,11 @@ main {
     .site-header .search {
         flex: 0 1 28rem;
         margin-bottom: 0;
+    }
+    /* no search on this page: controls sit at the right, in line with the page padding */
+    .site-header:not(:has(.search)) {
+        justify-content: flex-end;
+        padding-inline-end: var(--space-xl);
     }
     .app {
         grid-template-columns: 20rem minmax(0, 1fr);
@@ -350,15 +359,22 @@ main {
 }
 .nav-heading {
     display: flex;
+    align-items: center;
     justify-content: space-between;
     margin: 0 0 var(--space-2xs);
     padding-inline: var(--space-xs);
+}
+.nav-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3xs);
 }
 .nav-group {
     margin: var(--space-xs) 0 0;
     padding-inline: var(--space-xs);
 }
-.nav-link + .nav-heading {
+/* every heading after the first; sections can be folded, so no link precedes it */
+.nav-heading ~ .nav-heading {
     margin-top: var(--space-md);
 }
 .nav-link {
@@ -617,8 +633,31 @@ main {
     height: var(--leading-body);
     color: var(--color-text-secondary);
 }
-.q-toggle[aria-expanded='true'] .q-chevron {
+.q-toggle[aria-expanded='true'] .q-chevron,
+.fold-toggle[aria-expanded='true'] .q-chevron {
     transform: rotate(180deg);
+}
+
+/* section heading button (sidebar and home index) that folds its list */
+.fold-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    cursor: pointer;
+}
+.fold-toggle:hover {
+    color: var(--color-text-primary);
+}
+.fold-toggle:focus-visible {
+    outline: var(--border-width-2) solid var(--color-accent);
+    outline-offset: var(--space-3xs);
 }
 
 /* answer body */
@@ -1274,18 +1313,6 @@ pre.code .sh__token--comment {
 .admin-header {
     margin-bottom: var(--space-lg);
 }
-.admin-rebuild {
-    padding-inline-start: var(--space-xs);
-    border-inline-start: var(--border-width-2) solid var(--color-border-control);
-    font-size: var(--text-sm);
-    line-height: var(--leading-ui);
-    color: var(--color-text-secondary);
-}
-.admin-rebuild[data-pending='true'] {
-    border-inline-start-color: var(--color-accent);
-    color: var(--color-text-primary);
-}
-
 .admin-preview {
     display: flex;
     flex-direction: column;
@@ -1359,27 +1386,6 @@ p.admin-state[role='status'] {
     font-size: var(--text-sm);
     line-height: var(--leading-ui);
     color: var(--color-text-secondary);
-}
-.admin-notice {
-    margin: var(--space-xs) 0 0;
-    font-size: var(--text-sm);
-}
-.admin-notice:empty {
-    display: none;
-}
-.admin-notice:not(:empty),
-.admin-message:not(:empty) {
-    padding-inline-start: var(--space-xs);
-    border-inline-start: var(--border-width-2) solid var(--color-accent);
-}
-.admin-message {
-    margin: 0;
-    font-size: var(--text-sm);
-    line-height: var(--leading-ui);
-}
-.admin-message.is-error {
-    border-inline-start-color: var(--color-text-primary);
-    font-weight: var(--font-weight-medium);
 }
 
 /* ---------- admin fields ---------- */
@@ -1952,6 +1958,28 @@ select.input {
 }
 .account-notice {
     color: var(--color-text-secondary);
+}
+
+/* In the desktop header the control is one row after the theme controls. The
+   phone menu keeps the stacked layout above. */
+.account-inline {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-xs);
+    margin: 0;
+    padding: 0;
+    border-top: 0;
+    min-width: 0;
+}
+.account-inline .account-email {
+    max-width: 14rem;
+}
+.account-inline .account-error,
+.account-inline .account-notice {
+    max-width: 14rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* ---------- sync error (P4) ----------

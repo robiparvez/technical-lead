@@ -1,16 +1,15 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useId, useRef, useState } from 'react';
+import { AdminSignInForm, AdminSignInHeader } from '@/components/AdminSignIn';
 import QuestionEditor from '@/components/QuestionEditor';
 import { Skeleton } from '@/components/Skeleton';
+import { useSync } from '@/components/SyncProvider';
 import TextField from '@/components/TextField';
 import {
     GROUPS,
     LIMITS,
-    REBUILD_DEBOUNCE_MS,
     checkTopicDetails,
-    getRebuildStatus,
     getTopic,
     listDeleted,
     listTopics,
@@ -20,12 +19,14 @@ import {
     type AdminTopicSummary,
     type ApiError,
     type DeletedQuestion,
-    type RebuildStatus,
     type TopicDetails,
 } from '@/lib/adminApi';
+import { adminToast } from '@/lib/adminToast';
 import { authClient, getStoredToken } from '@/lib/auth';
 import { DIFFICULTIES, DIFFICULTY_LABELS } from '@/lib/quiz';
 import type { Difficulty, Question } from '@/data/types';
+
+const PROJECT_TITLE = 'Technical Lead Study Guide';
 
 type View = { kind: 'list' } | { kind: 'edit'; id?: string };
 
@@ -44,7 +45,14 @@ export default function AdminConsole({
     techTagCounts: Record<string, number>;
     techTagLabels: Record<string, string>;
 }) {
-    const [access, setAccess] = useState<Access>('checking');
+    const [accessState, setAccess] = useState<Access>('checking');
+    // signing out while the editor is open (any Sign out button) drops it at
+    // once and shows the sign-in screen, without waiting for a new role check
+    const { status: syncStatus } = useSync();
+    const access: Access =
+        syncStatus === 'signed-out' && (accessState === 'allowed' || accessState === 'denied')
+            ? 'signed-out'
+            : accessState;
     const [accessAttempt, setAccessAttempt] = useState(0);
     const [summaries, setSummaries] = useState<AdminTopicSummary[] | null>(null);
     const [listFailed, setListFailed] = useState(false);
@@ -54,7 +62,6 @@ export default function AdminConsole({
     const [topicAttempt, setTopicAttempt] = useState(0);
     const [view, setView] = useState<View>({ kind: 'list' });
     const [tagCounts, setTagCounts] = useState(techTagCounts);
-    const [notice, setNotice] = useState('');
     const [deletedVersion, setDeletedVersion] = useState(0);
     const [filter, setFilter] = useState('');
     const [difficulty, setDifficulty] = useState<'' | Difficulty>('');
@@ -134,7 +141,7 @@ export default function AdminConsole({
         });
         setTopic(next);
         refreshSummaries();
-        setNotice(created ? `Question ${saved.id} added.` : `Question ${saved.id} saved.`);
+        adminToast.done(created ? `Question ${saved.id} added.` : `Question ${saved.id} saved.`);
         returnFocus.current = `row-${saved.id}`;
         setView({ kind: 'list' });
     };
@@ -148,7 +155,7 @@ export default function AdminConsole({
         setTopic(next);
         refreshSummaries();
         setDeletedVersion((v) => v + 1);
-        setNotice(`Question ${removed.id} deleted. You can restore it from the deleted list.`);
+        adminToast.done(`Question ${removed.id} deleted. You can restore it from the deleted list.`);
         returnFocus.current = 'add-question';
         setView({ kind: 'list' });
     };
@@ -164,13 +171,12 @@ export default function AdminConsole({
         setDeletedVersion((v) => v + 1);
         setFilter('');
         setDifficulty('');
-        setNotice(`Question ${restored.id} restored.`);
+        adminToast.done(`Question ${restored.id} restored.`);
         // the restored row renders on the next commit
         requestAnimationFrame(() => document.getElementById(`row-${restored.id}`)?.focus());
     };
 
     const openEditor = (id?: string) => {
-        setNotice('');
         returnFocus.current = id ? `row-${id}` : 'add-question';
         setView({ kind: 'edit', id });
     };
@@ -184,20 +190,19 @@ export default function AdminConsole({
 
     if (access === 'checking') return <Skeleton label='Checking admin access' field rows={6} />;
 
+    // nobody signed in: the admin landing page is the sign-in screen itself;
+    // after a successful sign-in the role check runs again in place
     if (access === 'signed-out')
         return (
-            <div className='admin'>
-                <header className='topic-header admin-header'>
-                    <h1 className='topic-title'>Content admin</h1>
-                </header>
-                <div className='admin-state'>
-                    <p>Sign in with the admin account to edit the site content here.</p>
-                    <p>
-                        <Link className='text-link' href='/login?next=/admin'>
-                            Go to the sign-in page
-                        </Link>
-                    </p>
-                </div>
+            <div className='auth'>
+                <AdminSignInHeader />
+                <AdminSignInForm
+                    next='/admin'
+                    onSignedIn={() => {
+                        setAccess('checking');
+                        setAccessAttempt((a) => a + 1);
+                    }}
+                />
             </div>
         );
 
@@ -205,7 +210,7 @@ export default function AdminConsole({
         return (
             <div className='admin'>
                 <header className='topic-header admin-header'>
-                    <h1 className='topic-title'>Content admin</h1>
+                    <h1 className='topic-title'>{PROJECT_TITLE}</h1>
                 </header>
                 <div className='admin-state'>
                     <p>
@@ -220,7 +225,7 @@ export default function AdminConsole({
         return (
             <div className='admin'>
                 <header className='topic-header admin-header'>
-                    <h1 className='topic-title'>Content admin</h1>
+                    <h1 className='topic-title'>{PROJECT_TITLE}</h1>
                 </header>
                 <div className='admin-state' role='alert'>
                     <p>The sign-in check did not answer. Check that the content service is running, then try again.</p>
@@ -241,8 +246,8 @@ export default function AdminConsole({
     return (
         <div className='admin'>
             <header className='topic-header admin-header'>
-                <h1 className='topic-title'>Content admin</h1>
-                <RebuildLine />
+                <h1 className='topic-title'>{PROJECT_TITLE}</h1>
+                <p className='topic-meta'>Saved changes show on the site as soon as a page loads again.</p>
             </header>
 
             {listFailed ? (
@@ -276,7 +281,6 @@ export default function AdminConsole({
                             className='input'
                             value={slug}
                             onChange={(e) => {
-                                setNotice('');
                                 setFilter('');
                                 setDifficulty('');
                                 setSlug(e.target.value);
@@ -336,10 +340,6 @@ export default function AdminConsole({
                                     </button>
                                 </div>
 
-                                <p className='admin-notice' role='status'>
-                                    {notice}
-                                </p>
-
                                 <div className='admin-filters'>
                                     <div className='field'>
                                         <label className='field-label' htmlFor='admin-filter'>
@@ -377,8 +377,8 @@ export default function AdminConsole({
                                 {topic.questions.length === 0 ? (
                                     <div className='admin-state'>
                                         <p>
-                                            This topic has no questions. The site build needs at least one,
-                                            so add a question before the next rebuild.
+                                            This topic has no questions. The site hides a topic until it has at least one question,
+                                            so add one to publish it.
                                         </p>
                                     </div>
                                 ) : visible.length === 0 ? (
@@ -451,7 +451,6 @@ function DeletedQuestions({
     const [failed, setFailed] = useState(false);
     const [open, setOpen] = useState(false);
     const [busyId, setBusyId] = useState<string | null>(null);
-    const [error, setError] = useState<{ id: string; text: string } | null>(null);
     const panelId = useId();
 
     useEffect(() => {
@@ -475,15 +474,15 @@ function DeletedQuestions({
 
     const restore = async (entry: DeletedQuestion) => {
         setBusyId(entry.question.id);
-        setError(null);
+        adminToast.saving('Restoring question…');
         try {
             onRestored(await restoreQuestion(slug, entry.question.id), entry.question);
         } catch (err) {
             const apiError = err as ApiError;
-            setError({
-                id: entry.question.id,
-                text: `Not restored. ${apiError.fields?.restore ?? `${apiError.message} Try again.`}`,
-            });
+            adminToast.failed(
+                'Question not restored',
+                apiError.fields?.restore ?? `${apiError.message}. Try again.`,
+            );
             setBusyId(null);
         }
     };
@@ -506,7 +505,7 @@ function DeletedQuestions({
                 </button>
             </div>
             <p className='admin-topic-summary'>
-                Deleted questions leave the site at the next rebuild. Their ids stay reserved, so a restore brings
+                Deleted questions leave the site at once. Their ids stay reserved, so a restore brings
                 each one back exactly as it was.
             </p>
             {open && (
@@ -528,49 +527,11 @@ function DeletedQuestions({
                                     <span className='sr-only'> question {entry.question.id}</span>
                                 </button>
                             </span>
-                            {error?.id === entry.question.id && (
-                                <p className='admin-message is-error' role='alert'>
-                                    {error.text}
-                                </p>
-                            )}
                         </li>
                     ))}
                 </ul>
             )}
         </section>
-    );
-}
-
-/** Says where saved edits are on their way to the live site. Polls while a rebuild waits. */
-function RebuildLine() {
-    const [status, setStatus] = useState<RebuildStatus | null>(null);
-
-    useEffect(() => {
-        const tick = () => getRebuildStatus().then(setStatus);
-        tick();
-        const timer = setInterval(tick, 5000);
-        return () => clearInterval(timer);
-    }, []);
-
-    if (!status) return <Skeleton label='Loading rebuild status' line />;
-    const time = (stamp: string) => new Date(stamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    let text = 'The live site matches the saved content.';
-    if (status.pending)
-        text = `${status.pending} saved ${status.pending === 1 ? 'change waits' : 'changes wait'} for the site rebuild. It starts ${REBUILD_DEBOUNCE_MS / 1000} seconds after your last save.`;
-    else if (status.requestedAt)
-        text = `Site rebuild requested at ${time(status.requestedAt)}. The live site updates when the GitHub Pages build finishes.`;
-
-    return (
-        <p className='topic-meta admin-rebuild' data-pending={status.pending > 0} role='status'>
-            {text}
-            {status.failed > 0 && (
-                <span className='admin-rebuild-failed'>
-                    {' '}
-                    {status.failed} {status.failed === 1 ? 'change failed' : 'changes failed'} to reach the rebuild
-                    pipeline. Check the server logs, then save again.
-                </span>
-            )}
-        </p>
     );
 }
 
@@ -581,7 +542,6 @@ function TopicDetailsForm({ topic, onSaved }: { topic: AdminTopic; onSaved: (t: 
     const [draft, setDraft] = useState(initial);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [saving, setSaving] = useState(false);
-    const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
     const panelId = useId();
     const dirty = JSON.stringify(draft) !== JSON.stringify(initial);
 
@@ -589,19 +549,19 @@ function TopicDetailsForm({ topic, onSaved }: { topic: AdminTopic; onSaved: (t: 
         e.preventDefault();
         const found = checkTopicDetails(draft);
         setErrors(found);
-        setMessage(null);
         if (Object.keys(found).length) {
             document.getElementById(`topic-${Object.keys(found)[0]}`)?.focus();
             return;
         }
         setSaving(true);
+        adminToast.saving('Saving topic details…');
         try {
             onSaved(await updateTopic(topic.slug, draft));
-            setMessage({ kind: 'ok', text: 'Topic details saved.' });
+            adminToast.done('Topic details saved.');
         } catch (err) {
             const apiError = err as ApiError;
             if (apiError.fields) setErrors(apiError.fields);
-            setMessage({ kind: 'error', text: `Not saved. ${apiError.message} Your edits are still here, so try again.` });
+            adminToast.failed('Topic details not saved', `${apiError.message}. Your edits are still here, so try again.`);
         } finally {
             setSaving(false);
         }
@@ -669,9 +629,6 @@ function TopicDetailsForm({ topic, onSaved }: { topic: AdminTopic; onSaved: (t: 
                             {saving ? 'Saving…' : 'Save topic details'}
                         </button>
                     </div>
-                    <p className={`admin-message${message?.kind === 'error' ? ' is-error' : ''}`} role='status'>
-                        {message?.text}
-                    </p>
                 </form>
             )}
         </section>

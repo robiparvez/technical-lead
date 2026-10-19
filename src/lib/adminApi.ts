@@ -4,8 +4,7 @@ import type { DiagramSpec, Question, Topic } from '@/data/types';
 /**
  * Admin content API for the /admin page (plan: P3). Every call goes through
  * the typed bearer client in lib/api.ts against the NestJS admin endpoints.
- * DTOs are hand-synced with server/src/admin/admin.schemas.ts and
- * server/src/rebuild/rebuild.controller.ts; 422 responses carry the plan's
+ * DTOs are hand-synced with server/src/admin/admin.schemas.ts; 422 responses carry the plan's
  * `fields` map, which the forms show beside each field.
  */
 
@@ -29,20 +28,6 @@ export interface AdminTopic extends Topic {
 }
 
 export type TopicDetails = Pick<AdminTopic, 'title' | 'requirement' | 'group'>;
-
-export interface RebuildStatus {
-    /** Saved changes not dispatched yet (pending + claimed). */
-    pending: number;
-    /** ISO timestamp of the last admin save. */
-    lastSavedAt: string | null;
-    /** ISO timestamp of the last dispatch (the rebuild request). */
-    requestedAt: string | null;
-    /** Dispatches whose retries are exhausted: the pipeline is dead. */
-    failed: number;
-}
-
-// rebuild debounce from the plan's outbox worker
-export const REBUILD_DEBOUNCE_MS = 30_000;
 
 export const GROUPS = ['Technical', 'Leadership & behavioral'];
 export const LANGUAGES = ['typescript', 'tsx', 'javascript', 'python', 'java', 'sql', 'bash', 'yaml'];
@@ -359,9 +344,4 @@ export async function restoreQuestion(slug: string, id: string): Promise<AdminTo
     });
     void slug;
     return toTopic(dto);
-}
-
-/** GET /v1/admin/rebuild: the outbox summary for the rebuild line. */
-export async function getRebuildStatus(): Promise<RebuildStatus> {
-    return apiFetch<RebuildStatus>('/v1/admin/rebuild');
 }

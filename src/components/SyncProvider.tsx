@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { authClient, clearStoredToken, getStoredToken, TOKEN_EVENT } from '@/lib/auth';
 import {
@@ -60,6 +61,7 @@ export function useSync(): SyncState {
 const FLUSH_DELAY_MS = 3_000;
 
 export function SyncProvider({ children }: { children: React.ReactNode }) {
+    const router = useRouter();
     const [state, setState] = useState<Omit<SyncState, 'retry' | 'signOut'>>(DEFAULT_STATE);
     const runningRef = useRef(false);
     // a run() requested while one is in flight; it replays when that one ends
@@ -170,8 +172,10 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
         clearStoredToken();
         clearSyncData();
         syncedOnceRef.current = false;
-        // the token change re-runs run(), which lands on 'signed-out'
-    }, []);
+        // the token change re-runs run(), which lands on 'signed-out';
+        // /admin shows the admin sign-in screen when nobody is signed in
+        router.push('/admin');
+    }, [router]);
 
     useEffect(() => {
         initSyncListeners();

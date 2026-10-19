@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { useState } from 'react';
+import FoldToggle from '@/components/FoldToggle';
 import type { SearchEntry } from '@/data';
 import { useKnownQuestions } from '@/lib/progress';
 import { clearSearch } from '@/components/SearchBox';
@@ -44,6 +46,9 @@ export function Results({
     tag: string;
 }) {
     const { known } = useKnownQuestions();
+    // both sections start unfolded so the prerendered markup matches
+    const [technologiesOpen, setTechnologiesOpen] = useState(true);
+    const [topicsOpen, setTopicsOpen] = useState(true);
     const q = query.trim().toLowerCase();
     // a search query wins over a tag filter; the search box only writes ?q=
     const tagFilter = q ? '' : tag.trim();
@@ -61,48 +66,64 @@ export function Results({
                 </header>
                 <section className='index-section' aria-labelledby='index-topics'>
                     <h2 className='index-section-title' id='index-topics'>
-                        Topics
+                        <FoldToggle
+                            open={topicsOpen}
+                            controls='index-topics-list'
+                            onToggle={() => setTopicsOpen((o) => !o)}
+                        >
+                            Topics
+                        </FoldToggle>
                     </h2>
-                    <ul className='index-list'>
-                        {topics.map((t) => {
-                            const knownCount = t.questionIds.filter((id) => known.has(id)).length;
-                            return (
-                                <li key={t.slug}>
-                                    <Link className='index-card' href={`/topics/${t.slug}`}>
-                                        <span className='index-head'>
-                                            <span className='index-title'>{t.title}</span>
-                                            <span className='index-meta'>
-                                                {knownCount}/{t.questionIds.length} known
+                    {topicsOpen && (
+                        <ul className='index-list' id='index-topics-list'>
+                            {topics.map((t) => {
+                                const knownCount = t.questionIds.filter((id) => known.has(id)).length;
+                                return (
+                                    <li key={t.slug}>
+                                        <Link className='index-card' href={`/topics/${t.slug}`}>
+                                            <span className='index-head'>
+                                                <span className='index-title'>{t.title}</span>
+                                                <span className='index-meta'>
+                                                    {knownCount}/{t.questionIds.length} known
+                                                </span>
                                             </span>
-                                        </span>
-                                        <span className='index-requirement'>{t.requirement}</span>
-                                    </Link>
-                                </li>
-                            );
-                        })}
-                    </ul>
+                                            <span className='index-requirement'>{t.requirement}</span>
+                                        </Link>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    )}
                 </section>
                 <section className='index-section' aria-labelledby='index-technologies'>
                     <h2 className='index-section-title' id='index-technologies'>
-                        Technologies
+                        <FoldToggle
+                            open={technologiesOpen}
+                            controls='index-technologies-list'
+                            onToggle={() => setTechnologiesOpen((o) => !o)}
+                        >
+                            Technologies
+                        </FoldToggle>
                     </h2>
-                    <ul className='index-list'>
-                        {technologies.map((t) => {
-                            const knownCount = t.questionIds.filter((id) => known.has(id)).length;
-                            return (
-                                <li key={t.slug}>
-                                    <Link className='index-card' href={`/technologies/${t.slug}`}>
-                                        <span className='index-head'>
-                                            <span className='index-title'>{t.label}</span>
-                                            <span className='index-meta'>
-                                                {knownCount}/{t.questionIds.length} known
+                    {technologiesOpen && (
+                        <ul className='index-list' id='index-technologies-list'>
+                            {technologies.map((t) => {
+                                const knownCount = t.questionIds.filter((id) => known.has(id)).length;
+                                return (
+                                    <li key={t.slug}>
+                                        <Link className='index-card' href={`/technologies/${t.slug}`}>
+                                            <span className='index-head'>
+                                                <span className='index-title'>{t.label}</span>
+                                                <span className='index-meta'>
+                                                    {knownCount}/{t.questionIds.length} known
+                                                </span>
                                             </span>
-                                        </span>
-                                    </Link>
-                                </li>
-                            );
-                        })}
-                    </ul>
+                                        </Link>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    )}
                 </section>
             </div>
         );

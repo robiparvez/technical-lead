@@ -1,11 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import QuestionRail from '@/components/QuestionRail';
-import { getTechnologyQuestions, TECHNOLOGY_LIST } from '@/data/technologies';
-
-export function generateStaticParams() {
-    return TECHNOLOGY_LIST.map((t) => ({ slug: t.slug }));
-}
+import { getTechnologyList, getTechnologyQuestions } from '@/data/technologies';
 
 export async function generateMetadata({
     params,
@@ -13,16 +9,16 @@ export async function generateMetadata({
     params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
     const { slug } = await params;
-    const tech = TECHNOLOGY_LIST.find((t) => t.slug === slug);
+    const tech = (await getTechnologyList()).find((t) => t.slug === slug);
     return { title: tech ? `${tech.label} — Technical Lead Study Guide` : 'Technology' };
 }
 
 export default async function TechnologyPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
-    const tech = TECHNOLOGY_LIST.find((t) => t.slug === slug);
+    const tech = (await getTechnologyList()).find((t) => t.slug === slug);
     if (!tech) notFound();
 
-    const items = getTechnologyQuestions(slug);
+    const items = await getTechnologyQuestions(slug);
     const topicCount = new Set(items.map((i) => i.topicSlug)).size;
 
     return (

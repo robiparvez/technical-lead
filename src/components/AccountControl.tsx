@@ -1,39 +1,34 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { useSync } from '@/components/SyncProvider';
 import { Skeleton } from '@/components/Skeleton';
 
 /**
- * Sidebar account control (plan: Frontend additions). While a session check
- * runs it is one skeleton line (D15); signed in it shows the email and a sign
- * out button, which clears the token, the local stores and every pending
- * sync queue; signed out it links to /login, offering to come back to the
- * page the reader is on.
+ * Account control (plan: Frontend additions): in the desktop header after the
+ * theme controls (`inline`), and stacked in the phone menu. Accounts are for the
+ * site admin, so a visitor sees nothing here: signed out renders no control
+ * and no sign-in link (the admin opens /login or /admin directly). While a
+ * session check runs it is one skeleton line (D15); signed in it shows the
+ * email and a sign out button, which clears the token, the local stores and
+ * every pending sync queue.
  */
-export default function AccountControl() {
+export default function AccountControl({ inline = false }: { inline?: boolean }) {
     const { status, email, notice, error, retry, signOut } = useSync();
-    // trailingSlash paths end in '/'; the query needs the clean path
-    const pathname = usePathname().replace(/(.)\/$/, '$1');
-    const loginHref = `/login?next=${encodeURIComponent(pathname)}`;
+
+    if (status === 'signed-out') return null;
 
     return (
-        <div className='account'>
+        <div className={inline ? 'account account-inline' : 'account'}>
             {status === 'checking' ? (
                 <Skeleton label='Checking sign-in' line />
             ) : status === 'signed-in' ? (
                 <p className='account-email' title={email ?? undefined}>
                     {email}
                 </p>
-            ) : status === 'error' ? (
-                <p className='account-error' role='alert'>
+            ) : (
+                <p className='account-error' role='alert' title={error ?? undefined}>
                     {error}
                 </p>
-            ) : (
-                <Link className='text-link' href={loginHref}>
-                    Sign in to sync progress
-                </Link>
             )}
             {status === 'signed-in' && (
                 <button type='button' className='btn' onClick={signOut}>
@@ -46,7 +41,7 @@ export default function AccountControl() {
                 </button>
             )}
             {notice && (
-                <p className='account-notice' role='status'>
+                <p className='account-notice' role='status' title={notice}>
                     {notice}
                 </p>
             )}

@@ -1,32 +1,16 @@
-import { TOPICS } from './index';
-import technologies from './technologies.json';
+import { getContent, type Technology } from '@/lib/content';
 import type { Question } from './types';
 
-export interface Technology {
-    slug: string;
-    label: string;
-    tags: string[];
-}
+export type { Technology };
 
 // Question tags mix tools ("kafka") with concepts ("caching"), so each
-// technology lists the tags that name it. Register new entries by hand in
-// technologies.json: adding a technology is a code change, and the rebuild
-// pipeline never writes this file (D9; scripts/fetch-content.mjs owns only
-// manifest.json and topics/*.json).
-export const TECHNOLOGIES: Technology[] = technologies;
+// technology lists the tags that name it. The technology list lives in the
+// technologies table (PostgreSQL) and arrives with the content (lib/content.ts);
+// the server's validator rejects an edit that leaves a technology tag with no
+// question, so a mistyped tag cannot reach here.
 
 // A technology page needs enough questions to be worth a click.
 const MIN_QUESTIONS = 3;
-
-// A mistyped tag would give an empty page with no error, so fail the build.
-const knownTags = new Set(TOPICS.flatMap((t) => t.questions.flatMap((q) => q.tags)));
-for (const tech of TECHNOLOGIES) {
-    for (const tag of tech.tags) {
-        if (!knownTags.has(tag)) {
-            throw new Error(`Technology "${tech.slug}" maps the tag "${tag}", which no question carries`);
-        }
-    }
-}
 
 export interface TechnologyQuestion {
     question: Question;
@@ -34,11 +18,17 @@ export interface TechnologyQuestion {
     topicTitle: string;
 }
 
+/** Every technology, in the stored order (the admin checks use all of them). */
+export async function getTechnologies(): Promise<Technology[]> {
+    return (await getContent()).technologies;
+}
+
 /** Questions carrying any of the technology's tags, in topic order; each appears once. */
-export function getTechnologyQuestions(slug: string): TechnologyQuestion[] {
-    const tech = TECHNOLOGIES.find((t) => t.slug === slug);
+export async function getTechnologyQuestions(slug: string): Promise<TechnologyQuestion[]> {
+    const { topics, technologies } = await getContent();
+    const tech = technologies.find((t) => t.slug === slug);
     if (!tech) return [];
-    return TOPICS.flatMap((topic) =>
+    return topics.flatMap((topic) =>
         topic.questions
             .filter((q) => q.tags.some((tag) => tech.tags.includes(tag)))
             .map((question) => ({ question, topicSlug: topic.slug, topicTitle: topic.title })),
@@ -46,15 +36,21 @@ export function getTechnologyQuestions(slug: string): TechnologyQuestion[] {
 }
 
 /** Technologies with enough questions, sorted by label. */
-export const TECHNOLOGY_LIST: Technology[] = TECHNOLOGIES.filter(
-    (t) => getTechnologyQuestions(t.slug).length >= MIN_QUESTIONS,
-).sort((a, b) => a.label.localeCompare(b.label));
+export async function getTechnologyList(): Promise<Technology[]> {
+    const { topics, technologies } = await getContent();
+    const count = (tech: Technology) =>
+        topics.reduce((n, topic) => n + topic.questions.filter((q) => q.tags.some((tag) => tech.tags.includes(tag))).length, 0);
+    return technologies.filter((t) => count(t) >= MIN_QUESTIONS).sort((a, b) => a.label.localeCompare(b.label));
+}
 
 /** Slim data for client components: no answers. */
-export function getTechnologySummaries() {
-    return TECHNOLOGY_LIST.map((t) => ({
-        slug: t.slug,
-        label: t.label,
-        questionIds: getTechnologyQuestions(t.slug).map((i) => i.question.id),
-    }));
+export async function getTechnologySummaries() {
+    const list = await getTechnologyList();
+    return Promise.all(
+        list.map(async (t) => ({
+            slug: t.slug,
+            label: t.label,
+            questionIds: (await getTechnologyQuestions(t.slug)).map((i) => i.question.id),
+        })),
+    );
 }

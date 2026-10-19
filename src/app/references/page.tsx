@@ -102,6 +102,11 @@ const SOURCES: Array<{ title: string; url: string; note: string }> = [
         note: 'security topic — OWASP Top 10 themes',
     },
     {
+        title: 'NestJS interview questions and answers (gasangw)',
+        url: 'https://github.com/gasangw/NestJS-Interview-Questions-And-Answers',
+        note: 'opened — NestJS topic; 60 questions adapted under the MIT License, copyright (c) 2024 Gasangwa Thomas; answers condensed and checked against the NestJS docs',
+    },
+    {
         title: 'Remotion license FAQ',
         url: 'https://www.remotion.dev/docs/license/faq',
         note: 'opened — license checked: free for individual use',

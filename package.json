@@ -5,9 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "postbuild": "node scripts/csp-hashes.mjs",
-    "csp": "node scripts/csp-hashes.mjs",
-    "start": "npx serve out",
+    "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
@@ -17,6 +15,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "remotion": "^4.0.532",
+    "sonner": "^2.0.8",
     "sugar-high": "^2.5.1"
   },
   "devDependencies": {

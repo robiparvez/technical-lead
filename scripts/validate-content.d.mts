@@ -11,7 +11,7 @@ export interface ValidateContentTechnology {
 
 /** `rules` carries the tag map, the diagram ids and the committed ids. */
 export interface ValidationRules {
-    /** Parsed src/data/technologies.json (the technology tag map). */
+    /** The technologies table rows (the technology tag map). */
     technologies: ValidateContentTechnology[];
     /** Ids from src/data/diagram-ids.json. */
     diagramIds: string[];
@@ -46,9 +46,3 @@ export declare function validateContent(
     rules: ValidationRules,
 ): ValidationResult;
 
-export declare const DEFAULT_DATA_DIR: string;
-
-export declare function loadCommittedContent(dataDir?: string): {
-    topics: ValidateContentTopic[];
-    rules: ValidationRules;
-};

@@ -15,6 +15,7 @@ import {
     type ApiError,
     type CheckContext,
 } from '@/lib/adminApi';
+import { adminToast } from '@/lib/adminToast';
 import { DIFFICULTIES, DIFFICULTY_LABELS, POINTS } from '@/lib/quiz';
 import type { Difficulty, Question } from '@/data/types';
 
@@ -129,7 +130,6 @@ export default function QuestionEditor({
     const [touched, setTouched] = useState<Set<string>>(new Set());
     const [submitted, setSubmitted] = useState(false);
     const [serverFields, setServerFields] = useState<Record<string, string>>({});
-    const [saveError, setSaveError] = useState('');
     const [busy, setBusy] = useState<'saving' | 'deleting' | null>(null);
     const [confirm, setConfirm] = useState<'discard' | 'delete' | null>(null);
     const headingRef = useRef<HTMLHeadingElement>(null);
@@ -170,12 +170,12 @@ export default function QuestionEditor({
     const save = async (e: React.FormEvent) => {
         e.preventDefault();
         setSubmitted(true);
-        setSaveError('');
         if (problems.length) {
             requestAnimationFrame(() => summaryRef.current?.focus());
             return;
         }
         setBusy('saving');
+        adminToast.saving(originalId ? 'Saving question…' : 'Adding question…');
         try {
             const { topic: next, saved } = await saveQuestion(topic.slug, question, ctx);
             onSaved(next, saved, original?.tags ?? [], !originalId);
@@ -184,10 +184,13 @@ export default function QuestionEditor({
             if (apiError.fields) {
                 const { mapped, unmapped } = mapServerFields(apiError.fields, draft.diagramMode === 'custom');
                 setServerFields(mapped);
-                // keys with no input on this form (form, difficulty, ...) would vanish otherwise
-                if (unmapped.length) setSaveError(`Not saved. ${unmapped.join(' ')}`);
+                // keys with no input on this form (form, difficulty, ...) show in the toast
+                adminToast.failed(
+                    'Question not saved',
+                    unmapped.length ? unmapped.join(' ') : 'Fix the problems listed in the form, then try again.',
+                );
                 requestAnimationFrame(() => summaryRef.current?.focus());
-            } else setSaveError(`Not saved. ${apiError.message} Your edits are still here, so try again.`);
+            } else adminToast.failed('Question not saved', `${apiError.message}. Your edits are still here, so try again.`);
             setBusy(null);
         }
     };
@@ -195,12 +198,12 @@ export default function QuestionEditor({
     const remove = async () => {
         if (!original) return;
         setBusy('deleting');
-        setSaveError('');
+        adminToast.saving('Deleting question…');
         try {
             onDeleted(await deleteQuestion(topic.slug, original.id), original);
         } catch (err) {
             const apiError = err as ApiError;
-            setSaveError(`Not deleted. ${apiError.fields?.delete ?? apiError.message}`);
+            adminToast.failed('Question not deleted', apiError.fields?.delete ?? apiError.message);
             setConfirm(null);
             setBusy(null);
             requestAnimationFrame(() => deleteRef.current?.focus());
@@ -486,11 +489,6 @@ export default function QuestionEditor({
                 </aside>
 
                 <div className='admin-editor-foot'>
-                    {saveError && (
-                        <p className='admin-message is-error' role='alert'>
-                            {saveError}
-                        </p>
-                    )}
                     <div className='admin-actions'>
                         <button type='submit' className='btn btn-primary' disabled={busy !== null} aria-busy={busy === 'saving'}>
                             {busy === 'saving' ? 'Saving…' : originalId ? 'Save question' : 'Add question'}
@@ -513,7 +511,7 @@ export default function QuestionEditor({
                     {confirm === 'delete' && original && (
                         <div className='admin-confirm' role='group' aria-labelledby='delete-text'>
                             <p id='delete-text'>
-                                Delete {original.id}? It leaves the site at the next rebuild. Its id stays reserved so
+                                Delete {original.id}? It leaves the site at once. Its id stays reserved so
                                 readers&rsquo; progress cannot attach to a different question, and you can restore it
                                 from the deleted list.
                             </p>

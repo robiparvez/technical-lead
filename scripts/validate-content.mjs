@@ -1,14 +1,9 @@
-#!/usr/bin/env node
 // scripts/validate-content.mjs — the one shared content validator (plan: D9,
 // "Content rules (one validator)"). Plain ESM with zero dependencies, so the
-// root (no test runner, no extra toolchain), scripts/fetch-content.mjs and
-// the NestJS server (server/src/content) all run the exact same rules.
+// root and the NestJS server (server/src/content) both run the exact same rules.
 //
 // Programmatic use:
 //   validateContent(topics, rules) -> { ok, errors }
-//
-// CLI use (validates the committed src/data content; exit 1 on failure):
-//   node scripts/validate-content.mjs [dataDir]   (default: <repo>/src/data)
 //
 // Rules (plan: "Content rules"):
 //   1. every tag in the technology map is carried by at least one question
@@ -22,15 +17,7 @@
 //
 // `topics` is an array of Topic objects (src/data/types.ts shape). Topics may
 // carry `groupLabel` and `groupSortOrder` — the server stores them as columns
-// and scripts/fetch-content.mjs derives them from the export's groups array;
-// rule 6 applies when they are present.
-
-import { readdirSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-
-const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-export const DEFAULT_DATA_DIR = join(REPO_ROOT, 'src', 'data');
+// and rule 6 applies when they are present.
 
 /**
  * @typedef {Object} TechnologyRule
@@ -218,64 +205,4 @@ export function validateContent(topics, rules) {
     }
 
     return { ok: errors.length === 0, errors };
-}
-
-/** Reads the committed content of a data dir (manifest, topics, rules files). */
-export function loadCommittedContent(dataDir = DEFAULT_DATA_DIR) {
-    const manifest = JSON.parse(readFileSync(join(dataDir, 'manifest.json'), 'utf8'));
-    const technologies = JSON.parse(readFileSync(join(dataDir, 'technologies.json'), 'utf8'));
-    const diagramIdMap = JSON.parse(readFileSync(join(dataDir, 'diagram-ids.json'), 'utf8'));
-
-    const topics = [];
-    for (const [groupSortOrder, group] of manifest.groups.entries()) {
-        for (const slug of group.topicSlugs) {
-            const topic = JSON.parse(readFileSync(join(dataDir, 'topics', `${slug}.json`), 'utf8'));
-            topics.push({ ...topic, groupLabel: group.label, groupSortOrder });
-        }
-    }
-
-    const committedQuestionIds = [];
-    for (const file of readdirSync(join(dataDir, 'topics')).filter((name) => name.endsWith('.json'))) {
-        const topic = JSON.parse(readFileSync(join(dataDir, 'topics', file), 'utf8'));
-        for (const question of topic.questions ?? []) {
-            if (typeof question?.id === 'string') committedQuestionIds.push(question.id);
-        }
-    }
-
-    return {
-        topics,
-        rules: { technologies, diagramIds: Object.keys(diagramIdMap), committedQuestionIds },
-    };
-}
-
-// --- CLI ---------------------------------------------------------------------
-
-const invokedDirectly = process.argv[1]
-    ? import.meta.url === pathToFileURL(process.argv[1]).href
-    : false;
-
-if (invokedDirectly) {
-    const positional = process.argv.slice(2).find((arg) => !arg.startsWith('--'));
-    const flagValue = process.argv.slice(2).find((arg) => arg.startsWith('--data-dir='));
-    const dataDir = flagValue ? flagValue.slice('--data-dir='.length) : (positional ?? DEFAULT_DATA_DIR);
-
-    let loaded;
-    try {
-        loaded = loadCommittedContent(dataDir);
-    } catch (error) {
-        console.error(`validate-content: cannot read content from ${dataDir}: ${error.message}`);
-        process.exit(1);
-    }
-
-    const result = validateContent(loaded.topics, loaded.rules);
-    if (!result.ok) {
-        console.error(`validate-content: ${result.errors.length} rule failure(s) in ${dataDir}:`);
-        for (const error of result.errors) console.error(`  - ${error}`);
-        process.exit(1);
-    }
-    const questionCount = loaded.topics.reduce((sum, topic) => sum + topic.questions.length, 0);
-    console.log(
-        `validate-content: ok (${loaded.topics.length} topics, ${questionCount} questions, ` +
-            `${loaded.rules.technologies.length} technologies, ${loaded.rules.diagramIds.length} diagram ids)`,
-    );
 }

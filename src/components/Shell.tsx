@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { FOCUS_SEARCH_EVENT, REVEAL_SEARCH_EVENT } from '@/components/SearchBox';
 import AccountControl from '@/components/AccountControl';
@@ -19,18 +20,43 @@ const DESKTOP_QUERY = '(min-width: 60rem)';
  * "/" reveals the search for the current layout and focuses it.
  * SyncProvider wraps everything: it starts after mount and drives the
  * progress/score stores from the API once a stored token checks out.
+ *
+ * The frame itself is AppFrame: the site uses it from here, and /admin uses
+ * it from app/admin/layout.tsx with its own nav, brand and no search. Under
+ * /admin this component only keeps SyncProvider mounted and lets that layout
+ * draw the frame.
  */
-export default function Shell({
-    nav,
-    search,
-    theme,
-    children,
-}: {
+export default function Shell(props: {
     nav: React.ReactNode;
     search: React.ReactNode;
     theme: React.ReactNode;
     children: React.ReactNode;
 }) {
+    const inAdmin = /^\/admin(\/|$)/.test(usePathname());
+    return <SyncProvider>{inAdmin ? props.children : <AppFrame {...props} />}</SyncProvider>;
+}
+
+/** Collapsible sidebar, sticky header and phone panels around the page. */
+export function AppFrame({
+    brand = 'Tech lead study',
+    brandHref = '/',
+    nav,
+    search,
+    theme,
+    wide = false,
+    children,
+}: {
+    brand?: string;
+    brandHref?: string;
+    nav: React.ReactNode;
+    /** Omit on pages without search: the Search button, panel and "/" shortcut go away. */
+    search?: React.ReactNode;
+    theme: React.ReactNode;
+    /** A wider content column, for dashboards. */
+    wide?: boolean;
+    children: React.ReactNode;
+}) {
+    const hasSearch = search != null;
     const [panel, setPanel] = useState<'none' | 'menu' | 'search'>('none');
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const inlineToggleRef = useRef<HTMLButtonElement>(null);
@@ -53,6 +79,7 @@ export default function Shell({
 
     useEffect(() => {
         const reveal = () => {
+            if (!hasSearch) return;
             // the desktop header search is always visible; only phone needs a panel
             if (!window.matchMedia(DESKTOP_QUERY).matches) setPanel('search');
             // focus once React has committed the revealed panel
@@ -64,7 +91,7 @@ export default function Shell({
                 target.tagName === 'INPUT' ||
                 target.tagName === 'TEXTAREA' ||
                 target.isContentEditable;
-            if (e.key === '/' && !typing) {
+            if (e.key === '/' && !typing && hasSearch) {
                 e.preventDefault();
                 reveal();
             }
@@ -91,7 +118,7 @@ export default function Shell({
             window.removeEventListener('keydown', onKey);
             window.removeEventListener(REVEAL_SEARCH_EVENT, reveal);
         };
-    }, [sidebarOpen]);
+    }, [sidebarOpen, hasSearch]);
 
     useEffect(() => {
         if (pendingFocus.current === 'inline') inlineToggleRef.current?.focus();
@@ -100,7 +127,7 @@ export default function Shell({
     }, [sidebarOpen]);
 
     return (
-        <SyncProvider>
+        <>
             <header className='topbar'>
                 <button
                     type='button'
@@ -112,18 +139,20 @@ export default function Shell({
                 >
                     <HamburgerIcon />
                 </button>
-                <Link className='brand' href='/'>
-                    Tech lead study
+                <Link className='brand' href={brandHref}>
+                    {brand}
                 </Link>
-                <button
-                    type='button'
-                    className='btn'
-                    aria-expanded={panel === 'search'}
-                    aria-controls='phone-search'
-                    onClick={openSearch}
-                >
-                    Search
-                </button>
+                {hasSearch && (
+                    <button
+                        type='button'
+                        className='btn'
+                        aria-expanded={panel === 'search'}
+                        aria-controls='phone-search'
+                        onClick={openSearch}
+                    >
+                        Search
+                    </button>
+                )}
                 {theme}
             </header>
 
@@ -139,9 +168,11 @@ export default function Shell({
                 {nav}
                 <AccountControl />
             </div>
-            <div id='phone-search' className='phone-panel' data-open={panel === 'search'}>
-                {search}
-            </div>
+            {hasSearch && (
+                <div id='phone-search' className='phone-panel' data-open={panel === 'search'}>
+                    {search}
+                </div>
+            )}
 
             <div className='app' data-sidebar={sidebarOpen ? 'open' : 'hidden'}>
                 {!sidebarOpen && (
@@ -162,8 +193,8 @@ export default function Shell({
                 {sidebarOpen && (
                     <aside className='sidebar' id='sidebar'>
                         <div className='sidebar-head'>
-                            <Link className='brand' href='/'>
-                                Tech lead study
+                            <Link className='brand' href={brandHref}>
+                                {brand}
                             </Link>
                             <button
                                 type='button'
@@ -180,20 +211,22 @@ export default function Shell({
                             </button>
                         </div>
                         {nav}
-                        <AccountControl />
                     </aside>
                 )}
                 <div className='app-main'>
                     <header className='site-header'>
                         {search}
                         {theme}
+                        <AccountControl inline />
                     </header>
                     <main id='main'>
-                        <div className='content'>{children}</div>
+                        <div className='content' data-wide={wide}>
+                            {children}
+                        </div>
                     </main>
                 </div>
             </div>
-        </SyncProvider>
+        </>
     );
 }
 
