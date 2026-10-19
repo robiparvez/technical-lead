@@ -10,7 +10,7 @@ Live at https://robiparvez.github.io/technical-lead/
 
 The questions follow a Technical Lead job description: 5 to 7 years of experience, full-stack work, plus leading a team. The guide covers what that role asks for. There are 14 technical topics, such as microservices, databases, system design and security. There are also 6 topics on the people side of the job, such as code review, mentoring, working with stakeholders and the HR round.
 
-You never need an account. Everything runs in your browser, and nothing you do leaves your device. If you want your progress to follow you to another browser, you can sign in — see "Keep track of what you know".
+You never need an account. Everything runs in your browser, and nothing you do leaves your device. Accounts exist only for the site admin, who edits the content (see "Editing the content").
 
 ## Read the answers
 
@@ -40,7 +40,7 @@ Each topic has a quiz. An attempt asks 10 questions in random order, and you pic
 
 Press "Mark as known" on any answer. The sidebar and the home page show a count for each topic and technology, like 12/28, so you can see where the gaps are. Your progress and quiz scores stay in your browser's local storage. Clear your browser data and they go away.
 
-If you sign in (the sign-in control sits in the sidebar, the page is `/login`), your known questions and quiz scores sync, so they follow you to another browser or device. Signing in is optional: signed out, or with the sync service unreachable, the site behaves exactly as described above. The sync needs the site's backend, which is not part of the static Pages site; see [docs/TECHNICAL.md](docs/TECHNICAL.md) for how that fits together.
+Visitors have no sign-in, so this progress stays on the device. The admin account is the exception: while the admin is signed in, known questions and quiz scores also sync to the site's backend, which is the same API that serves the site's content. See [docs/TECHNICAL.md](docs/TECHNICAL.md) for how that fits together.
 
 ## Small things that help
 
@@ -55,22 +55,22 @@ If you sign in (the sign-in control sits in the sidebar, the page is `/login`), 
 
 ## Editing the content (for the site owner)
 
-Questions and topics can be edited in the browser on the `/admin` page. It is not linked from the site and search engines are told to skip it, and it needs an account with the admin role, which is granted from the command line (`npm run admin:grant -- <email>` inside `server/`). Saved edits go into the database and reach the public site on its next rebuild. Setup and details: [docs/TECHNICAL.md](docs/TECHNICAL.md).
+Questions and topics can be edited in the browser on the `/admin` page. It is not linked from the site and search engines are told to skip it. To use it, create an account on the `/login` page, then grant that account the admin role from the command line (`npm run admin:grant -- <email>` inside `server/`). After you sign in, `/admin` shows the content editor, and the Account page there changes your password. If you forget it, use "Forgot password?" on the sign-in screen; in development the mail is caught by MailHog and you read it at http://localhost:8025 (setup in [docs/TECHNICAL.md](docs/TECHNICAL.md)). Saved edits go into the database, and the public site shows them the next time a page loads. Setup and details: [docs/TECHNICAL.md](docs/TECHNICAL.md).
 
 ## Run it yourself
 
-You need Node.js.
+You need Node.js and PostgreSQL.
+
+The questions live in PostgreSQL and the site reads them through the API in the `server/` folder, so start the API first. Setup is in [docs/TECHNICAL.md](docs/TECHNICAL.md). The database holds all the content, so restore it from a `pg_dump` backup on a new machine.
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open http://localhost:3000. To build the static site, run `npm run build`. It writes the site to the `out/` folder, and `npm start` serves it.
+Open http://localhost:3000. To run a production build, use `npm run build` and then `npm start`. The site needs the API while it runs. If the API is down, pages show a "Content is not available" message.
 
-The site is plain static files, so it runs on GitHub Pages with no server. A GitHub Action rebuilds and publishes it every time someone pushes to `master`.
-
-The sign-in, syncing and `/admin` features talk to a separate API that lives in the `server/` folder of this repository. The public site does not need it, and running it yourself is optional — how to do that is in [docs/TECHNICAL.md](docs/TECHNICAL.md).
+The old GitHub Pages deploy was removed, because the site needs a host that can run Node. Until a host is chosen, a GitHub check only lints and builds the app.
 
 ## For developers
 

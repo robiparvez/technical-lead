@@ -2,6 +2,8 @@
 
 > **Status:** Approved 2026-10-18, executing in batches · **Date:** 2026-10-18 · **Branch:** `feat/nestjs-backend` (all work)
 >
+> **Superseded in part:** the site now reads PostgreSQL per request, so the rebuild pipeline in this plan (outbox, dispatcher, `GET /admin/rebuild`, `repository_dispatch`) was built and then removed. Read those sections as history.
+>
 > Revision 11. Revisions 1 to 3 merged a `nestjs-best-practices` review, three codebase reviews
 > (frontend/data, backend/security, deploy pipeline) and a verification pass. Revision 4 recorded
 > the owner's decisions D1 to D5 and fixed eight findings from the revision 3 review. Revision 5

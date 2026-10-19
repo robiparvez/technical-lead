@@ -11,17 +11,17 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000. Production build: `npm run build` writes a static site to `out/` (the `postbuild` step then injects the per-page CSP meta tags — see Backend); `npm start` serves it. The API in `server/` is optional for local browsing; its commands are in Backend.
+Open http://localhost:3000. Production build: `npm run build`, then `npm start` (`next start`). Every page renders per request from the API, so the API in `server/` must be running (commands in Backend). The build itself does not call the API.
 
 ## Deploy
 
-`.github/workflows/pages.yml` lints, builds the static export (`output: 'export'`, `trailingSlash: true`), and publishes `out/` to GitHub Pages on every push to `master`. The workflow sets `PAGES_BASE_PATH` to `/technical-lead`; local runs leave it unset and serve from `/`.
+The site is no longer a static export (`output: 'export'` is gone). A Next server reads all content from the NestJS API on each request (`src/lib/content.ts`, `GET /v1/export`, `cache: 'no-store'`). The Next server needs `API_URL` (default `http://127.0.0.1:3001`) and `EXPORT_TOKEN`; when `EXPORT_TOKEN` is unset in dev it is read from `server/.env`. If the API is unreachable, pages return HTTP 500 and show `src/app/error.tsx`.
 
-The Pages deploy itself still has no request-time server: the home page reads `?q=` (search) and `?tag=` (tag filter) in the browser, and on the home page the search box updates the query with `history.replaceState`, since the export has no per-query payload. The server that now exists (see Backend) is a separate API that the browser calls from the static pages; the workflow file is unchanged until the P6 hosting phase wires in the content pipeline.
+The old GitHub Pages deploy (`pages.yml`) was removed, because Pages cannot run a Node server. `.github/workflows/web-ci.yml` now runs lint, a type check and the build on pull requests and on the backend branch; it deploys nothing. Hosting for the Next server and the API is the open P6 decision. `PAGES_BASE_PATH` and `trailingSlash` are kept in `next.config.ts` for now.
 
 ## Backend
 
-A NestJS 12 API lives in `server/` — its own npm project with its own tests (plan of record: `docs/BACKEND_PLAN.md`). It owns accounts, progress and quiz sync, and (after cutover) the content itself. It is not part of the Pages deploy: every call is a client-side `fetch`, and every page still prerenders with the API unreachable. It listens on port 3001 (`PORT` in `server/.env`), and the site targets it at `NEXT_PUBLIC_API_URL`, which defaults to `http://localhost:3001` when unset (`src/lib/auth.ts`; `.env.local` pins it in development).
+A NestJS 12 API lives in `server/` — its own npm project with its own tests (plan of record: `docs/BACKEND_PLAN.md`). It owns accounts, progress and quiz sync, and (after cutover) the content itself. The Next server reads content from it per request, and the browser calls it for accounts, sync and admin edits. It listens on port 3001 (`PORT` in `server/.env`), and the site targets it at `NEXT_PUBLIC_API_URL`, which defaults to `http://localhost:3001` when unset (`src/lib/auth.ts`; `.env.local` pins it in development).
 
 Local commands (inside `server/`):
 
@@ -29,7 +29,6 @@ Local commands (inside `server/`):
 npm install
 cp .env.example .env      # DATABASE_URL, BETTER_AUTH_SECRET, EXPORT_TOKEN, ...
 npm run migrate           # drizzle-kit migrations
-npm run seed              # insert-only seed from the committed JSON; safe to re-run
 npm run start:dev         # dev API on http://localhost:3001 (npm run build && npm run start otherwise)
 npm test                  # vitest unit + e2e against technical_lead_test
 npm run admin:grant -- <email>   # the only path to the admin role
@@ -38,26 +37,26 @@ npm run admin:grant -- <email>   # the only path to the admin role
 Routes — global prefix `/v1`; better-auth mounts raw at `/api/auth/*` (outside the prefix, with `GET /api/auth/ok` as a smoke test); Swagger at `/docs` outside production:
 
 - Public GETs, throttled 60 requests/min/IP, in-memory cache with a 5 min TTL that admin writes invalidate: `GET /v1/topics`, `GET /v1/topics/:slug`, `GET /v1/questions?tag=&difficulty=&limit=&cursor=` (`limit` 1–100, default 20). Draft topics (no live question) and soft-deleted rows are omitted.
-- `GET /v1/export` — all topics, groups and questions in one payload with a `content_version` hash. Exempt from the throttler; protected by the build token (`x-export-token` header, compared in constant time). Used by `scripts/fetch-content.mjs`.
+- `GET /v1/export` — all groups, topics, questions and technologies in one payload with a `content_version` hash (groups and topics only). Exempt from the throttler; protected by the build token (`x-export-token` header, compared in constant time). Read by `src/lib/content.ts` on every page request.
 - Signed-in user (bearer token): `GET`/`POST /v1/progress/known`, `GET /v1/quiz/state`, `POST /v1/quiz/events`.
-- Admin (bearer token plus admin role): `GET /v1/admin/topics` (drafts and soft-deleted included), `POST /v1/admin/topics`, `GET`/`PATCH`/`DELETE /v1/admin/topics/:slug`, `GET /v1/admin/topics/:slug/deleted`, `POST`/`PATCH`/`DELETE /v1/admin/questions[/:id]`, `POST /v1/admin/questions/:id/restore`, `GET /v1/admin/rebuild` (the outbox summary shown on `/admin`).
+- Admin (bearer token plus admin role): `GET /v1/admin/topics` (drafts and soft-deleted included), `POST /v1/admin/topics`, `GET`/`PATCH`/`DELETE /v1/admin/topics/:slug`, `GET /v1/admin/topics/:slug/deleted`, `POST`/`PATCH`/`DELETE /v1/admin/questions[/:id]`, `POST /v1/admin/questions/:id/restore`.
 - `GET /v1/health/live` and `GET /v1/health/ready` (readiness checks the DB); unthrottled.
 
 Validation is zod behind a hand-written `ZodValidationPipe`. Errors use one envelope, `{ statusCode, message, error }`; a 422 adds `fields: Record<string, string>`, which the admin form shows beside each field. Deletes are soft; question ids are immutable, and the server assigns new ones as `<prefix>-q<N>` counting deleted questions, so no id is ever reused.
 
 ### Auth
 
-better-auth with email/password and the bearer plugin. Bearer tokens, not cookies, because the static site is served from `github.io` and the API from another origin, where cross-origin cookie sessions do not work. The token arrives in the `set-auth-token` response header and is stored in localStorage (`tl-auth-token`) — readable by XSS, accepted as a known limitation, with the per-page CSP and output escaping as mitigations. Sessions last 24 h and refresh while in use. No email verification and no OAuth in v1 (D3); the admin role comes only from the `admin:grant` CLI above, never from signup. Sign-out revokes the session server-side and clears the token, both pending queues, the local known set and the local scores, so a following account on the same browser starts clean.
+better-auth with email/password and the bearer plugin. Bearer tokens, not cookies, because the site and the API run on different origins, where cross-origin cookie sessions do not work. The token arrives in the `set-auth-token` response header and is stored in localStorage (`tl-auth-token`) — readable by XSS, accepted as a known limitation, with output escaping as the mitigation (the CSP is only a baseline now, see Content Security Policy). Sessions last 24 h and refresh while in use. No email verification and no OAuth in v1 (D3); the admin role comes only from the `admin:grant` CLI above, never from signup. Sign-out revokes the session server-side and clears the token, both pending queues, the local known set and the local scores, so a following account on the same browser starts clean.
 
-### Content pipeline (the DB is the source of truth after cutover)
+Passwords: better-auth's own routes, with no extra package. "Forgot password" calls `POST /api/auth/request-password-reset` (the answer is the same for known and unknown emails; `redirectTo` must be a trusted origin). The reset token lives in the `verification` table, works once, and expires after 30 minutes. A successful reset (`POST /api/auth/reset-password`) signs out every session of that account. Change password (`POST /api/auth/change-password`) needs the current password and signs out the other devices. Mail: `server/src/mail/send-mail.ts` sends plain-text mail over SMTP to `SMTP_HOST`/`SMTP_PORT` (`MAIL_FROM` is the sender), with no TLS and no login, using only `node:net`. In dev, MailHog catches it: start `MailHog.exe -smtp-bind-addr 127.0.0.1:1025 -api-bind-addr 127.0.0.1:8025 -ui-bind-addr 127.0.0.1:8025`, set the three variables from `server/.env.example`, and read the mail at http://localhost:8025. Two mails go out (`server/src/auth/auth-mail.ts`): the reset link, and a "password was changed" notice after a reset or a change. A send failure is logged and never breaks the request. With `SMTP_HOST` empty nothing is sent: outside production the mail text is logged, and in production only a warning is logged. Before production, replace `send-mail.ts` with a client that supports STARTTLS and login (nodemailer, a community package, so the owner approves it first).
 
-Hand edits to `src/data/topics/*.json` stop at cutover (D2). Content then flows one way: DB → `GET /v1/export` → `scripts/fetch-content.mjs` → `src/data/manifest.json` + `src/data/topics/*.json` → `npm run build`.
+### Content (the DB is the source of truth)
 
-1. Every admin write updates content and inserts a `rebuild_outbox` row in the same transaction.
-2. The outbox worker claims rows with `FOR UPDATE SKIP LOCKED` and commits before waiting, waits out a ~30 s debounce (computed from `created_at`, so a restart loses nothing), folds in newer pending rows whose `content_version` matches, and sends one `repository_dispatch` whose `client_payload` carries that version. A `claimed` row older than 5 min returns to `pending`; failed dispatches retry with backoff (5 attempts) and show up as `failed` in `GET /v1/admin/rebuild` once exhausted; dispatched rows are removed after 24 h.
-3. The rebuild runs `scripts/fetch-content.mjs`: it calls `GET /v1/export` with the build token (20 s timeout, 3 retries), checks the payload shape, asserts `content_version` when one is given, runs the shared validator (`scripts/validate-content.mjs`), writes the manifest and the topic files, and deletes topic files the export no longer lists. It never writes `technologies.json` or `diagram-ids.json` — those are hand-kept, and adding a technology is a code change. Then `npm run build`.
+PostgreSQL owns every group, topic, question and technology. The Next server reads them per request: `src/lib/content.ts` calls `GET /v1/export` with the build token, and `src/data/index.ts` and `src/data/technologies.ts` turn the result into the helpers the pages use. An admin edit is visible on the next page load, with no rebuild step.
 
-Today this pipeline runs locally only: `DISPATCH_ENABLED=false` (the default) makes the worker log the payload and mark the row dispatched without calling GitHub, and GitHub Actions cannot reach a local API anyway. On this branch the loop is: API on :3001, edit in `/admin`, `node scripts/fetch-content.mjs`, `npm run build`. Until the P6 merge, the committed JSON remains what the Pages deploy builds from.
+No JSON file holds content any more. Back the database up with `pg_dump`. `src/data/diagram-ids.json` stays: it lists the animated diagram components, which are code. The e2e tests load a fixture snapshot from `server/test/fixtures/seed/` into the test database only (`server/test/support/seed.ts`).
+
+The rebuild outbox, its dispatcher and `GET /v1/admin/rebuild` were removed once the site began reading the database per request. Each admin write still runs the shared content validator inside its transaction (`ContentService.assertValid`), and the `rebuild_outbox` table is dropped by migration `0003`.
 
 ### Sync rules (signed in)
 
@@ -67,11 +66,10 @@ Today this pipeline runs locally only: `DISPATCH_ENABLED=false` (the default) ma
 
 ### Content Security Policy
 
-GitHub Pages sends no response headers, and the static export emits inline scripts that differ per page and per build (the theme bootstrap in `src/app/layout.tsx` and the `self.__next_f` hydration payloads). `scripts/csp-hashes.mjs`, wired as the root `postbuild`, runs after `next build`: for every HTML file under `out/` it sha256-hashes each inline script and injects a CSP `<meta http-equiv>` listing those hashes — no `'unsafe-inline'` anywhere. `connect-src` allows `'self'` plus the API origin read from `NEXT_PUBLIC_API_URL`.
-
+`next.config.ts` sends `X-Content-Type-Options`, `Referrer-Policy` and a CSP with only `frame-ancestors 'none'; base-uri 'none'; object-src 'none'`. The earlier per-page script hashes (`scripts/csp-hashes.mjs`) worked only for a static export and are removed. A nonce-based `script-src` is the follow-up; until it exists, scripts are not restricted by CSP.
 ### What waits for P6
 
-Everything production: hosting and the production database, `https://robiparvez.github.io` added to CORS and `trustedOrigins`, the `vars.API_URL` build variable, the `EXPORT_TOKEN` secret and the dispatch PAT, `DISPATCH_ENABLED=true`, the `pages.yml` changes (`repository_dispatch` trigger, the fetch step, `paths-ignore: server/**`), and the merge to `master` — after which the DB is the operational source of truth and hand edits to the topic JSON stop.
+Everything production: hosting and the production database, `https://robiparvez.github.io` added to CORS and `trustedOrigins`, the `vars.API_URL` build variable, the `EXPORT_TOKEN` secret, a host that runs the Next server (with `API_URL` and `EXPORT_TOKEN` set), a deploy workflow for that host (the Pages workflow is gone), and the merge to `master`.
 
 ## Versions
 
@@ -88,24 +86,24 @@ Remotion license: free for individuals, including personal use
 
 ## Structure
 
-- `src/data/topics/*.json` — questions, answers, tags, diagrams, key takeaways. Hand-edited source until cutover; after it, a generated snapshot written by `scripts/fetch-content.mjs` from the API (see Backend)
-- `src/data/manifest.json` — group labels, group order and topic order, read by the registry loader `src/data/index.ts`; adding or removing a topic changes only JSON, never that file
-- `src/data/technologies.ts` — hand-registered technology list; each maps to the question tags that name it (the tag map lives in `src/data/technologies.json`), and one with fewer than 3 matching questions is hidden. A tag no question carries fails the build
+- `src/lib/content.ts` — the one server-side reader: fetches groups, topics, questions and technologies from the API per request. `src/data/index.ts` holds the async helpers over it
+- `src/data/technologies.ts` — async helpers over the technologies from the database (`technologies` table: slug, label, tags, sort order). A technology with fewer than 3 matching questions is hidden
 - `src/data/diagram-ids.json` — the animated diagram id set, shared with the server's content validator; `src/components/Diagram.tsx` types its `ANIMATED` keys against it, so a missing component fails type-checking
 - `src/components/QuestionRail.tsx` — difficulty rail with stations and progress glyphs; each card lists its tags as links to `/?tag=<tag>`
 - `src/components/SearchResults.tsx` — home index ("Study guide"): topic cards and technology cards, `?q=` search results, or the questions carrying one `?tag=` across all topics
-- `src/app/technologies/[slug]/page.tsx` — one static page per technology: every matching question across all topics on the difficulty rail, each card labelled with its topic
+- `src/app/technologies/[slug]/page.tsx` — one page per technology: every matching question across all topics on the difficulty rail, each card labelled with its topic
 - `src/components/Diagram.tsx` — diagram host: every diagram plays as a looping @remotion/player animation
 - `src/components/diagrams/` — Remotion compositions: hand-built diagrams and `SpecDiagram`, which animates any JSON-authored `DiagramSpec`
 - `src/styles/tokens.css` — every design token as a CSS custom property, with light and dark values
 - `src/styles/reset.css` — the only file with background declarations (the themed page canvas, repeated on the sticky desktop header so scrolled content stays hidden; everything else transparent/none)
 - `src/components/ThemeSwitch.tsx` — light/dark icon toggle; follows the OS until clicked, then saves the choice in localStorage
-- `src/app/admin/page.tsx`, `src/components/AdminConsole.tsx`, `src/components/QuestionEditor.tsx` — content admin at `/admin` (not linked from the nav, `noindex`), gated on the admin role from the session: pick a topic, edit its details, add, edit, or delete questions, with live site-build checks beside the form
-- `src/components/Skeleton.tsx` — outlined placeholder shapes shown while an API call is in flight; the static export cannot use `loading.tsx`
+- `src/app/admin/page.tsx`, `src/components/AdminConsole.tsx`, `src/components/QuestionEditor.tsx` — content admin at `/admin` (not linked from the nav, `noindex`), gated on the admin role from the session: pick a topic, edit its details, add, edit, or delete questions, with the validation checks beside the form
+- `src/components/Skeleton.tsx` — outlined placeholder shapes shown while an API call is in flight; API calls from the browser have no route-level loading state
 - `src/lib/api.ts` — typed `fetch` wrapper for the API: attaches the stored bearer token, turns the JSON error envelope (plus the 422 `fields` map) into a thrown error, and holds the DTO types hand-synced with the server's zod schemas
 - `src/lib/auth.ts` — better-auth client (bearer token captured from the `set-auth-token` header into localStorage) plus the API base URL
 - `src/lib/sync.ts`, `src/components/SyncProvider.tsx` — the sync engine and its provider: localStorage queues for known-question ops and quiz events, flushed per the Backend sync rules; signed out, it makes no calls at all
-- `src/app/login/` — sign-in / sign-up page; redirects back to where the reader came from
+- `src/app/reset-password/`, `src/app/admin/account/`, `src/components/PasswordForms.tsx` — the reset page the emailed link lands on (new password twice, token from `?token=`) and the signed-in change-password form (current password, new password twice; other devices are signed out and this session gets a fresh token). The "Forgot password?" form is a mode of `AdminSignIn.tsx`
+- `src/app/login/`: admin sign-in / sign-up page; redirects to `?next=` and defaults to `/admin`. The site shows no sign-in link to visitors
 - `src/lib/adminApi.ts` — admin API client for `/admin`: typed calls to the `/v1/admin/*` endpoints through the bearer wrapper, plus the client-side validation that mirrors the server's (the server validates again on every save)
 
 ## Token-to-component mapping
@@ -153,6 +151,8 @@ Every interactive component: keyboard, pointer, touch. State rules live in `src/
 | Search input | `/` anywhere focuses it; type filters live; Escape clears the browser's search text; the box mirrors `?q=` and re-reads it on every route change, so a topic page or tag link shows it empty and Back restores the query | Tap opens (phone panel); typing filters after 200 ms debounce |
 | Menu / Search buttons (phone) | Tab + Enter toggles panel; `aria-expanded` reflects state; Menu shows a hamburger icon | Tap toggles in-flow panel; 44 px target |
 | Sidebar toggle (desktop) | Tab + Enter, or Ctrl+B (Cmd+B on macOS) from anywhere except rich-text editors, collapses or restores the sidebar; focus moves to the toggle that replaces the unmounted one; `aria-expanded` and `aria-keyshortcuts` set | Click the hamburger at the top of the sidebar to collapse, the floating hamburger top-left to restore; 44 px target |
+| Admin frame (`/admin`) | `app/admin/layout.tsx` draws the same frame as the site (`AppFrame` in `Shell.tsx`: collapsible sidebar, Ctrl+B or Cmd+B, sticky header, phone menu) with the admin nav (`AdminNav`), the project title ("Technical Lead Study Guide") as brand, a 72 rem content column, and no search: the Search button, the search panel and the `/` shortcut are absent. The root `Shell` steps aside under `/admin` and only keeps `SyncProvider` mounted. A new admin page needs one entry in `SECTIONS` in `AdminNav.tsx`. Sign out, from any page, goes to `/admin`, which shows the Admin sign-in screen while nobody is signed in | Tap the hamburger for the phone menu; the "Study guide" link in the nav returns to the site |
+| Section fold toggle | The Topics and Technologies headings in the sidebar and on the home page are buttons: Tab + Enter/Space folds or unfolds the list below; `aria-expanded` and `aria-controls` set; the chevron points up while unfolded. Topics come first, Technologies second. Both start unfolded, so the server-rendered markup matches; the state lives in memory, so a reload unfolds both again | Tap the heading; 44 px min height |
 | Nav links | Tab reachable; `aria-current="page"` on the open topic or technology; Enter navigates | Tap navigates; 44 px min height |
 | Question toggle | Tab + Enter/Space expands or collapses; `aria-expanded` and `aria-controls` set; a `#question-id` in the URL (search results, quiz review links) opens that card and scrolls it just below the sticky header | Tap anywhere on the header; 44 px min height |
 | Tag link | Tab reachable, one link per tag under each question; Enter opens `/?tag=<tag>`, which lists every question with that exact tag across all topics; typing in search replaces the tag filter | Tap navigates; "Show all topics" returns to the index |
@@ -173,7 +173,7 @@ Every interactive component: keyboard, pointer, touch. State rules live in `src/
 
 ## Verification
 
-- `npm run build` passes; 20 topic pages prerendered (SSG), references static.
+- `npm run build` passes; every page is server-rendered per request.
 - Greps over `src/` (including SVG) excluding `tokens.css`/`reset.css`: zero gradient values, zero background declarations, zero raw hex.
 - `reset.css` holds the canvas background for `html` and the sticky `.site-header`, and otherwise only `transparent`/`none` backgrounds.
 - Computed `background-color` on body, buttons, inputs, cards, code blocks, badges, mark, and `__remotion-player` (Player root): all `rgba(0, 0, 0, 0)`; only `html` and `.site-header` carry the canvas color.
