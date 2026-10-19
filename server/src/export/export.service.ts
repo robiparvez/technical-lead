@@ -7,8 +7,12 @@ import type { PgTransaction } from 'drizzle-orm/pg-core';
 import { z } from 'zod';
 import { getDb, type Database } from '../db/client.js';
 import type * as schema from '../db/schema.js';
-import { questions, topics } from '../db/schema.js';
+import { questions, technologies, topics } from '../db/schema.js';
 import { exportedQuestionSchema } from '../common/content.schemas.js';
+import { TtlCacheService } from '../common/ttl-cache.service.js';
+
+const EXPORT_CACHE_KEY = 'export';
+const EXPORT_CACHE_TTL_MS = 60_000;
 
 export const exportGroupSchema = z.object({
     label: z.string(),
@@ -22,11 +26,22 @@ export const exportTopicSchema = z.object({
     questions: z.array(exportedQuestionSchema),
 });
 
-/** One payload for the static-site build (plan: /export row). */
+export const exportTechnologySchema = z.object({
+    slug: z.string(),
+    label: z.string(),
+    tags: z.array(z.string()),
+});
+
+/**
+ * One payload with all the site content: the web app reads it on every page
+ * request (plan: /export row). `technologies` is outside contentVersion,
+ * which hashes only groups and topics.
+ */
 export const exportResponseSchema = z.object({
     contentVersion: z.string().length(64),
     groups: z.array(exportGroupSchema),
     topics: z.array(exportTopicSchema),
+    technologies: z.array(exportTechnologySchema),
 });
 
 export type ExportResponseDto = z.infer<typeof exportResponseSchema>;
@@ -49,6 +64,8 @@ export interface ContentState {
     })[];
     /** Live question ids of live topics: the server's committed-id set. */
     committedQuestionIds: string[];
+    /** The technology tag map, in display order (validator rule 1 input). */
+    technologies: z.infer<typeof exportTechnologySchema>[];
 }
 
 /**
@@ -145,10 +162,16 @@ export async function collectContentState(exec: Executor): Promise<ContentState>
         return { ...topic, groupLabel: source.groupLabel, groupSortOrder: source.groupSortOrder };
     });
 
+    const technologyRows = await exec
+        .select({ slug: technologies.slug, label: technologies.label, tags: technologies.tags })
+        .from(technologies)
+        .orderBy(asc(technologies.sortOrder), asc(technologies.slug));
+
     return {
         exportBody: { groups, topics: exportedTopics },
         validationTopics,
         committedQuestionIds: questionRows.map((row) => row.id),
+        technologies: technologyRows.map((row) => exportTechnologySchema.parse(row)),
     };
 }
 
@@ -159,17 +182,29 @@ export function hashContentVersion(exportBody: ContentState['exportBody']): stri
 
 /**
  * Builds the full export payload: groups + topics + questions with the same
- * exclusions as the public endpoints, plus a content_version hash. Never
- * cached.
+ * exclusions as the public endpoints, the technologies, and a content_version
+ * hash. Never cached.
  */
 @Injectable()
 export class ExportService {
+    constructor(private readonly cache: TtlCacheService) {}
+
+    /**
+     * The whole site is read through this on every page request, so the result
+     * is cached for a minute. Every admin write calls cache.clear(), so an edit
+     * shows at once; only an edit made straight in the database waits for the TTL.
+     */
     async buildExport(): Promise<ExportResponseDto> {
+        const cached = this.cache.get<ExportResponseDto>(EXPORT_CACHE_KEY);
+        if (cached) return cached;
         const { db } = getDb();
-        const { exportBody } = await collectContentState(db);
-        return exportResponseSchema.parse({
+        const { exportBody, technologies: technologyList } = await collectContentState(db);
+        const result = exportResponseSchema.parse({
             contentVersion: hashContentVersion(exportBody),
             ...exportBody,
+            technologies: technologyList,
         });
+        this.cache.set(EXPORT_CACHE_KEY, result, EXPORT_CACHE_TTL_MS);
+        return result;
     }
 }

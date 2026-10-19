@@ -10,7 +10,7 @@ import { TtlCacheService } from '../common/ttl-cache.service.js';
 import { questionDtoSchema } from '../common/content.schemas.js';
 import { UnprocessableException } from '../common/fields.exception.js';
 import type { Executor } from '../export/export.service.js';
-import { OutboxService } from '../rebuild/outbox.service.js';
+import { ContentService } from '../content/content.service.js';
 import {
     adminTopicListItemSchema,
     type AdminTopicListItemDto,
@@ -84,12 +84,11 @@ const TAKEAWAY_LIVE_INDEX = 'questions_topic_slug_key_takeaway_live_idx';
 /**
  * Content management (plan: API endpoints, admin rows). Every write runs in
  * one transaction that also validates the resulting exported content with
- * the shared validator and inserts a rebuild_outbox row (rebuild/outbox);
- * the public topics cache is dropped after the commit.
+ * the shared validator; the public topics cache is dropped after the commit.
  */
 @Injectable()
 export class AdminService {
-    constructor(private readonly outbox: OutboxService, private readonly cache: TtlCacheService) {}
+    constructor(private readonly content: ContentService, private readonly cache: TtlCacheService) {}
 
     // --- reads ---------------------------------------------------------------
 
@@ -205,7 +204,7 @@ export class AdminService {
                     sortOrder: body.sortOrder ?? Number(nextSort ?? 0),
                     questionIdPrefix: body.questionIdPrefix,
                 });
-                await this.outbox.recordWrite(tx, 'topic-created');
+                await this.content.assertValid(tx);
                 return this.loadTopicDetail(tx, body.slug);
             });
             this.cache.clear();
@@ -262,7 +261,7 @@ export class AdminService {
                     sortOrder: body.sortOrder ?? topic.sortOrder,
                 })
                 .where(eq(topics.slug, slug));
-            await this.outbox.recordWrite(tx, 'topic-updated');
+            await this.content.assertValid(tx);
             return this.loadTopicDetail(tx, slug);
         });
         this.cache.clear();
@@ -281,7 +280,7 @@ export class AdminService {
                 .update(topics)
                 .set({ deletedAt: new Date() })
                 .where(eq(topics.slug, slug));
-            await this.outbox.recordWrite(tx, 'topic-deleted');
+            await this.content.assertValid(tx);
             return this.loadTopicDetail(tx, slug);
         });
         this.cache.clear();
@@ -339,7 +338,7 @@ export class AdminService {
                     diagram: body.diagram ?? null,
                     sortOrder: body.sortOrder ?? Number(nextSort ?? 0),
                 });
-                await this.outbox.recordWrite(tx, 'question-created');
+                await this.content.assertValid(tx);
                 return {
                     topic: await this.loadTopicDetail(tx, topic.slug),
                     saved: {
@@ -410,7 +409,7 @@ export class AdminService {
                         ...(body.sortOrder !== undefined ? { sortOrder: body.sortOrder } : {}),
                     })
                     .where(eq(questions.id, id));
-                await this.outbox.recordWrite(tx, 'question-updated');
+                await this.content.assertValid(tx);
                 return {
                     topic: await this.loadTopicDetail(tx, row.topicSlug),
                     saved: {
@@ -446,7 +445,7 @@ export class AdminService {
             const [row] = await tx.select().from(questions).where(eq(questions.id, id));
             if (!row || row.deletedAt) throw new NotFoundException(`question "${id}" not found`);
             await tx.update(questions).set({ deletedAt: new Date() }).where(eq(questions.id, id));
-            await this.outbox.recordWrite(tx, 'question-deleted');
+            await this.content.assertValid(tx);
             return this.loadTopicDetail(tx, row.topicSlug);
         });
         this.cache.clear();
@@ -485,7 +484,7 @@ export class AdminService {
             }
 
             await tx.update(questions).set({ deletedAt: null }).where(eq(questions.id, id));
-            await this.outbox.recordWrite(tx, 'question-restored');
+            await this.content.assertValid(tx);
             return this.loadTopicDetail(tx, row.topicSlug);
         }).catch((error: unknown) => {
             // A live question took this takeaway after the check above; the

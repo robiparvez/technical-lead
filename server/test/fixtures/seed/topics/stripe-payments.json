@@ -1,0 +1,1148 @@
+{
+    "slug": "stripe-payments",
+    "title": "Stripe Payments: Checkout, PaymentIntents & Webhooks",
+    "requirement": "Experience integrating Stripe: checkout flows, webhooks, Checkout Sessions, PaymentIntents, and the Stripe API.",
+    "questions": [
+        {
+            "id": "stripe-q1",
+            "difficulty": "basic",
+            "tags": [
+                "stripe",
+                "checkout",
+                "payment-intents",
+                "fundamentals"
+            ],
+            "question": "When do you use Stripe Checkout versus building the flow yourself with PaymentIntents?",
+            "answer": "I default to Checkout. Stripe hosts the page and handles cards, wallets and SCA challenges, so my PCI scope is almost nothing. I only use PaymentIntents with Elements for a fully branded, embedded payment step, and then I own the UI, validation and compliance.",
+            "keyTakeaway": "Checkout hosts the page and shrinks PCI scope; Elements gives control at the cost of owning the UX.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Checkout vs Elements",
+                "columns": [
+                    "Checkout",
+                    "Elements"
+                ],
+                "rows": [
+                    {
+                        "label": "Where hosted",
+                        "values": [
+                            "Stripe's page",
+                            "Your page"
+                        ]
+                    },
+                    {
+                        "label": "PCI scope",
+                        "values": [
+                            "Almost none",
+                            "You own more"
+                        ]
+                    },
+                    {
+                        "label": "Branding control",
+                        "values": [
+                            "Themed, not full",
+                            "Full control"
+                        ]
+                    },
+                    {
+                        "label": "Time to launch",
+                        "values": [
+                            "Hours",
+                            "Days or weeks"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stripe-q2",
+            "difficulty": "basic",
+            "tags": [
+                "stripe",
+                "webhooks",
+                "reliability",
+                "fundamentals"
+            ],
+            "question": "Why can you not mark an order as paid just because the customer landed on the success_url?",
+            "answer": "The redirect is client-controlled. The tab can close, or someone can just type the success URL. Only a webhook like checkout.session.completed proves the money moved, so I fulfill orders in the webhook handler.",
+            "keyTakeaway": "Redirects are UX; only signed webhook events are proof of payment.",
+            "diagram": {
+                "kind": "compare",
+                "title": "success_url vs webhook",
+                "columns": [
+                    "success_url",
+                    "Webhook event"
+                ],
+                "rows": [
+                    {
+                        "label": "Who controls it",
+                        "values": [
+                            "The browser",
+                            "Stripe server-to-server"
+                        ]
+                    },
+                    {
+                        "label": "Trustworthy",
+                        "values": [
+                            "Never",
+                            "Signed and verified"
+                        ]
+                    },
+                    {
+                        "label": "Reliability",
+                        "values": [
+                            "Tab may close",
+                            "Retried for days"
+                        ]
+                    },
+                    {
+                        "label": "Role",
+                        "values": [
+                            "Thank-you UX",
+                            "Fulfillment trigger"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stripe-q3",
+            "difficulty": "basic",
+            "tags": [
+                "stripe",
+                "testing",
+                "test-mode",
+                "fundamentals"
+            ],
+            "question": "How do you test a Stripe integration without moving real money?",
+            "answer": "Test mode has its own keys and test cards. 4242 4242 4242 4242 succeeds, 4000 0000 0000 3220 forces an SCA challenge, and 4000 0000 0000 9995 declines. The Stripe CLI forwards test events to localhost and can trigger them. Test mode only approximates live disputes and payouts.",
+            "keyTakeaway": "Test mode plus test cards plus Stripe CLI covers the whole lifecycle for free.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Testing without real money",
+                "steps": [
+                    {
+                        "label": "Test mode keys",
+                        "note": "separate from live"
+                    },
+                    {
+                        "label": "Test cards",
+                        "note": "success, SCA, decline"
+                    },
+                    {
+                        "label": "Stripe CLI",
+                        "note": "forwards events to localhost"
+                    },
+                    {
+                        "label": "CI assertion",
+                        "note": "live keys never leak"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stripe-q4",
+            "difficulty": "intermediate",
+            "tags": [
+                "stripe",
+                "idempotency",
+                "reliability",
+                "api"
+            ],
+            "question": "What are idempotency keys in the Stripe API and when must you use them?",
+            "answer": "Stripe can retry after a timeout without knowing if the first attempt landed, so I send an idempotency key on every payment-creating POST. The same key within 24 hours returns the original response, not a second charge. I derive it from the order ID plus the operation, not a fresh UUID per retry.",
+            "keyTakeaway": "Idempotency keys derived from order IDs make retries safe; Stripe deduplicates per key for 24 hours.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Idempotent retry",
+                "actors": [
+                    "Your server",
+                    "Stripe"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "POST with idempotency key"
+                    },
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Retry after timeout, same key"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "Original response, no duplicate charge"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stripe-q5",
+            "difficulty": "intermediate",
+            "tags": [
+                "stripe",
+                "payment-intents",
+                "lifecycle",
+                "state-machine"
+            ],
+            "question": "Walk through the lifecycle of a PaymentIntent and what your app should do at each status.",
+            "answer": "A PaymentIntent is a state machine for one attempt. It goes from requires_payment_method to requires_action when the issuer wants 3DS, then processing, then succeeded. Failure drops it back with last_payment_error. I render the 3DS challenge or a retry UI, but I fulfill only on succeeded confirmed by webhook, never by polling.",
+            "keyTakeaway": "Fulfill only on payment_intent.succeeded; every other status is UX, not truth.",
+            "diagram": {
+                "kind": "flow",
+                "title": "PaymentIntent lifecycle",
+                "steps": [
+                    {
+                        "label": "Requires payment method",
+                        "note": "intent created"
+                    },
+                    {
+                        "label": "Requires confirmation",
+                        "note": "attach and confirm"
+                    },
+                    {
+                        "label": "Requires action",
+                        "note": "issuer demands 3DS"
+                    },
+                    {
+                        "label": "Processing",
+                        "note": "funds settling"
+                    },
+                    {
+                        "label": "Succeeded",
+                        "note": "webhook confirms, fulfill"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stripe-q6",
+            "difficulty": "intermediate",
+            "tags": [
+                "stripe",
+                "webhooks",
+                "reliability",
+                "security"
+            ],
+            "question": "How do you build a webhook handler that is secure, fast, and correct under retries?",
+            "answer": "I verify the Stripe-Signature header with constructEvent, which also checks the timestamp, and reject failures. I return 2xx fast and enqueue the event ID, so slow work never triggers retries. Delivery is at-least-once, so I store event IDs and skip seen ones, and I don't assume ordering.",
+            "keyTakeaway": "Verify signatures, ack fast, process async, dedupe by event ID, never assume ordering.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Webhook processing path",
+                "actors": [
+                    "Stripe",
+                    "Endpoint",
+                    "Queue",
+                    "Worker"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "POST signed event"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "Verify, return 2xx"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Enqueue event ID"
+                    },
+                    {
+                        "from": 2,
+                        "to": 3,
+                        "label": "Deliver for processing"
+                    },
+                    {
+                        "from": 3,
+                        "to": 2,
+                        "label": "Ack after commit"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stripe-q7",
+            "difficulty": "intermediate",
+            "tags": [
+                "stripe",
+                "sca",
+                "3ds",
+                "authentication"
+            ],
+            "question": "What is SCA and how does your integration handle a payment that requires customer authentication?",
+            "answer": "SCA is the European rule that most card payments need two factors, done through 3D Secure. The PaymentIntent goes to requires_action and the front end completes the challenge. Checkout does that, and with Elements I call handleNextAction. The classic bug is treating requires_action as an error. Outside Europe cards may skip SCA, so the flow has to work with or without a challenge.",
+            "keyTakeaway": "requires_action means show the 3DS challenge, not an error; both branches must work.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Handling requires_action",
+                "condition": "PaymentIntent requires_action?",
+                "yes": {
+                    "label": "Show 3DS challenge",
+                    "note": "handleNextAction opens bank UI"
+                },
+                "no": {
+                    "label": "Confirm and continue",
+                    "note": "straight to processing"
+                }
+            }
+        },
+        {
+            "id": "stripe-q8",
+            "difficulty": "intermediate",
+            "tags": [
+                "stripe",
+                "subscriptions",
+                "billing",
+                "lifecycle"
+            ],
+            "question": "How does the lifecycle of a Stripe subscription work, and which events does your billing logic need?",
+            "answer": "Stripe invoices each period and fires invoice.paid on renewal, invoice.payment_failed on a failed charge, and customer.subscription.updated or deleted on changes. For failures I combine smart retries with my own grace period, driven by past_due and unpaid. I read current_period_end from the subscription, never compute it.",
+            "keyTakeaway": "Drive access off subscription status and invoice events; never compute billing dates yourself.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Subscription events to handle",
+                "rows": [
+                    {
+                        "label": "invoice.paid",
+                        "note": "Renewal succeeded"
+                    },
+                    {
+                        "label": "invoice.payment_failed",
+                        "note": "Dunning plus grace period"
+                    },
+                    {
+                        "label": "customer.subscription.updated",
+                        "note": "Plan change"
+                    },
+                    {
+                        "label": "customer.subscription.deleted",
+                        "note": "Subscription ended"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stripe-q9",
+            "difficulty": "advanced",
+            "tags": [
+                "stripe",
+                "ledger",
+                "reconciliation",
+                "architecture"
+            ],
+            "question": "How do you design your own order and payment data model around Stripe so the two never disagree?",
+            "answer": "Stripe processes payments but my database is the ledger. Orders store the Stripe IDs and a status mirroring the intent, and only verified webhook handlers update it, in a transaction. I save every raw event first in an append-only table. A reconciliation job diffs Stripe against local state and alerts on drift. Amounts are in minor units.",
+            "keyTakeaway": "Local DB is the ledger, webhooks are the writer, raw events are the audit trail, and a reconciler catches gaps.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Keeping order data in sync",
+                "steps": [
+                    {
+                        "label": "Webhook received",
+                        "note": "signature verified"
+                    },
+                    {
+                        "label": "Store raw event",
+                        "note": "append-only table"
+                    },
+                    {
+                        "label": "Update order",
+                        "note": "inside a transaction"
+                    },
+                    {
+                        "label": "Reconcile",
+                        "note": "diff against Stripe"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stripe-q10",
+            "difficulty": "advanced",
+            "tags": [
+                "stripe",
+                "refunds",
+                "disputes",
+                "operations"
+            ],
+            "question": "How do refunds and disputes (chargebacks) work in Stripe, and how should your system respond?",
+            "answer": "Refunds arrive as charge.refunded events, and since partial refunds repeat, I model them as their own records, not a boolean. A dispute fires charge.dispute.created and starts a clock of roughly one to three weeks to submit evidence. The funds are pulled immediately and returned only if I win. I watch the dispute rate, because networks penalize high ones.",
+            "keyTakeaway": "Model refunds as records, treat disputes as deadline-driven evidence workflows, watch your dispute rate.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Refunds versus disputes",
+                "columns": [
+                    "Refund",
+                    "Dispute"
+                ],
+                "rows": [
+                    {
+                        "label": "Event",
+                        "values": [
+                            "charge.refunded",
+                            "charge.dispute.created"
+                        ]
+                    },
+                    {
+                        "label": "Initiated by",
+                        "values": [
+                            "You",
+                            "Cardholder's bank"
+                        ]
+                    },
+                    {
+                        "label": "Funds",
+                        "values": [
+                            "Returned to customer",
+                            "Withdrawn until you win"
+                        ]
+                    },
+                    {
+                        "label": "Model as",
+                        "values": [
+                            "Own records, can repeat",
+                            "Evidence deadline, 1 to 3 weeks"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stripe-q11",
+            "difficulty": "intermediate",
+            "tags": [
+                "stripe",
+                "customers",
+                "payment-methods",
+                "vault"
+            ],
+            "question": "How do you save a customer's payment method in Stripe and reuse it for future purchases?",
+            "answer": "The Customer is a pointer into Stripe's vault. I create one at signup and attach PaymentMethods as they pay or save a card, so my database holds nothing sensitive. For subscriptions I set invoice_settings.default_payment_method. I attach only after a successful SetupIntent or payment.",
+            "keyTakeaway": "Customers are pointers into Stripe's vault; attach verified PaymentMethods and reference them by ID.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Saving a card for reuse",
+                "steps": [
+                    {
+                        "label": "Create Customer",
+                        "note": "one per real user"
+                    },
+                    {
+                        "label": "Verify card",
+                        "note": "SetupIntent or first payment"
+                    },
+                    {
+                        "label": "Attach PaymentMethod",
+                        "note": "Stripe vaults the details"
+                    },
+                    {
+                        "label": "Set default",
+                        "note": "invoice_settings for renewals"
+                    },
+                    {
+                        "label": "Reuse by ID",
+                        "note": "charge off-session later"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stripe-q12",
+            "difficulty": "intermediate",
+            "tags": [
+                "stripe",
+                "setup-intents",
+                "off-session",
+                "authentication"
+            ],
+            "question": "What is a SetupIntent and when do you need one instead of a PaymentIntent?",
+            "answer": "A SetupIntent verifies and saves a payment method without charging it, which I use for trials and card-on-file. Under SCA a stored card can't be silently charged months later unless the issuer authenticated it at save time, and a SetupIntent through 3DS does that. The later charge is a PaymentIntent with off_session true.",
+            "keyTakeaway": "SetupIntents authenticate a card at save time so later off-session charges actually succeed.",
+            "code": {
+                "language": "typescript",
+                "snippet": "const intent = await stripe.paymentIntents.create({\n    amount: 4900,\n    currency: \"usd\",\n    customer: \"cus_Qabc123\",\n    payment_method: \"pm_saved_card\",\n    off_session: true,\n    confirm: true,\n});"
+            },
+            "diagram": {
+                "kind": "sequence",
+                "title": "Setup then charge off-session",
+                "actors": [
+                    "Customer",
+                    "Backend",
+                    "Stripe",
+                    "Issuer"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Start card setup"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Create SetupIntent"
+                    },
+                    {
+                        "from": 2,
+                        "to": 0,
+                        "label": "3DS challenge"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Off-session PaymentIntent"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "succeeded or declined"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stripe-q13",
+            "difficulty": "intermediate",
+            "tags": [
+                "stripe",
+                "captures",
+                "authorization",
+                "payments"
+            ],
+            "question": "Why would you use manual capture, and what happens if you forget to capture an authorization?",
+            "answer": "Manual capture splits authorization from capture, so the issuer holds the funds and I capture later. The trap is expiry. Authorizations are only guaranteed for about seven days, then the funds release and capture fails. So I run a sweeper that captures or cancels near expiry and alert on the uncaptured balance.",
+            "keyTakeaway": "Manual capture holds funds for about seven days; run a sweeper or uncaptured auths expire.",
+            "code": {
+                "language": "typescript",
+                "snippet": "const intent = await stripe.paymentIntents.create({\n    amount: 10000, currency: \"usd\", capture_method: \"manual\",\n});\n// capture only what actually shipped\nawait stripe.paymentIntents.capture(intent.id, {\n    amount_to_capture: 7500,\n});"
+            },
+            "diagram": {
+                "kind": "flow",
+                "title": "Manual capture lifecycle",
+                "steps": [
+                    {
+                        "label": "Authorize",
+                        "note": "issuer holds funds"
+                    },
+                    {
+                        "label": "Capture later",
+                        "note": "full or partial"
+                    },
+                    {
+                        "label": "Expiry",
+                        "note": "about seven days"
+                    },
+                    {
+                        "label": "Sweeper",
+                        "note": "capture or cancel"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stripe-q14",
+            "difficulty": "intermediate",
+            "tags": [
+                "stripe",
+                "payment-element",
+                "elements",
+                "migration"
+            ],
+            "question": "What does migrating from the Card Element to the Payment Element actually buy you?",
+            "answer": "The Payment Element is one component for cards, wallets, bank debits and buy-now-pay-later, where the Card Element is cards only. New methods arrive without UI rebuilds, and it shows only what I enable per country. The cost is retesting error paths. Redirect methods mean success depends on webhooks and return URLs, not the submit callback.",
+            "keyTakeaway": "The Payment Element accepts every payment method through one component; the Card Element is cards-only legacy.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Card Element vs Payment Element",
+                "columns": [
+                    "Card Element",
+                    "Payment Element"
+                ],
+                "rows": [
+                    {
+                        "label": "Payment methods",
+                        "values": [
+                            "Cards only",
+                            "Cards plus wallets, debits"
+                        ]
+                    },
+                    {
+                        "label": "SCA challenge",
+                        "values": [
+                            "Manual handleNextAction",
+                            "Rendered inline automatically"
+                        ]
+                    },
+                    {
+                        "label": "Adding a method",
+                        "values": [
+                            "Rebuild integration",
+                            "Enable in dashboard"
+                        ]
+                    },
+                    {
+                        "label": "API surface",
+                        "values": [
+                            "confirmCardPayment",
+                            "confirmPayment"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stripe-q15",
+            "difficulty": "intermediate",
+            "tags": [
+                "stripe",
+                "retries",
+                "dunning",
+                "invoices"
+            ],
+            "question": "What is a sane retry policy for declined subscription payments?",
+            "answer": "I split declines into hard and soft. A stolen or invalid card never succeeds, and retrying risks network abuse flags. Insufficient funds often clears days later. So I use smart retries, which pick when a card is most likely to work, and respect Visa and Mastercard caps. After the last retry, access ends per the grace policy.",
+            "keyTakeaway": "Retry soft declines on a smart schedule, never hammer hard declines; networks cap re-presentation.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Declined renewal handling",
+                "steps": [
+                    {
+                        "label": "Invoice payment fails",
+                        "note": "invoice.payment_failed fires"
+                    },
+                    {
+                        "label": "Classify decline",
+                        "note": "hard stops, soft retries"
+                    },
+                    {
+                        "label": "Smart retry schedule",
+                        "note": "ML-timed reattempts"
+                    },
+                    {
+                        "label": "Dunning emails",
+                        "note": "ask customer to update"
+                    },
+                    {
+                        "label": "Cancel or pause",
+                        "note": "access follows grace policy"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stripe-q16",
+            "difficulty": "intermediate",
+            "tags": [
+                "stripe",
+                "multi-currency",
+                "fx",
+                "settlement"
+            ],
+            "question": "How do presentment currency and settlement currency differ in Stripe, and why should you care?",
+            "answer": "Presentment is the currency charged and settlement is what lands in the bank, like euros charged and dollars paid out. Stripe converts at its FX rate and takes a fee at payout. I price natively per market instead of converting the home price, and I decide deliberately whether to hold foreign balances, since passive conversion is a silent cost.",
+            "keyTakeaway": "Charge in the presentment currency, get paid in the settlement currency, and FX conversion at payout is a real cost.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Presentment vs settlement",
+                "columns": [
+                    "Presentment",
+                    "Settlement"
+                ],
+                "rows": [
+                    {
+                        "label": "Meaning",
+                        "values": [
+                            "What customer pays",
+                            "What lands in bank"
+                        ]
+                    },
+                    {
+                        "label": "Scope",
+                        "values": [
+                            "Per charge",
+                            "Per payout sweep"
+                        ]
+                    },
+                    {
+                        "label": "FX conversion",
+                        "values": [
+                            "Optional at charge",
+                            "At payout, with fee"
+                        ]
+                    },
+                    {
+                        "label": "Price strategy",
+                        "values": [
+                            "Native per market",
+                            "Home currency plus FX"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stripe-q17",
+            "difficulty": "intermediate",
+            "tags": [
+                "stripe",
+                "stripe-cli",
+                "ci",
+                "testing"
+            ],
+            "question": "How do you exercise webhooks end-to-end in CI rather than hoping staging gets events?",
+            "answer": "I put the Stripe CLI in the pipeline. stripe listen --forward-to my webhook route prints a signing secret that I export to the app. Then stripe trigger fires real payloads like checkout.session.completed, and I assert on database state after the handler commits. It's the only honest end-to-end test of signing, dedupe and fulfillment.",
+            "keyTakeaway": "Forward events with stripe listen in CI, trigger them, and assert on committed database state.",
+            "code": {
+                "language": "bash",
+                "snippet": "stripe listen --forward-to localhost:3000/api/webhooks &\nstripe trigger payment_intent.succeeded\npytest tests/test_fulfillment.py"
+            },
+            "diagram": {
+                "kind": "sequence",
+                "title": "Webhooks in CI",
+                "actors": [
+                    "Stripe CLI",
+                    "App",
+                    "Database"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "listen, forward with signing secret"
+                    },
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "trigger event payload"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Handler commits state"
+                    },
+                    {
+                        "from": 0,
+                        "to": 2,
+                        "label": "Assert against database"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stripe-q18",
+            "difficulty": "intermediate",
+            "tags": [
+                "stripe",
+                "webhooks",
+                "security",
+                "rotation"
+            ],
+            "question": "How do you rotate a webhook endpoint signing secret without dropping events?",
+            "answer": "The failure mode is rotating in the dashboard before handlers know about it, so every event fails verification and payments get dropped. First I deploy config that accepts both the current and previous secret, trying each with constructEvent. Then I rotate in Stripe, and a day later I remove the old one. I never skip verification.",
+            "keyTakeaway": "Deploy handlers that verify against both old and new secrets before rotating, and retire the old one last.",
+            "code": {
+                "language": "typescript",
+                "snippet": "function verify(body: string, sig: string) {\n    for (const secret of [currentSecret, previousSecret]) {\n        try { return stripe.webhooks.constructEvent(body, sig, secret); }\n        catch { /* not this secret */ }\n    }\n    throw new Error(\"invalid webhook signature\");\n}"
+            },
+            "diagram": {
+                "kind": "flow",
+                "title": "Rotating a signing secret",
+                "steps": [
+                    {
+                        "label": "Accept two secrets",
+                        "note": "current and previous"
+                    },
+                    {
+                        "label": "Rotate in Stripe"
+                    },
+                    {
+                        "label": "Wait a day",
+                        "note": "in-flight events finish"
+                    },
+                    {
+                        "label": "Remove previous"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stripe-q19",
+            "difficulty": "intermediate",
+            "tags": [
+                "stripe",
+                "test-clocks",
+                "testing",
+                "billing"
+            ],
+            "question": "How do you test billing behavior that only shows up weeks later, like trial expiry or dunning?",
+            "answer": "I use test clocks. I attach a test-mode customer to a clock, and its subscriptions, invoices and retries follow the clock, not wall time. Advance a month and Stripe runs the renewal, fires invoice.paid or payment_failed, and runs the retry schedule, so dunning and grace logic is testable in seconds.",
+            "keyTakeaway": "Attach test-mode customers to a test clock and advance time to exercise renewals and dunning instantly.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Testing billing with a clock",
+                "steps": [
+                    {
+                        "label": "Create test clock",
+                        "note": "one per scenario"
+                    },
+                    {
+                        "label": "Attach customer",
+                        "note": "at creation, immutable"
+                    },
+                    {
+                        "label": "Advance time",
+                        "note": "renewals fire immediately"
+                    },
+                    {
+                        "label": "Assert on events",
+                        "note": "dunning runs in seconds"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stripe-q20",
+            "difficulty": "advanced",
+            "tags": [
+                "stripe",
+                "connect",
+                "marketplaces",
+                "charges"
+            ],
+            "question": "In a Connect marketplace, how do you choose between destination charges and separate charges and transfers?",
+            "answer": "With destination charges there's one charge with a destination and application_fee_amount, and the seller is the merchant of record, so refunds and disputes sit with them. With separate charges and transfers the platform is the merchant and pays out to each seller. That's the only option for multi-seller carts, but I carry more liability. I decide by who owns the customer.",
+            "keyTakeaway": "Destination charges make the seller the merchant of record; separate charges and transfers make the platform liable but enable multi-seller carts.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Connect charge strategies",
+                "columns": [
+                    "Destination charge",
+                    "Separate + transfers"
+                ],
+                "rows": [
+                    {
+                        "label": "Merchant of record",
+                        "values": [
+                            "Seller's connected account",
+                            "Your platform"
+                        ]
+                    },
+                    {
+                        "label": "Multi-seller cart",
+                        "values": [
+                            "Single seller only",
+                            "Natural fit"
+                        ]
+                    },
+                    {
+                        "label": "Refunds, disputes",
+                        "values": [
+                            "On seller account",
+                            "Platform reverses transfers"
+                        ]
+                    },
+                    {
+                        "label": "Fee mechanism",
+                        "values": [
+                            "application_fee_amount",
+                            "Markup via transfers"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stripe-q21",
+            "difficulty": "advanced",
+            "tags": [
+                "stripe",
+                "connect",
+                "onboarding",
+                "kyc"
+            ],
+            "question": "How does onboarding a seller onto your Connect platform actually work?",
+            "answer": "I create a connected account and send the seller through Account Links, Stripe's hosted onboarding that collects the KYC data, so I never touch it. It's asynchronous: the account starts restricted and charges and payouts unlock as Stripe verifies. I watch account.updated and the currently_due requirements so I know before an account freezes.",
+            "keyTakeaway": "Onboarding is async KYC via Account Links; watch account.updated requirements before an account freezes.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Connect seller onboarding",
+                "steps": [
+                    {
+                        "label": "Create connected account",
+                        "note": "express type, per seller"
+                    },
+                    {
+                        "label": "Generate Account Link",
+                        "note": "hosted KYC form"
+                    },
+                    {
+                        "label": "Seller submits details",
+                        "note": "identity, bank, tax"
+                    },
+                    {
+                        "label": "Verification completes",
+                        "note": "account.updated webhook"
+                    },
+                    {
+                        "label": "Capabilities activate",
+                        "note": "charges and payouts live"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stripe-q22",
+            "difficulty": "advanced",
+            "tags": [
+                "stripe",
+                "radar",
+                "fraud",
+                "3ds"
+            ],
+            "question": "How do you use Radar to manage fraud without blocking good customers?",
+            "answer": "Radar scores each charge and returns allow, review or block, and I add custom rules on top. The underused part is risk-based 3DS. When the score is elevated I request 3DS, which shifts fraud liability to the issuer and lets good cards through. Blocks cost real customers, so I start in review mode and tune with my own dispute data.",
+            "keyTakeaway": "Use Radar rules for risk-based 3DS so risky cards authenticate and liability shifts, while good cards sail through.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Radar evaluation per charge",
+                "condition": "Risk elevated or SCA mandated?",
+                "yes": {
+                    "label": "3DS challenge",
+                    "note": "liability shifts to issuer"
+                },
+                "no": {
+                    "label": "Authorize directly",
+                    "note": "low-friction path"
+                }
+            }
+        },
+        {
+            "id": "stripe-q23",
+            "difficulty": "advanced",
+            "tags": [
+                "stripe",
+                "reconciliation",
+                "balance-transactions",
+                "reliability"
+            ],
+            "question": "How would you design a job that detects when your ledger and Stripe disagree?",
+            "answer": "I anchor on balance transactions, since every money movement appears there once with an ID. I walk them in created-time windows with checkpoints, so runs are resumable, and join to local records by stored Stripe IDs. I diff both ways. Stripe-only rows mean a missed webhook, and local-only rows mean an unconfirmed payment. I alert a human instead of auto-healing.",
+            "keyTakeaway": "Diff Stripe's balance transactions against your ledger in both directions, checkpointed and alerting before auto-healing.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Ledger reconciliation job",
+                "steps": [
+                    {
+                        "label": "Walk balance transactions",
+                        "note": "created-time windows"
+                    },
+                    {
+                        "label": "Checkpoint cursor",
+                        "note": "resumable, idempotent"
+                    },
+                    {
+                        "label": "Join by Stripe IDs"
+                    },
+                    {
+                        "label": "Diff both ways",
+                        "note": "alert, no auto-heal"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stripe-q24",
+            "difficulty": "advanced",
+            "tags": [
+                "stripe",
+                "payouts",
+                "balance",
+                "cash-flow"
+            ],
+            "question": "How do payouts work and what does it mean when your Stripe balance goes negative?",
+            "answer": "Charges land in a per-currency balance, pending while networks settle and then available. Payouts sweep the available balance to the bank on a schedule. A negative balance means returned money exceeded what Stripe holds, usually a dispute or big refund after a payout. Stripe recovers it from future charges, so I alert on negative trends and payout failures.",
+            "keyTakeaway": "Payouts sweep the per-currency available balance on a schedule; a negative balance nets against future charges and can freeze payouts.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Where money sits in Stripe",
+                "rows": [
+                    {
+                        "label": "Charges pending",
+                        "note": "settlement window"
+                    },
+                    {
+                        "label": "Available balance",
+                        "note": "per currency bucket"
+                    },
+                    {
+                        "label": "Payouts",
+                        "note": "swept on schedule"
+                    },
+                    {
+                        "label": "Bank account",
+                        "note": "your money at rest"
+                    },
+                    {
+                        "label": "Negative balance",
+                        "note": "disputes claw back funds"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stripe-q25",
+            "difficulty": "advanced",
+            "tags": [
+                "stripe",
+                "payment-methods",
+                "wallets",
+                "localization"
+            ],
+            "question": "What changes when you add alternative payment methods like iDEAL or ACH beyond cards?",
+            "answer": "Cards authorize in seconds, but alternatives don't. ACH settles over days and can be returned later, and iDEAL sends the customer to their bank. So I never treat a payment as final when the API call returns. Everything goes through the PaymentIntent state machine and webhooks, and I add methods one market at a time.",
+            "keyTakeaway": "Alternative payment methods trade instant card certainty for delayed settlement and new failure modes; lean on webhooks and add them per market.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Cards versus alternative methods",
+                "columns": [
+                    "Cards",
+                    "iDEAL, ACH"
+                ],
+                "rows": [
+                    {
+                        "label": "Settlement",
+                        "values": [
+                            "Seconds",
+                            "Redirects or days"
+                        ]
+                    },
+                    {
+                        "label": "Final on API return",
+                        "values": [
+                            "Mostly",
+                            "No, can be returned"
+                        ]
+                    },
+                    {
+                        "label": "Integration",
+                        "values": [
+                            "PaymentIntent states",
+                            "Same states and webhooks"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stripe-q26",
+            "difficulty": "advanced",
+            "tags": [
+                "stripe",
+                "tax",
+                "invoices",
+                "compliance"
+            ],
+            "question": "How do Stripe Tax and the invoice lifecycle fit into a billing system?",
+            "answer": "Stripe Tax replaces a hand-rolled tax matrix. I register where I have nexus, and it calculates the rate from address, product tax code and customer tax ID, including VAT validation and reverse charge for European B2B. A finalized invoice is immutable, so I correct with credit notes. I use invoice.paid and invoice.payment_failed to drive access.",
+            "keyTakeaway": "Invoices are immutable once finalized; correct them with credit notes and let Stripe Tax compute the rates.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Invoice lifecycle",
+                "steps": [
+                    {
+                        "label": "Draft",
+                        "note": "editable"
+                    },
+                    {
+                        "label": "Open",
+                        "note": "finalized, immutable"
+                    },
+                    {
+                        "label": "Paid",
+                        "note": "or void, uncollectible"
+                    },
+                    {
+                        "label": "Credit note",
+                        "note": "to correct, never edit"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stripe-q27",
+            "difficulty": "advanced",
+            "tags": [
+                "stripe",
+                "api-versions",
+                "upgrades",
+                "maintenance"
+            ],
+            "question": "How do Stripe's API versions and SDK updates affect a long-lived integration?",
+            "answer": "Both the account and the SDK pin an API version, and teams that drift for years hit a cliff of breaking changes. I upgrade at least annually using expand and contract: add fields without removing old ones, verify in test mode against recorded events, then cut over.",
+            "keyTakeaway": "Pinned API versions freeze behavior until you upgrade; expand-contract changes and replay recorded events before cutover.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Upgrading the API version",
+                "steps": [
+                    {
+                        "label": "Add fields",
+                        "note": "keep the old ones"
+                    },
+                    {
+                        "label": "Test mode",
+                        "note": "recorded fixtures"
+                    },
+                    {
+                        "label": "Cut over",
+                        "note": "code and account together"
+                    },
+                    {
+                        "label": "Repeat yearly"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "stripe-q28",
+            "difficulty": "advanced",
+            "tags": [
+                "stripe",
+                "metered-billing",
+                "usage-records",
+                "billing"
+            ],
+            "question": "How do you bill for metered or usage-based pricing in Stripe?",
+            "answer": "I report usage records on a metered price with a quantity, timestamp and idempotency key, and pick the aggregation, sum, last or max. Events arrive late and out of order, and a duplicated usage event is a duplicated charge on a real invoice. So I record usage idempotently and guard period boundaries, and preview with the upcoming invoice API.",
+            "keyTakeaway": "Report metered usage idempotently with explicit period boundaries; Stripe bills what you report, not what happened.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Usage-based billing",
+                "steps": [
+                    {
+                        "label": "Ingest events",
+                        "note": "late, out of order"
+                    },
+                    {
+                        "label": "Record usage",
+                        "note": "idempotent per item"
+                    },
+                    {
+                        "label": "Aggregate",
+                        "note": "sum, last or max"
+                    },
+                    {
+                        "label": "Period-end invoice",
+                        "note": "preview first"
+                    }
+                ]
+            }
+        }
+    ]
+}

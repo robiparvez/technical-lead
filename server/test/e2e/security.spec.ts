@@ -51,6 +51,9 @@ describe('GET /v1/export (D7)', () => {
                 0,
             ),
         ).toBe(592);
+        // the site reads its technology tag map from here, not from a file
+        expect(response.body.technologies).toHaveLength(14);
+        expect(response.body.technologies[0]).toEqual({ slug: 'kafka', label: 'Kafka', tags: ['kafka'] });
     });
 });
 

@@ -1,0 +1,1094 @@
+{
+    "slug": "automated-testing",
+    "title": "Automated Testing Strategy",
+    "requirement": "Experience with automated testing: unit, integration, and end-to-end tests across the stack.",
+    "questions": [
+        {
+            "id": "testing-q1",
+            "difficulty": "basic",
+            "tags": [
+                "unit-testing",
+                "fundamentals",
+                "structure"
+            ],
+            "question": "What makes a good unit test, and what do the arrange-act-assert stages enforce?",
+            "answer": "A good unit test is fast, deterministic and fails for one readable reason. I use arrange, act, assert and test behavior, not implementation, so it survives refactors. If I need heavy mocking to run a test, that's design feedback about too many dependencies.",
+            "keyTakeaway": "Fast, deterministic, behavior-focused tests with one reason to fail; mocking pain is design feedback.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Anatomy of a unit test",
+                "steps": [
+                    {
+                        "label": "Arrange inputs",
+                        "note": "collaborators and data staged"
+                    },
+                    {
+                        "label": "Act once",
+                        "note": "the behavior under test"
+                    },
+                    {
+                        "label": "Assert observable result",
+                        "note": "one readable failure reason"
+                    },
+                    {
+                        "label": "Refactor safely",
+                        "note": "behavior tests survive change"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "testing-q2",
+            "difficulty": "basic",
+            "tags": [
+                "react",
+                "testing-library",
+                "component-testing",
+                "fundamentals"
+            ],
+            "question": "What should you test in a React component, and why is querying implementation details an anti-pattern?",
+            "answer": "I test what the user experiences: rendered content, roles, labels and interactions, using queries like getByRole that mirror how users find things. Querying by class name or internal state couples the test to structure, so harmless refactors break it. After an invalid submit I assert the error message, not a state variable.",
+            "keyTakeaway": "Test rendered behavior through user-facing queries; implementation-coupled assertions break on refactors, not bugs.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Behavior versus implementation queries",
+                "columns": [
+                    "User behavior",
+                    "Implementation details"
+                ],
+                "rows": [
+                    {
+                        "label": "Query by",
+                        "values": [
+                            "getByRole, label text",
+                            "Class name, internal state"
+                        ]
+                    },
+                    {
+                        "label": "Assert",
+                        "values": [
+                            "Visible error message",
+                            "State variable"
+                        ]
+                    },
+                    {
+                        "label": "Harmless refactor",
+                        "values": [
+                            "Test still passes",
+                            "Test breaks"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "testing-q3",
+            "difficulty": "basic",
+            "tags": [
+                "test-doubles",
+                "mocks",
+                "stubs",
+                "fundamentals"
+            ],
+            "question": "What is the difference between a mock, a stub, a fake, and a spy?",
+            "answer": "A stub returns canned answers, a mock also asserts interactions, and a fake is a lightweight working version like an in-memory repository. I stub and fake inputs, and mock only at side-effect boundaries like charging a card. I never mock what I don't own, so I wrap vendor SDKs in my own interface.",
+            "keyTakeaway": "Stub inputs, mock only side-effect contracts, prefer fakes for behavior, never mock what you don't own.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Test doubles at a glance",
+                "columns": [
+                    "Stub",
+                    "Mock",
+                    "Fake"
+                ],
+                "rows": [
+                    {
+                        "label": "Provides",
+                        "values": [
+                            "canned answers",
+                            "canned answers",
+                            "working behavior"
+                        ]
+                    },
+                    {
+                        "label": "Asserts calls",
+                        "values": [
+                            "no",
+                            "yes",
+                            "no"
+                        ]
+                    },
+                    {
+                        "label": "Best for",
+                        "values": [
+                            "feeding inputs",
+                            "side-effect contracts",
+                            "realistic substitutes"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "testing-q4",
+            "difficulty": "intermediate",
+            "tags": [
+                "integration",
+                "database",
+                "boundaries",
+                "strategy"
+            ],
+            "question": "Where do you draw the line between unit and integration tests, and how do you make integration tests fast enough to run on every push?",
+            "answer": "Unit tests check logic with doubles at the edges. Integration tests check real pieces wired together, which is where most production bugs live: bad SQL, wrong transactions, serialization. I keep them fast with an ephemeral database started once per suite and a fresh schema per test, and I test the integration contract once per repository method. I use factories, not shared seed data.",
+            "keyTakeaway": "Integration-test the real wiring with per-test isolated databases; contract-check repositories once instead of everywhere.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Realism versus speed",
+                "rows": [
+                    {
+                        "label": "E2E",
+                        "note": "minutes, critical journeys"
+                    },
+                    {
+                        "label": "Integration",
+                        "note": "seconds, real wiring"
+                    },
+                    {
+                        "label": "Unit",
+                        "note": "milliseconds, pure logic"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "testing-q5",
+            "difficulty": "intermediate",
+            "tags": [
+                "e2e",
+                "playwright",
+                "stability",
+                "strategy"
+            ],
+            "question": "How do you build an end-to-end suite that catches real regressions without becoming flaky and slow?",
+            "answer": "I keep E2E small, only the journeys that define the product like signup, login and checkout. Everything else is cheaper at the integration layer. I use Playwright with auto-waiting, role-based selectors and no sleeps. Each test creates its own user through the API, so they run in parallel and in any order.",
+            "keyTakeaway": "Few critical journeys, role-based auto-waiting selectors, isolated per-test state, zero tolerated flake.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "One E2E journey run",
+                "actors": [
+                    "Test runner",
+                    "App UI",
+                    "Seeded backend"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 2,
+                        "label": "seed fresh user"
+                    },
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "drive journey by role"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "real requests flow"
+                    },
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "assert visible outcomes"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "testing-q6",
+            "difficulty": "intermediate",
+            "tags": [
+                "flaky-tests",
+                "debugging",
+                "ci",
+                "process"
+            ],
+            "question": "What causes flaky tests, and how do you systematically eliminate them?",
+            "answer": "The causes are shared mutable state, fixed sleeps, slow external dependencies and order dependence. I fix them with hygiene, not retries: reset state in setup, unique data per test, randomized order, injected clocks. Retries hide the problem and train the team to ignore red. A flaky test gets an owner and is quarantined that day, then fixed or deleted within the sprint.",
+            "keyTakeaway": "Flake is shared state, timing, or hidden order dependence; quarantine and fix it, never train red to be normal.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Triaging a flaky failure",
+                "condition": "Fails alone in isolation?",
+                "yes": {
+                    "label": "State or timing bug",
+                    "note": "fix the race, own it"
+                },
+                "no": {
+                    "label": "Order dependence",
+                    "note": "randomize order, break coupling"
+                }
+            }
+        },
+        {
+            "id": "testing-q7",
+            "difficulty": "intermediate",
+            "tags": [
+                "coverage",
+                "metrics",
+                "mutation-testing",
+                "quality"
+            ],
+            "question": "Is code coverage a useful metric? How do you use it without gaming it?",
+            "answer": "Coverage is a useful negative signal and a weak positive one. Low coverage means the change is unverified, but high coverage only proves the code ran. So I ratchet on diff coverage with no global target, and use the reports to find untested branches in critical paths, never to chase a number. Mutation testing shows whether tests actually fail when the code changes.",
+            "keyTakeaway": "Ratchet diff coverage, let mutation testing catch empty tests, and never let the metric become the goal.",
+            "diagram": {
+                "kind": "compare",
+                "title": "What coverage tells you",
+                "columns": [
+                    "Line coverage",
+                    "Mutation testing"
+                ],
+                "rows": [
+                    {
+                        "label": "Proves",
+                        "values": [
+                            "Code ran",
+                            "Assertions catch changes"
+                        ]
+                    },
+                    {
+                        "label": "Signal",
+                        "values": [
+                            "Good negative, weak positive",
+                            "Real test strength"
+                        ]
+                    },
+                    {
+                        "label": "Use",
+                        "values": [
+                            "Ratchet on diff coverage",
+                            "Critical paths like payments"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "testing-q8",
+            "difficulty": "advanced",
+            "tags": [
+                "payments",
+                "strategy",
+                "determinism",
+                "risk"
+            ],
+            "question": "How would you build the test strategy for a payments feature where bugs cost real money?",
+            "answer": "I rank by blast radius, so money gets the deepest layers. Unit tests cover amount math, rounding, partial refunds and state transitions. Integration tests use Stripe test mode and replay webhooks against real handlers, including duplicate and out-of-order ones, since that's where payments break. A couple of E2E tests cover checkout, I test reconciliation with deliberate ledger drift, and I alert on anomalous refund rates.",
+            "keyTakeaway": "Depth where money moves: deterministic unit math, test-mode integration with webhooks, reconciliation drift tests, production rate alarms.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Payments test strategy",
+                "rows": [
+                    {
+                        "label": "Unit",
+                        "note": "Amount math, rounding, state transitions"
+                    },
+                    {
+                        "label": "Integration",
+                        "note": "Stripe test mode, test cards"
+                    },
+                    {
+                        "label": "Webhook simulation",
+                        "note": "Duplicate and out-of-order events"
+                    },
+                    {
+                        "label": "E2E",
+                        "note": "One or two full checkouts"
+                    },
+                    {
+                        "label": "Reconciliation",
+                        "note": "Deliberate ledger drift"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "testing-q9",
+            "difficulty": "advanced",
+            "tags": [
+                "legacy-code",
+                "characterization-tests",
+                "refactoring",
+                "process"
+            ],
+            "question": "You inherit a legacy module with zero tests that the business depends on: how do you make it safe to change?",
+            "answer": "I characterize before I refactor. I write tests that pin what the code does today, oddities included, so any accidental change fails loudly. Then I break dependency cycles just enough to instantiate it. Mechanical refactors are verified by that suite, and behavior changes get their tests updated first. Each diff is structure or semantics, never both.",
+            "keyTakeaway": "Pin current behavior with characterization tests, create seams, then separate structural refactors from behavior changes.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Making legacy code safe to change",
+                "steps": [
+                    {
+                        "label": "Characterize",
+                        "note": "pin current output"
+                    },
+                    {
+                        "label": "Break dependencies",
+                        "note": "no behavior change"
+                    },
+                    {
+                        "label": "Refactor",
+                        "note": "suite stays green"
+                    },
+                    {
+                        "label": "Change behavior",
+                        "note": "update tests first"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "testing-q10",
+            "difficulty": "advanced",
+            "tags": [
+                "contract-testing",
+                "microservices",
+                "pact",
+                "ci"
+            ],
+            "question": "How do contract tests keep independent services from breaking each other?",
+            "answer": "Consumer tests publish a pact file, and the provider verifies it against its real implementation in CI. So a field the consumer uses can't be renamed without a red provider build. That replaces shared integration environments and mocks that drift. A broker stores the pacts and can-i-deploy gates the release.",
+            "keyTakeaway": "Consumer-driven pacts verified in provider CI turn 'it broke integration' into a red build before deploy.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Contract testing with a broker",
+                "actors": [
+                    "Consumer CI",
+                    "Broker",
+                    "Provider CI"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Publish pact"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "Fetch pacts"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "Publish verification"
+                    },
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "can-i-deploy?"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "testing-q11",
+            "difficulty": "intermediate",
+            "tags": [
+                "test-data",
+                "builders",
+                "maintainability"
+            ],
+            "question": "How do you keep test data maintainable when hundreds of tests need slightly different versions of the same domain objects?",
+            "answer": "I use builders. A builder makes a valid domain object with sensible defaults, and each test overrides only the fields it cares about. An active user with an expired card is one fluent line, not a forty-field literal. I never share mutable instances between tests.",
+            "keyTakeaway": "Builders with valid defaults age well; override only what the behavior cares about and never share mutable fixtures.",
+            "code": {
+                "language": "typescript",
+                "snippet": "function aUser(overrides: Partial<User> = {}): User {\n    return { id: nextId(), email: `user${nextId()}@test.dev`, status: \"active\", ...overrides };\n}\n\n// in a test: name only what the behavior needs\nconst suspended = aUser({ status: \"suspended\" });"
+            },
+            "diagram": {
+                "kind": "flow",
+                "title": "Builder-based test data",
+                "steps": [
+                    {
+                        "label": "Seed valid defaults",
+                        "note": "every field realistic"
+                    },
+                    {
+                        "label": "Override what matters",
+                        "note": "only behavior-relevant fields"
+                    },
+                    {
+                        "label": "Build fresh instance",
+                        "note": "no shared mutable state"
+                    },
+                    {
+                        "label": "Assert on outcome",
+                        "note": "failure names the behavior"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "testing-q12",
+            "difficulty": "intermediate",
+            "tags": [
+                "snapshot-testing",
+                "maintainability",
+                "react"
+            ],
+            "question": "When is snapshot testing a good idea, and how do you stop snapshots from becoming noise nobody reviews?",
+            "answer": "Snapshots fit small, stable output like generated SQL. They rot on large component trees: the first is committed unread, someone presses update, and the test verifies nothing. So I read snapshot diffs like code review and keep them short. If I only care about part of a render, I write a specific assertion.",
+            "keyTakeaway": "Snapshots work only when small and reviewed like code; a blindly updated diff verifies nothing.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Reviewing a snapshot diff",
+                "condition": "Is the change intended?",
+                "yes": {
+                    "label": "Update deliberately",
+                    "note": "reviewed diff, same PR"
+                },
+                "no": {
+                    "label": "Fix the regression",
+                    "note": "never overwrite to green"
+                }
+            }
+        },
+        {
+            "id": "testing-q13",
+            "difficulty": "intermediate",
+            "tags": [
+                "visual-regression",
+                "playwright",
+                "ci",
+                "ui"
+            ],
+            "question": "How would you introduce visual regression testing without drowning the team in false positives?",
+            "answer": "I screenshot only pages and components with real layout or brand risk, at fixed viewports, and run them in CI since laptop font rendering causes noise. I freeze animations and dates and seed data, then diff against committed baselines. The diff image goes in the PR, and a red test is a review request.",
+            "keyTakeaway": "Deterministic rendering plus CI-diffed baselines with human review turns screenshots into a real signal.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Visual regression in CI",
+                "steps": [
+                    {
+                        "label": "Render fixed viewport",
+                        "note": "seeded data, frozen animations"
+                    },
+                    {
+                        "label": "Capture key screenshots",
+                        "note": "risk-bearing states only"
+                    },
+                    {
+                        "label": "Diff against baseline",
+                        "note": "tolerance absorbs antialiasing"
+                    },
+                    {
+                        "label": "Review diff in PR",
+                        "note": "human judges the change"
+                    },
+                    {
+                        "label": "Update or fix",
+                        "note": "baseline change same PR"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "testing-q14",
+            "difficulty": "intermediate",
+            "tags": [
+                "time",
+                "determinism",
+                "clocks",
+                "fake-timers"
+            ],
+            "question": "How do you test logic that depends on the current time, like expiring tokens or debounced saves?",
+            "answer": "Time is the classic hidden dependency. Production code never calls Date.now inline. It asks an injected clock, or I use fake timers like vitest's useFakeTimers. Tests set a fixed instant and advance it, so I can prove a token expired in milliseconds. I also pin the time zone, since bugs hide at DST boundaries.",
+            "keyTakeaway": "Inject the clock or use fake timers, set a fixed time, advance it explicitly, and pin the time zone.",
+            "code": {
+                "language": "typescript",
+                "snippet": "vi.useFakeTimers();\nvi.setSystemTime(new Date(\"2026-03-08T06:30:00Z\"));\nsearchInput.dispatchEvent(new Event(\"input\"));\nvi.advanceTimersByTime(300); // debounce fires, no real wait\nexpect(save).toHaveBeenCalledTimes(1);"
+            },
+            "diagram": {
+                "kind": "flow",
+                "title": "Testing time-dependent logic",
+                "steps": [
+                    {
+                        "label": "Inject clock",
+                        "note": "no inline Date.now"
+                    },
+                    {
+                        "label": "Fix the instant"
+                    },
+                    {
+                        "label": "Advance time",
+                        "note": "fake timers"
+                    },
+                    {
+                        "label": "Assert outcome",
+                        "note": "expiry, debounce"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "testing-q15",
+            "difficulty": "intermediate",
+            "tags": [
+                "testcontainers",
+                "integration",
+                "docker",
+                "database"
+            ],
+            "question": "What do testcontainers give you that mocking the database or sharing a dev instance cannot?",
+            "answer": "Testcontainers starts the real dependency from the test, like an actual Postgres in Docker. In-memory fakes lie, since H2 accepts SQL that Postgres rejects, and a shared dev database gets polluted. I start one container per suite, and each test gets its own schema or rolls back in a transaction.",
+            "keyTakeaway": "Run the real engine in a container per suite with per-test isolation; in-memory fakes lie and shared databases pollute.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Testcontainer suite lifecycle",
+                "actors": [
+                    "Test suite",
+                    "Docker",
+                    "Postgres"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "start Postgres once"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "ready on mapped port"
+                    },
+                    {
+                        "from": 0,
+                        "to": 2,
+                        "label": "migrate fresh schema"
+                    },
+                    {
+                        "from": 0,
+                        "to": 2,
+                        "label": "run per-test transaction"
+                    },
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "stop after suite"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "testing-q16",
+            "difficulty": "intermediate",
+            "tags": [
+                "parallelism",
+                "isolation",
+                "database",
+                "ci"
+            ],
+            "question": "What does it actually take to make a test suite safe to run fully in parallel?",
+            "answer": "Parallelism usually fails in four places: data, files, ports and globals. I use unique data per test, like UUID-based emails, remove hidden singletons and mutated environment variables, and randomize order in CI to surface coupling. For databases I pick one strategy: rollback per test, schema per test, or a container per worker.",
+            "keyTakeaway": "Parallel speed requires unique data, isolated files and ports, no shared globals, and one database isolation strategy.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Database isolation strategies",
+                "columns": [
+                    "Rollback",
+                    "Schema per test",
+                    "Container per worker"
+                ],
+                "rows": [
+                    {
+                        "label": "Speed",
+                        "values": [
+                            "fastest",
+                            "fast",
+                            "slowest"
+                        ]
+                    },
+                    {
+                        "label": "Cleanup",
+                        "values": [
+                            "automatic",
+                            "drop schema",
+                            "none needed"
+                        ]
+                    },
+                    {
+                        "label": "Catches",
+                        "values": [
+                            "same-connection bugs",
+                            "cross-connection leaks",
+                            "full engine parity"
+                        ]
+                    },
+                    {
+                        "label": "Watch out",
+                        "values": [
+                            "needs shared connection",
+                            "template drift",
+                            "startup cost"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "testing-q17",
+            "difficulty": "intermediate",
+            "tags": [
+                "msw",
+                "graphql",
+                "network-mocking",
+                "frontend"
+            ],
+            "question": "How do you mock network calls in frontend tests so they catch real wiring problems without coupling to implementation?",
+            "answer": "I mock at the network layer, not the module layer. MSW intercepts real HTTP, so the component runs its actual data-fetching client, where a module mock can hide that the request never fires. I set handlers once and override one only to stage a scenario like an error. I assert on what rendered, not that a request fired.",
+            "keyTakeaway": "Mock the network with MSW so real clients run; stage scenarios per test and assert on rendered outcomes.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Network mock versus module mock",
+                "columns": [
+                    "MSW network mock",
+                    "Module mock"
+                ],
+                "rows": [
+                    {
+                        "label": "Real fetch client runs",
+                        "values": [
+                            "Yes",
+                            "No"
+                        ]
+                    },
+                    {
+                        "label": "Request actually sent",
+                        "values": [
+                            "Verified",
+                            "Hidden"
+                        ]
+                    },
+                    {
+                        "label": "Schema drift",
+                        "values": [
+                            "Fails the test",
+                            "Goes unnoticed"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "testing-q18",
+            "difficulty": "intermediate",
+            "tags": [
+                "smoke-tests",
+                "regression",
+                "deployment",
+                "pipeline"
+            ],
+            "question": "How do you split smoke tests from the full regression suite across the deployment pipeline?",
+            "answer": "Smoke tests answer one question after each deploy: is it alive and does the core path work? That's five to fifteen fast checks, like login works and health endpoints are green, and promotion is gated on them. Full regression runs earlier: unit and integration on every PR, E2E on merges or nightly. If smoke fails in production, I roll back.",
+            "keyTakeaway": "Smoke checks core aliveness after every deploy and gates promotion; full regression runs pre-merge and nightly.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Deploy pipeline gates",
+                "rows": [
+                    {
+                        "label": "Smoke gate",
+                        "note": "after every deploy"
+                    },
+                    {
+                        "label": "Unit and integration",
+                        "note": "every pull request"
+                    },
+                    {
+                        "label": "E2E regression",
+                        "note": "merges and nightly"
+                    },
+                    {
+                        "label": "Production rollback",
+                        "note": "automatic on smoke failure"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "testing-q19",
+            "difficulty": "intermediate",
+            "tags": [
+                "ci",
+                "debugging",
+                "flaky-tests",
+                "process"
+            ],
+            "question": "A test passes on your machine but fails only in CI: how do you track it down?",
+            "answer": "I assume CI is showing a real environment difference. I diff runtime versions, environment variables, locale and time zone, then consider what CI adds, like parallel runs exposing order coupling. I reproduce it by running the same commands in the CI image locally. I never add a retry, because it turns a diagnosable bug into a permanent one.",
+            "keyTakeaway": "Reproduce the CI environment faithfully and hunt order coupling; never convert a diagnosable failure into a retry.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Fails only in CI",
+                "steps": [
+                    {
+                        "label": "Diff environments",
+                        "note": "versions, locale, TZ"
+                    },
+                    {
+                        "label": "Check CI additions",
+                        "note": "parallelism, resources"
+                    },
+                    {
+                        "label": "Reproduce",
+                        "note": "run in the CI image"
+                    },
+                    {
+                        "label": "Bisect",
+                        "note": "seeds, shards"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "testing-q20",
+            "difficulty": "advanced",
+            "tags": [
+                "property-based-testing",
+                "fast-check",
+                "generators"
+            ],
+            "question": "Where does property-based testing earn its place, and how does it complement example-based tests?",
+            "answer": "Property-based testing replaces hand-picked examples with generators plus an invariant that must hold for any input, like encode then decode returns the original. Libraries like fast-check generate hundreds of cases and hit forgotten corners like unicode and empty lists. A failure shrinks to a minimal counterexample, and I pin the seed as a regression.",
+            "keyTakeaway": "Generators plus invariants find forgotten edge cases and shrink failures to minimal counterexamples; pin seeds as regressions.",
+            "code": {
+                "language": "typescript",
+                "snippet": "it(\"round-trips every string\", () => {\n    fc.assert(\n        fc.property(fc.string(), (s) => expect(decode(encode(s))).toBe(s))\n    );\n});"
+            },
+            "diagram": {
+                "kind": "flow",
+                "title": "Property test lifecycle",
+                "steps": [
+                    {
+                        "label": "Generate random inputs",
+                        "note": "hundreds of cases, corners included"
+                    },
+                    {
+                        "label": "Assert the invariant",
+                        "note": "must hold for every input"
+                    },
+                    {
+                        "label": "Shrink on failure",
+                        "note": "minimal counterexample reported"
+                    },
+                    {
+                        "label": "Pin failing seed",
+                        "note": "counterexample becomes regression test"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "testing-q21",
+            "difficulty": "advanced",
+            "tags": [
+                "ci",
+                "monorepo",
+                "affected",
+                "optimization"
+            ],
+            "question": "How do you make CI run only the tests a change could affect, and where does that approach break down?",
+            "answer": "Nx, Turborepo and Bazel maintain a dependency graph, so I compute the affected set, changed files plus downstream targets, and run only that on the PR. A forty-minute suite becomes ninety seconds for a leaf change. But static graphs miss dynamic edges like runtime-assembled SQL, so merges to main and a nightly job run everything.",
+            "keyTakeaway": "Run the affected set on pull requests but keep full-suite runs on main and nightly, since static graphs miss dynamic edges.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Choosing the CI test set",
+                "condition": "Shared code or dynamic dependency touched?",
+                "yes": {
+                    "label": "Run the full suite",
+                    "note": "static graph misses runtime edges"
+                },
+                "no": {
+                    "label": "Run affected targets",
+                    "note": "changed files plus downstream"
+                }
+            }
+        },
+        {
+            "id": "testing-q22",
+            "difficulty": "advanced",
+            "tags": [
+                "accessibility",
+                "axe",
+                "automation",
+                "strategy"
+            ],
+            "question": "How much accessibility testing can you realistically automate, and where does automation fall short?",
+            "answer": "I automate the mechanical layer everywhere. axe-core in component tests catches things like contrast failures and unlabeled inputs, roughly the mechanical third of WCAG. I fail builds on new violations and baseline the old backlog like a coverage ratchet. Automation can't judge focus after a modal closes or alt text quality, so I schedule manual screen reader passes.",
+            "keyTakeaway": "Automate axe scans at every layer with a violations ratchet, and budget manual screen-reader passes for experience judgment.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Accessibility checks by layer",
+                "rows": [
+                    {
+                        "label": "Lint rules",
+                        "note": "issues caught at authoring"
+                    },
+                    {
+                        "label": "Component tests",
+                        "note": "zero axe violations"
+                    },
+                    {
+                        "label": "E2E page scans",
+                        "note": "every template on PRs"
+                    },
+                    {
+                        "label": "Manual audits",
+                        "note": "screen reader user journeys"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "testing-q23",
+            "difficulty": "advanced",
+            "tags": [
+                "performance",
+                "load-testing",
+                "k6",
+                "slo"
+            ],
+            "question": "How would you add basic load testing to a backend service that has never had any?",
+            "answer": "I start from objectives, not tools. We agree what fine means, say p95 under 300 milliseconds at twice today's peak, then I encode that as pass-fail thresholds in a k6 script modeling real traffic and run it on staging with production-like data. I also watch CPU, connection pools and locks, since k6 shows slowness, not which tier bent first.",
+            "keyTakeaway": "Encode SLO thresholds in load scripts, mirror real traffic against production-like data, and watch server metrics for the bending tier.",
+            "code": {
+                "language": "bash",
+                "snippet": "# nightly smoke-scale load check with pass-fail thresholds\nk6 run --vus 20 --duration 60s scripts/load/smoke.js\n\n# full ramp to find the ceiling before a major release\nk6 run scripts/load/ramp.js --out json=results.json"
+            },
+            "diagram": {
+                "kind": "flow",
+                "title": "Adding load testing",
+                "steps": [
+                    {
+                        "label": "Agree objectives",
+                        "note": "p95, error rate"
+                    },
+                    {
+                        "label": "Encode thresholds",
+                        "note": "k6 pass-fail checks"
+                    },
+                    {
+                        "label": "Model traffic",
+                        "note": "baseline, ramp, spike"
+                    },
+                    {
+                        "label": "Run and watch tiers",
+                        "note": "nightly smoke in CI"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "testing-q24",
+            "difficulty": "advanced",
+            "tags": [
+                "design",
+                "testability",
+                "architecture",
+                "coupling"
+            ],
+            "question": "Can writing tests damage a design, and how do you test in a way that improves the code instead?",
+            "answer": "Tests damage design when the tail wags the dog: methods made public only for tests, test flags in production logic, classes split just to be mockable. Good testing injects dependencies at real boundaries like the database and clock, and asserts through public behavior. A painful test is feedback, so I fix the design, not the test.",
+            "keyTakeaway": "Never contort production code for testability; inject dependencies at real boundaries and assert through public behavior.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Tests that harm versus help design",
+                "columns": [
+                    "Harmful",
+                    "Helpful"
+                ],
+                "rows": [
+                    {
+                        "label": "Visibility",
+                        "values": [
+                            "Methods public for tests",
+                            "Public behavior only"
+                        ]
+                    },
+                    {
+                        "label": "Seams",
+                        "values": [
+                            "Test flags in prod code",
+                            "Inject real boundaries"
+                        ]
+                    },
+                    {
+                        "label": "Painful test",
+                        "values": [
+                            "Bend the code to fit",
+                            "Fix the design"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "testing-q25",
+            "difficulty": "advanced",
+            "tags": [
+                "code-review",
+                "test-quality",
+                "process",
+                "checklist"
+            ],
+            "question": "What do you look for when reviewing another engineer's tests in a pull request?",
+            "answer": "I read the tests before the implementation, since they show what the author thinks the behavior is. Would each test fail if that behavior broke? Is it deterministic and isolated, with no sleeps, real clocks, execution order, or other tests' data? Does it test public behavior, not internals? Are the sad paths covered? I send back tests with weak assertions, since they run code without verifying it.",
+            "keyTakeaway": "A reviewed test must fail when the behavior breaks, stay deterministic and isolated, and cover error paths, not only happy paths.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Reviewing tests in a pull request",
+                "rows": [
+                    {
+                        "label": "One behavior per test",
+                        "note": "Fails if that behavior breaks"
+                    },
+                    {
+                        "label": "Deterministic",
+                        "note": "No sleeps, real clocks, or network"
+                    },
+                    {
+                        "label": "Public behavior",
+                        "note": "Not internals"
+                    },
+                    {
+                        "label": "Sad paths",
+                        "note": "Errors, empty states, boundaries"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "testing-q26",
+            "difficulty": "advanced",
+            "tags": [
+                "background-jobs",
+                "queues",
+                "idempotency",
+                "integration"
+            ],
+            "question": "How do you test background jobs and async workflows whose results arrive after the request has returned?",
+            "answer": "I split it. The job handler is a function from message to outcome, so I unit-test its logic. Then I integration-test the machinery with a real broker in a testcontainer: publish an event and assert the side effect landed. The same message twice proves idempotency, and a poison message must retry with backoff and reach the dead-letter queue, not loop forever. I never assert on queue internals.",
+            "keyTakeaway": "Unit-test handler logic, integration-test delivery with idempotency, retries, and dead-lettering, and assert async outcomes with eventually polling.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Background job delivery paths",
+                "actors": [
+                    "Producer",
+                    "Queue",
+                    "Worker",
+                    "Dead-letter"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "publish job message"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "deliver to worker"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "ack after success"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "fail, retry with backoff"
+                    },
+                    {
+                        "from": 1,
+                        "to": 3,
+                        "label": "dead-letter after max retries"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "testing-q27",
+            "difficulty": "advanced",
+            "tags": [
+                "strategy",
+                "maintenance",
+                "prioritization",
+                "cost"
+            ],
+            "question": "How do you decide what not to test, and when is deleting a test the right call?",
+            "answer": "I test where failure costs money, trust or a debugging afternoon, and skip trivial getters, third-party internals and generated code. A test's value is the chance it catches a real bug times its cost, minus what it costs in flakes and churn. I delete tests that break on harmless refactors, check behavior that no longer exists, or sit in quarantine with no owner.",
+            "keyTakeaway": "Every test must earn its lifetime maintenance cost; delete implementation-coupled, duplicated, or ownerless flaky tests without guilt.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Keep or delete a test",
+                "condition": "Does it catch real bugs worth more than its upkeep?",
+                "yesLabel": "Yes",
+                "noLabel": "No",
+                "yes": {
+                    "label": "Keep",
+                    "note": "Money, trust, debugging time"
+                },
+                "no": {
+                    "label": "Delete",
+                    "note": "Internals, dead behavior, orphaned"
+                }
+            }
+        },
+        {
+            "id": "testing-q28",
+            "difficulty": "advanced",
+            "tags": [
+                "resilience",
+                "fault-injection",
+                "circuit-breakers",
+                "reliability"
+            ],
+            "question": "How do you prove that resilience code like retries, timeouts, and circuit breakers actually works?",
+            "answer": "Resilience code is invisible on the happy path, so I inject failure at the boundary. Fail three times then succeed, and assert a retry with backoff. Hang forever, and assert the client times out and degrades. Exceed the threshold, and assert the circuit opens, half-opens and recovers. I retry only idempotent operations, and timeouts must cancel the underlying work, not leak it.",
+            "keyTakeaway": "Inject failures against fakes to prove retries, timeouts, and breaker states, including idempotency and genuine cancellation.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Proving resilience code",
+                "columns": [
+                    "Injected failure",
+                    "Expected behavior"
+                ],
+                "rows": [
+                    {
+                        "label": "Retry",
+                        "values": [
+                            "Fail three times",
+                            "Backoff then success"
+                        ]
+                    },
+                    {
+                        "label": "Timeout",
+                        "values": [
+                            "Hang forever",
+                            "Cancel, degrade to cache"
+                        ]
+                    },
+                    {
+                        "label": "Circuit breaker",
+                        "values": [
+                            "Exceed threshold",
+                            "Open, half-open, recover"
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}

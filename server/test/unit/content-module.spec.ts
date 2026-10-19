@@ -36,17 +36,12 @@ describe('content module wrapper (CONTENT_RULES_DIR)', () => {
     it('reads and validates through an absolute CONTENT_RULES_DIR', () => {
         const dir = mkdtempSync(join(tmpdir(), 'content-rules-'));
         try {
-            writeFileSync(
-                join(dir, 'technologies.json'),
-                JSON.stringify([{ slug: 'react', label: 'React', tags: ['react'] }]),
-            );
             writeFileSync(join(dir, 'diagram-ids.json'), JSON.stringify({ 'request-flow': true }));
 
             process.env.CONTENT_RULES_DIR = dir;
             const service = new ContentService();
             const loaded = service.loadRules();
             expect(loaded.dir).toBe(dir);
-            expect(loaded.technologies).toEqual([{ slug: 'react', label: 'React', tags: ['react'] }]);
             expect(loaded.diagramIds).toEqual(['request-flow']);
 
             const passing = service.validate(
@@ -70,6 +65,7 @@ describe('content module wrapper (CONTENT_RULES_DIR)', () => {
                     },
                 ],
                 ['t-q1'],
+                [{ slug: 'react', label: 'React', tags: ['react'] }],
             );
             expect(passing.ok).toBe(true);
             expect(passing.errors).toEqual([]);
@@ -96,6 +92,7 @@ describe('content module wrapper (CONTENT_RULES_DIR)', () => {
                     },
                 ],
                 ['t-q1'],
+                [{ slug: 'react', label: 'React', tags: ['react'] }],
             );
             expect(failing.ok).toBe(false);
             expect(failing.errors[0]).toContain('diagram "saga-flow" is not in diagram-ids.json');
@@ -104,11 +101,29 @@ describe('content module wrapper (CONTENT_RULES_DIR)', () => {
         }
     });
 
+    it('validates against a technology list passed in (the technologies table).', () => {
+        const service = new ContentService();
+        const topic = {
+            slug: 't',
+            title: 'T',
+            requirement: 'R',
+            groupLabel: 'Technical',
+            groupSortOrder: 0,
+            questions: [
+                { id: 't-q1', difficulty: 'basic' as const, tags: ['react'], question: 'q', answer: 'a', keyTakeaway: 'k' },
+            ],
+        };
+        // the passed list names only a tag the question carries
+        expect(service.validate([topic], ['t-q1'], [{ slug: 'react', label: 'React', tags: ['react'] }]).ok).toBe(true);
+        const failing = service.validate([topic], ['t-q1'], [{ slug: 'vue', label: 'Vue', tags: ['vue'] }]);
+        expect(failing.ok).toBe(false);
+        expect(failing.errors[0]).toContain('technology "vue" maps the tag "vue", which no question carries');
+    });
+
     it('loads the real repo rules through the default dir and validates them', () => {
         const service = new ContentService();
         const loaded = service.loadRules(true);
         expect(loaded.dir).toBe(join(repoRoot, 'src', 'data'));
-        expect(loaded.technologies.some((technology) => technology.slug === 'kafka')).toBe(true);
         expect(loaded.diagramIds).toContain('request-flow');
     });
 

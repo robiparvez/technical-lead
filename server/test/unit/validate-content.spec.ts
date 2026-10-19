@@ -1,16 +1,13 @@
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
-    loadCommittedContent,
     validateContent,
     type ValidationResult,
 } from '../../../scripts/validate-content.mjs';
 
 /**
  * Plan: "Content rules (one validator)" — every rule has a failing fixture
- * (Build & verify 2, validator row), plus the committed src/data content must
- * pass as a whole. Fixtures keep every other rule green so each test fails
- * for exactly one reason.
+ * (Build & verify 2, validator row). Fixtures keep every other rule green so
+ * each test fails for exactly one reason.
  */
 
 interface FixtureQuestion {
@@ -213,14 +210,5 @@ describe('validate-content (shared rules, D9)', () => {
         delete (bare as Partial<FixtureTopic>).groupSortOrder;
         const result = run([bare]);
         expect(result.ok).toBe(true);
-    });
-
-    it('the committed src/data content passes the validator', () => {
-        const dataDir = fileURLToPath(new URL('../../../src/data', import.meta.url));
-        const committed = loadCommittedContent(dataDir);
-        const result = validateContent(committed.topics, committed.rules);
-        expect(result.errors).toEqual([]);
-        expect(result.ok).toBe(true);
-        expect(committed.topics.length).toBeGreaterThan(1);
     });
 });

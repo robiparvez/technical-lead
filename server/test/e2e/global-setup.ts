@@ -4,7 +4,7 @@ import postgres from 'postgres';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { dirname, join } from 'node:path';
-import { runSeed } from '../../src/db/seed.js';
+import { runSeed } from '../support/seed.js';
 import * as schema from '../../src/db/schema.js';
 
 /**

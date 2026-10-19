@@ -25,13 +25,6 @@ import {
 
 export const difficultyEnum = pgEnum('difficulty', ['basic', 'intermediate', 'advanced']);
 
-export const outboxStatusEnum = pgEnum('rebuild_outbox_status', [
-    'pending',
-    'claimed',
-    'dispatched',
-    'failed',
-]);
-
 const createdAt = () =>
     timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow();
 const updatedAt = () =>
@@ -139,6 +132,16 @@ export const questions = pgTable(
     ],
 );
 
+// Technology pages: each entry lists the question tags that name it (the web
+// app shows a technology once at least 3 questions carry one of its tags).
+// Seeded once from src/data/technologies.json; the database owns it after.
+export const technologies = pgTable('technologies', {
+    slug: text('slug').primaryKey(),
+    label: text('label').notNull(),
+    tags: text('tags').array().notNull(),
+    sortOrder: integer('sort_order').notNull(),
+});
+
 // --- per-user data ---
 
 export const userKnownQuestions = pgTable(
@@ -230,25 +233,6 @@ export const quizState = pgTable('quiz_state', {
     resetEpoch: integer('reset_epoch').notNull().default(0),
     importedAt: timestamp('imported_at', { withTimezone: true, mode: 'date' }),
 });
-
-// --- rebuild pipeline ---
-
-export const rebuildOutbox = pgTable(
-    'rebuild_outbox',
-    {
-        id: uuid('id').primaryKey().defaultRandom(),
-        status: outboxStatusEnum('status').notNull().default('pending'),
-        payload: jsonb('payload').notNull(),
-        contentVersion: text('content_version').notNull(),
-        attempts: integer('attempts').notNull().default(0),
-        nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true, mode: 'date' })
-            .notNull()
-            .defaultNow(),
-        createdAt: createdAt(),
-        dispatchedAt: timestamp('dispatched_at', { withTimezone: true, mode: 'date' }),
-    },
-    (table) => [index('rebuild_outbox_status_next_attempt_idx').on(table.status, table.nextAttemptAt)],
-);
 
 // --- relations (drizzle query API) ---
 

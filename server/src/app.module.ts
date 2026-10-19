@@ -10,7 +10,6 @@ import { AuthModule } from './auth/auth.module.js';
 import { ProgressModule } from './progress/progress.module.js';
 import { QuizModule } from './quiz/quiz.module.js';
 import { AdminModule } from './admin/admin.module.js';
-import { RebuildModule } from './rebuild/rebuild.module.js';
 import { PublicGetThrottlerGuard } from './common/public-get-throttler.guard.js';
 import { CommonModule } from './common/common.module.js';
 import { validateEnv } from './common/env.schema.js';
@@ -47,7 +46,6 @@ import { closeDb } from './db/client.js';
         ProgressModule,
         QuizModule,
         AdminModule,
-        RebuildModule,
     ],
     providers: [
         {

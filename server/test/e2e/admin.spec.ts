@@ -1,9 +1,8 @@
-import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import postgres from 'postgres';
 import type { INestApplication } from '@nestjs/common';
 import { bootApp, client } from './app.js';
-import { authed, signUp, uniqueEmail, waitFor } from './helpers.js';
+import { authed, signUp, uniqueEmail } from './helpers.js';
 import { grantAdmin } from '../../scripts/grant-admin.js';
 
 
@@ -13,15 +12,11 @@ import { grantAdmin } from '../../scripts/grant-admin.js';
  * D16 id assignment (advisory lock, deleted numbers skipped, client ids
  * ignored, concurrent creates), restore with its takeaway clash, and the
  * shared validator rejecting a tag that would orphan a technology page.
- *
- * The dispatcher is STOPPED for this file so outbox rows stay pending and
- * assertions are deterministic; rebuild.spec runs the worker itself.
  */
 
 const TEST_URL =
     process.env.DATABASE_URL ?? 'postgres://postgres@127.0.0.1:5432/technical_lead_test';
 const EXPORT_TOKEN = process.env.EXPORT_TOKEN ?? '';
-import { DispatcherService } from '../../src/rebuild/dispatcher.service.js';
 
 const TMP_SLUG_PREFIX = 'tmp-admin-';
 
@@ -44,11 +39,6 @@ const createdTopics: string[] = [];
 
 beforeAll(async () => {
     app = await bootApp();
-    // Keep outbox rows pending for deterministic assertions (rebuild.spec
-    // runs the worker itself).
-    await app.get(DispatcherService, { strict: false }).stop();
-    // Keep outbox rows pending for deterministic assertions.
-
 
     adminEmail = uniqueEmail('admin-e2e');
     const adminUser = await signUp(app, adminEmail);
@@ -68,7 +58,6 @@ afterAll(async () => {
         await pg`delete from "user" where email like 'admin-e2e-%' or email like 'plain-e2e-%'`;
         await pg`delete from questions where topic_slug like ${TMP_SLUG_PREFIX + '%'}`;
         await pg`delete from topics where slug like ${TMP_SLUG_PREFIX + '%'}`;
-        await pg`delete from rebuild_outbox`;
         await pg`update questions set deleted_at = null where id = 'hr-q1'`;
         await pg.end({ timeout: 5 });
     }
@@ -108,7 +97,6 @@ describe('admin guards', () => {
             ['patch', '/v1/admin/questions/hr-q1'],
             ['del', '/v1/admin/questions/hr-q1'],
             ['post', '/v1/admin/questions/hr-q1/restore'],
-            ['get', '/v1/admin/rebuild'],
         ];
         for (const [method, path] of routes) {
             const response = await plain[method](path);
@@ -358,10 +346,8 @@ describe('questions: D16 id assignment', () => {
 describe('the shared validator guards every write', () => {
     /** A live question carrying some technology-map tag exactly once. */
     async function singleCarrier(): Promise<{ id: string; topicSlug: string; tag: string }> {
-        const technologies = JSON.parse(
-            readFileSync(new URL('../../../src/data/technologies.json', import.meta.url), 'utf8'),
-        ) as { tags: string[] }[];
-        const techTags = new Set(technologies.flatMap((tech) => tech.tags));
+        const technologies = await pg`select tags from technologies`;
+        const techTags = new Set(technologies.flatMap((tech) => tech.tags as string[]));
         const rows = await pg`select id, topic_slug, tags from questions where deleted_at is null`;
         const counts = new Map<string, number>();
         for (const row of rows) for (const tag of row.tags as string[]) {
@@ -463,16 +449,26 @@ describe('soft-deleted topics', () => {
     });
 });
 
-describe('the outbox write side', () => {
-    it('leaves a pending row after each admin write (worker stopped)', async () => {
-        const summary = await admin.get('/v1/admin/rebuild').expect(200);
-        expect(summary.body.pending).toBeGreaterThanOrEqual(1);
-        expect(summary.body.lastSavedAt).toBeTruthy();
-        // the rows this file produced are still waiting
-        await waitFor(async () => {
-            const rows = await pg`select count(*)::int as n from rebuild_outbox where status = 'pending'`;
-            if (rows[0]!.n < 1) throw new Error('no pending rows');
-            return rows[0]!.n;
-        });
+describe('the cached /v1/export', () => {
+    it('shows an admin write at once, and serves repeat reads from the cache', async () => {
+        const slug = `${TMP_SLUG_PREFIX}export-cache`;
+        const read = async () =>
+            (await client(app).get('/v1/export').set('x-export-token', EXPORT_TOKEN).expect(200)).body;
+        const titleOf = (body: { topics: { slug: string; title: string }[] }) =>
+            body.topics.find((t) => t.slug === slug)?.title;
+
+        await createTopic(slug, 'tmpe', { title: 'Before' });
+        await admin
+            .post('/v1/admin/questions')
+            .send({ topicSlug: slug, ...questionBody('Cache takeaway for e2e.') })
+            .expect(201);
+        expect(titleOf(await read())).toBe('Before'); // now cached
+
+        // a change made behind the API's back is not seen while the entry is fresh...
+        await pg`update topics set title = 'Behind the back' where slug = ${slug}`;
+        expect(titleOf(await read())).toBe('Before');
+        // ...but an admin write clears the cache, so the next read is current
+        await admin.patch(`/v1/admin/topics/${slug}`).send({ title: 'After' }).expect(200);
+        expect(titleOf(await read())).toBe('After');
     });
 });

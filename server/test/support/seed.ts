@@ -1,21 +1,23 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import { sql } from 'drizzle-orm';
-import { closeDb, getDb, type Database } from './client.js';
-import { questions as questionsTable, topics as topicsTable } from './schema.js';
+import type { Database } from '../../src/db/client.js';
+import {
+    questions as questionsTable,
+    technologies as technologiesTable,
+    topics as topicsTable,
+} from '../../src/db/schema.js';
 
 /**
- * Insert-only seed (plan: Database schema / Seed). Reads the hand-written
- * manifest plus the 20 topic JSONs from the frontend data directory, so the
- * server never imports frontend TypeScript. Existing rows are never
- * overwritten: a second run changes nothing, and admin edits survive.
+ * Test-only, insert-only seed. PostgreSQL owns the content; nothing in the
+ * app or the API reads these JSON files. The e2e global setup loads this
+ * snapshot into the empty test database so the specs have data to work on.
+ * Existing rows are never overwritten.
  */
 
 const here = dirname(fileURLToPath(import.meta.url));
-// src/db -> server/src/db; the repo root is three levels up.
-const repoRoot = join(here, '..', '..', '..');
-export const defaultDataDir = join(repoRoot, 'src', 'data');
+export const defaultDataDir = join(here, '..', 'fixtures', 'seed');
 
 interface ManifestGroup {
     label: string;
@@ -47,8 +49,16 @@ interface SeedTopic {
 export interface SeedResult {
     topicsInserted: number;
     questionsInserted: number;
+    technologiesInserted: number;
     topicsTotal: number;
     questionsTotal: number;
+    technologiesTotal: number;
+}
+
+interface SeedTechnology {
+    slug: string;
+    label: string;
+    tags: string[];
 }
 
 function questionIdPrefix(topic: SeedTopic): string {
@@ -111,6 +121,14 @@ export async function runSeed(
         }
     }
 
+    const technologyList = (await readJson(join(dataDir, 'technologies.json'))) as SeedTechnology[];
+    const technologyRows = technologyList.map((technology, index) => ({
+        slug: technology.slug,
+        label: technology.label,
+        tags: technology.tags,
+        sortOrder: index,
+    }));
+
     const inserted = await db.transaction(async (tx) => {
         const topicInsert = await tx
             .insert(topicsTable)
@@ -122,7 +140,16 @@ export async function runSeed(
             .values(questionRows)
             .onConflictDoNothing()
             .returning({ id: questionsTable.id });
-        return { topics: topicInsert.length, questions: questionInsert.length };
+        const technologyInsert = await tx
+            .insert(technologiesTable)
+            .values(technologyRows)
+            .onConflictDoNothing({ target: technologiesTable.slug })
+            .returning({ slug: technologiesTable.slug });
+        return {
+            topics: topicInsert.length,
+            questions: questionInsert.length,
+            technologies: technologyInsert.length,
+        };
     });
 
     const [topicCount] = await db
@@ -131,29 +158,16 @@ export async function runSeed(
     const [questionCount] = await db
         .select({ value: sql<number>`count(*)::int` })
         .from(questionsTable);
+    const [technologyCount] = await db
+        .select({ value: sql<number>`count(*)::int` })
+        .from(technologiesTable);
 
     return {
         topicsInserted: inserted.topics,
         questionsInserted: inserted.questions,
+        technologiesInserted: inserted.technologies,
         topicsTotal: topicCount?.value ?? 0,
         questionsTotal: questionCount?.value ?? 0,
+        technologiesTotal: technologyCount?.value ?? 0,
     };
-}
-
-const invokedDirectly = process.argv[1]
-    ? import.meta.url === pathToFileURL(process.argv[1]).href
-    : false;
-
-if (invokedDirectly) {
-    const url = process.env.DATABASE_URL ?? 'postgres://postgres@127.0.0.1:5432/technical_lead';
-    try {
-        const { db } = getDb(url);
-        const result = await runSeed(db);
-        console.log(
-            `seed: +${result.topicsInserted} topics, +${result.questionsInserted} questions ` +
-                `(now ${result.topicsTotal} topics / ${result.questionsTotal} questions)`,
-        );
-    } finally {
-        await closeDb();
-    }
 }

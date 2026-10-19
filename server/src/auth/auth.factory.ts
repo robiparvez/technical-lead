@@ -2,6 +2,8 @@ import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { bearer } from 'better-auth/plugins';
 import { parseTrustedOrigins } from '../common/env.schema.js';
+import { createAuthMiddleware } from 'better-auth/api';
+import { sendPasswordChangedMail, sendResetPasswordMail } from './auth-mail.js';
 import { getDb } from '../db/client.js';
 import {
     account,
@@ -64,6 +66,19 @@ export function buildAuth(overrides: AuthFactoryOverrides = {}) {
             // D3: no email verification, so sign-up signs straight in.
             autoSignIn: true,
             revokeSessionsOnPasswordReset: true,
+            // Mails are not awaited (sendMail never throws): a slow mail server
+            // must not delay the answer, and a reset for a known address must
+            // not answer slower than one for an unknown address.
+            sendResetPassword: (data) => {
+                void sendResetPasswordMail(data);
+                return Promise.resolve();
+            },
+            onPasswordReset: ({ user }) => {
+                void sendPasswordChangedMail(user.email);
+                return Promise.resolve();
+            },
+            // the reset link works once, for 30 minutes
+            resetPasswordTokenExpiresIn: 30 * 60,
         },
         session: {
             // D13: 24 h session, refreshed while in use (default updateAge is
@@ -76,6 +91,14 @@ export function buildAuth(overrides: AuthFactoryOverrides = {}) {
             // Plan: Auth — the limiter stores in the DATABASE, not memory.
             storage: 'database',
             enabled: overrides.rateLimitEnabled ?? process.env.NODE_ENV !== 'test',
+            // The library default for these paths is 3 per 60 s (reset request,
+            // per client, not per email) and 100 per 10 s (reset submit). A
+            // reset request mails a real inbox, so it gets a slower budget;
+            // the submit gets a tighter one against token guessing.
+            customRules: {
+                '/request-password-reset': { window: 10 * 60, max: 3 },
+                '/reset-password': { window: 60, max: 10 },
+            },
         },
         advanced: {
             ipAddress: trustedProxies.length
@@ -95,6 +118,14 @@ export function buildAuth(overrides: AuthFactoryOverrides = {}) {
             additionalFields: {
                 role: { type: 'string', required: true, defaultValue: 'user', input: false },
             },
+        },
+        hooks: {
+            // better-auth has no callback for change-password, so notice it here
+            after: createAuthMiddleware(async (ctx) => {
+                if (ctx.path !== '/change-password' || ctx.context.returned instanceof Error) return;
+                const email = ctx.context.session?.user.email ?? ctx.context.newSession?.user.email;
+                if (email) void sendPasswordChangedMail(email);
+            }),
         },
         plugins: [bearer()],
     });

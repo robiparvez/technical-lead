@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 import { dirname, isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Injectable } from '@nestjs/common';
+import { collectContentState, type Executor } from '../export/export.service.js';
+import { UnprocessableException, validationErrorsToFields } from '../common/fields.exception.js';
 import {
     validateContent,
     type ValidateContentTechnology,
@@ -10,11 +12,11 @@ import {
 } from '../../../scripts/validate-content.mjs';
 
 /**
- * Thin wrapper over the one shared content validator (plan: D9, "Content
- * rules"). The rules files live as JSON in the repo — technologies.json (the
- * hand-kept tag map) and diagram-ids.json — read from CONTENT_RULES_DIR
- * (server/.env; default: the repo's src/data). The P3 admin write path calls
- * `validate` with the candidate content state before committing it.
+ * Thin wrapper over the one shared content validator (plan: D9). The
+ * technology map comes from the database (`technologies` table) on every
+ * write; only the animated diagram id set lives in a file, diagram-ids.json,
+ * because it names React components. It is read from CONTENT_RULES_DIR
+ * (server/.env; default: the repo's src/data).
  *
  * The import above reaches outside server/src to the repo-root script on
  * purpose: server/src/content and server/dist/content sit at the same depth,
@@ -31,8 +33,6 @@ const repoRoot = join(serverRoot, '..');
 export const defaultContentRulesDir = join(repoRoot, 'src', 'data');
 
 export interface ContentRules {
-    /** Parsed technologies.json: the technology tag map. */
-    technologies: ValidateContentTechnology[];
     /** String diagram ids from diagram-ids.json. */
     diagramIds: string[];
     /** Directory the rules were loaded from. */
@@ -58,33 +58,17 @@ export class ContentService {
         if (!force && this.cache) return this.cache;
         const dir = this.rulesDir();
 
-        let technologies: unknown;
         let diagramIdMap: unknown;
         try {
-            technologies = JSON.parse(readFileSync(join(dir, 'technologies.json'), 'utf8'));
             diagramIdMap = JSON.parse(readFileSync(join(dir, 'diagram-ids.json'), 'utf8'));
         } catch (error) {
             throw new Error(
-                `content rules: cannot read technologies.json / diagram-ids.json in ${dir} ` +
+                `content rules: cannot read diagram-ids.json in ${dir} ` +
                     `(CONTENT_RULES_DIR): ${error instanceof Error ? error.message : String(error)}`,
                 { cause: error },
             );
         }
 
-        if (
-            !Array.isArray(technologies) ||
-            technologies.some(
-                (technology) =>
-                    !technology ||
-                    typeof technology !== 'object' ||
-                    typeof (technology as ValidateContentTechnology).slug !== 'string' ||
-                    !Array.isArray((technology as ValidateContentTechnology).tags),
-            )
-        ) {
-            throw new Error(
-                `content rules: ${dir}/technologies.json must be an array of { slug, label, tags }`,
-            );
-        }
         if (!diagramIdMap || typeof diagramIdMap !== 'object' || Array.isArray(diagramIdMap)) {
             throw new Error(
                 `content rules: ${dir}/diagram-ids.json must be an object keyed by diagram id`,
@@ -92,7 +76,6 @@ export class ContentService {
         }
 
         this.cache = {
-            technologies: technologies as ValidateContentTechnology[],
             diagramIds: Object.keys(diagramIdMap),
             dir,
         };
@@ -104,12 +87,32 @@ export class ContentService {
      * group columns (D11) when group data is in scope; empty/draft topics are
      * legal data but must be excluded by the caller first (rule 5).
      */
-    validate(topics: ValidateContentTopic[], committedQuestionIds: Iterable<string>): ValidationResult {
+    validate(
+        topics: ValidateContentTopic[],
+        committedQuestionIds: Iterable<string>,
+        technologies: ValidateContentTechnology[],
+    ): ValidationResult {
         const rules = this.loadRules();
         return validateContent(topics, {
-            technologies: rules.technologies,
+            technologies,
             diagramIds: rules.diagramIds,
             committedQuestionIds,
         });
+    }
+
+    /**
+     * Validates the content a write transaction has produced. Every admin
+     * write calls it INSIDE its transaction: a rejection throws a 422 with the
+     * `fields` map, which rolls the whole write back.
+     */
+    async assertValid(tx: Executor): Promise<void> {
+        const state = await collectContentState(tx);
+        const result = this.validate(state.validationTopics, state.committedQuestionIds, state.technologies);
+        if (!result.ok) {
+            throw new UnprocessableException(
+                validationErrorsToFields(result.errors),
+                'The change would leave the content invalid, so it was not saved.',
+            );
+        }
     }
 }

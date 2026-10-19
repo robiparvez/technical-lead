@@ -60,14 +60,6 @@ export default defineConfig({
                         BETTER_AUTH_SECRET: 'test-better-auth-secret-0123456789abcdef',
                         TRUSTED_ORIGINS: 'http://localhost:3000',
                         EXPORT_TOKEN: 'unit-test-export-token',
-                        DISPATCH_ENABLED: 'false',
-                        GITHUB_REPO_DISPATCH_TOKEN: '',
-                        GITHUB_REPO: 'robiparvez/technical-lead',
-                        // Dispatcher intervals shrunk for the outbox specs
-                        // (defaults 5000 / 30000). rebuild.spec flips env per
-                        // test; the dispatcher reads these at run time.
-                        REBUILD_POLL_MS: '100',
-                        REBUILD_DEBOUNCE_MS: '250',
                         PORT: '3001',
                     },
                 },

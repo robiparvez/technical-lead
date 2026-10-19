@@ -6,8 +6,9 @@ import { ExportService, type ExportResponseDto } from './export.service.js';
 export const EXPORT_TOKEN_HEADER = 'x-export-token';
 
 /**
- * GET /v1/export — the static-site build payload. Protected by the build
- * token (D7), compared in constant time; exempt from the throttler.
+ * GET /v1/export — all content in one payload, read by the Next server on
+ * every page request. Protected by the build token (D7), compared in
+ * constant time; exempt from the throttler; cached in ExportService.
  */
 @Controller('export')
 export class ExportController {

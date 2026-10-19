@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { sql } from 'drizzle-orm';
-import { runSeed } from '../../src/db/seed.js';
+import { runSeed } from '../support/seed.js';
 import * as schema from '../../src/db/schema.js';
 
 /**
@@ -40,8 +40,8 @@ describe('migrations + seed', () => {
             'quiz_state',
             'quiz_topic_totals',
             'rate_limit',
-            'rebuild_outbox',
             'session',
+            'technologies',
             'topics',
             'user',
             'user_known_questions',
@@ -55,12 +55,6 @@ describe('migrations + seed', () => {
             where indexname = 'questions_topic_slug_key_takeaway_live_idx'`;
         expect(result).toHaveLength(1);
         expect(result[0]!.indexdef.toLowerCase()).toContain('where (deleted_at is null)');
-    });
-
-    it('creates the rebuild_outbox (status, next_attempt_at) index', async () => {
-        const result = await pg<{ indexdef: string }[]>`
-            select indexdef from pg_indexes where indexname = 'rebuild_outbox_status_next_attempt_idx'`;
-        expect(result).toHaveLength(1);
     });
 
     it('seeds 21 topics and 592 questions with prefixes and group order', async () => {
@@ -94,6 +88,15 @@ describe('migrations + seed', () => {
         ]);
     });
 
+    it('seeds the 14 technologies in the file order', async () => {
+        const rows = await db
+            .select({ slug: schema.technologies.slug, tags: schema.technologies.tags })
+            .from(schema.technologies)
+            .orderBy(schema.technologies.sortOrder);
+        expect(rows).toHaveLength(14);
+        expect(rows[0]).toEqual({ slug: 'kafka', tags: ['kafka'] });
+    });
+
     it('running the seed a second time changes nothing', async () => {
         const before = await db
             .select({ id: schema.questions.id, takeaway: schema.questions.keyTakeaway, deleted: schema.questions.deletedAt })
@@ -104,8 +107,10 @@ describe('migrations + seed', () => {
 
         expect(result.topicsInserted).toBe(0);
         expect(result.questionsInserted).toBe(0);
+        expect(result.technologiesInserted).toBe(0);
         expect(result.topicsTotal).toBe(21);
         expect(result.questionsTotal).toBe(592);
+        expect(result.technologiesTotal).toBe(14);
 
         const after = await db
             .select({ id: schema.questions.id, takeaway: schema.questions.keyTakeaway, deleted: schema.questions.deletedAt })

@@ -18,8 +18,7 @@
     "test:unit": "vitest run --project unit",
     "test:e2e": "vitest run --project e2e",
     "db:generate": "drizzle-kit generate",
-    "migrate": "drizzle-kit migrate",
-    "seed": "node --env-file-if-exists=.env --import tsx src/db/seed.ts"
+    "migrate": "drizzle-kit migrate"
   },
   "dependencies": {
     "@nestjs/common": "^12.1.3",

@@ -23,28 +23,14 @@ export const envSchema = z.object({
     // API. Needed for per-client sign-in rate limits outside dev (P6).
     TRUSTED_PROXIES: z.string().optional(),
     EXPORT_TOKEN: z.string().min(16, 'must be at least 16 characters'),
-    DISPATCH_ENABLED: z.enum(['true', 'false']).optional(),
-    GITHUB_REPO_DISPATCH_TOKEN: z.string().optional(),
-    // repository_dispatch target while DISPATCH_ENABLED=true (P3/P6):
-    // "owner/repo", e.g. robiparvez/technical-lead. Unused while disabled.
-    GITHUB_REPO: z
-        .string()
-        .regex(/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/, 'must be "owner/repo"')
-        .optional(),
-    // Dispatcher interval overrides (milliseconds), mainly for the test
-    // suite; production keeps the defaults (poll 5 s, debounce 30 s).
-    REBUILD_POLL_MS: z.string().regex(/^\d+$/, 'must be a number').optional(),
-    REBUILD_DEBOUNCE_MS: z.string().regex(/^\d+$/, 'must be a number').optional(),
-    // Directory holding technologies.json + diagram-ids.json for the shared
+    // Outgoing mail: plain SMTP (MailHog in dev). Without SMTP_HOST nothing is
+    // sent. See src/mail/send-mail.ts.
+    SMTP_HOST: z.string().optional(),
+    SMTP_PORT: z.string().regex(/^\d+$/, 'must be a number').optional(),
+    MAIL_FROM: z.string().optional(),
+    // Directory holding diagram-ids.json for the shared
     // content validator (P2, D9). Relative paths resolve against server/.
     CONTENT_RULES_DIR: z.string().optional(),
-}).superRefine((env, ctx) => {
-    if (env.DISPATCH_ENABLED !== 'true') return;
-    for (const key of ['GITHUB_REPO', 'GITHUB_REPO_DISPATCH_TOKEN'] as const) {
-        if (!env[key]?.trim()) {
-            ctx.addIssue({ code: 'custom', path: [key], message: 'is required when DISPATCH_ENABLED=true' });
-        }
-    }
 });
 
 export type Env = z.infer<typeof envSchema>;

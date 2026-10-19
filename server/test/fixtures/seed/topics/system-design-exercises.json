@@ -1,0 +1,1171 @@
+{
+    "slug": "system-design-exercises",
+    "title": "System Design Exercises",
+    "requirement": "Architect, design, implement high-performance, scalable, secure full-stack apps.",
+    "questions": [
+        {
+            "id": "system-design-exercises-q1",
+            "difficulty": "basic",
+            "tags": [
+                "url-shortener",
+                "base62",
+                "redirect",
+                "exercise"
+            ],
+            "question": "Design a URL shortener like TinyURL. How do you generate the short keys and handle redirects?",
+            "answer": "Hashing the URL and taking a prefix collides, so I'd take a unique ID from a distributed generator and base-62 encode it. Seven characters cover about 3.5 trillion URLs. Reads outnumber writes roughly 10 to 1, so I'd cache mappings in front of the key-value store. I'd use a 302 instead of a 301 when we need every click for analytics, since browsers cache a 301.",
+            "keyTakeaway": "Base62-encoded unique IDs avoid collisions; cache the read-heavy redirect path.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Redirect path",
+                "actors": [
+                    "Client",
+                    "Service",
+                    "Cache",
+                    "Key-value store"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "GET /short-key"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "look up key"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "hit: long URL"
+                    },
+                    {
+                        "from": 1,
+                        "to": 3,
+                        "label": "miss: read"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "redirect to long URL"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-exercises-q2",
+            "difficulty": "basic",
+            "tags": [
+                "unique-id",
+                "snowflake",
+                "exercise"
+            ],
+            "question": "How do you generate unique, time-ordered 64-bit IDs in a distributed system?",
+            "answer": "Auto-increment breaks ordering across data centers, UUIDs are 128 bits and unsorted, and a ticket server is a single point of failure. So I'd use Snowflake: a sign bit, 41 bits of millisecond timestamp, 10 bits of datacenter and machine, and a 12-bit sequence. That's 4096 IDs per machine per millisecond with no coordination.",
+            "keyTakeaway": "Snowflake: timestamp + machine bits + per-millisecond sequence, no coordination.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Snowflake 64-bit layout",
+                "rows": [
+                    {
+                        "label": "Sign bit",
+                        "note": "Always zero"
+                    },
+                    {
+                        "label": "41-bit timestamp",
+                        "note": "Milliseconds since epoch"
+                    },
+                    {
+                        "label": "10-bit machine",
+                        "note": "Datacenter plus worker"
+                    },
+                    {
+                        "label": "12-bit sequence",
+                        "note": "4096 per millisecond"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-exercises-q3",
+            "difficulty": "intermediate",
+            "tags": [
+                "web-crawler",
+                "politeness",
+                "bfs",
+                "exercise"
+            ],
+            "question": "Design a scalable, polite web crawler.",
+            "answer": "I walk the web breadth-first from seed URLs through a frontier. Pages get fetched, parsed, and dropped if the content hash is a duplicate. New URLs are extracted, filtered, and rejoin the frontier. The part people miss is politeness. I'd use per-host FIFO back queues, one request per host at a time with a delay, plus robots.txt. Front queues set priority for important or fast-changing pages.",
+            "keyTakeaway": "Frontier with per-host back queues for politeness, priority front queues for value, dedupe by content hash.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Crawler pipeline",
+                "steps": [
+                    {
+                        "label": "Seed URL frontier",
+                        "note": "Priority front queues"
+                    },
+                    {
+                        "label": "Downloader fetch",
+                        "note": "Per-host politeness delay"
+                    },
+                    {
+                        "label": "Parse and dedupe",
+                        "note": "Content hash check"
+                    },
+                    {
+                        "label": "Extract links",
+                        "note": "Filter and normalize"
+                    },
+                    {
+                        "label": "Rejoin frontier",
+                        "note": "Back queues per host"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-exercises-q4",
+            "difficulty": "intermediate",
+            "tags": [
+                "autocomplete",
+                "trie",
+                "top-k",
+                "exercise"
+            ],
+            "question": "Design a search autocomplete service that returns the top 5 popular completions.",
+            "answer": "I'd aggregate query logs into frequency counts on a schedule and rebuild the trie from them, since per-keystroke updates aren't practical. Each node stores its top-k, so a lookup walks to the prefix and returns, with no sorting, and I'd cache aggressively. Some staleness is a fair trade for speed.",
+            "keyTakeaway": "Trie with cached top-k per node, built offline from logs; serve reads from cache.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Autocomplete pipeline",
+                "steps": [
+                    {
+                        "label": "Query logs",
+                        "note": "raw searches"
+                    },
+                    {
+                        "label": "Aggregate frequencies",
+                        "note": "on a schedule"
+                    },
+                    {
+                        "label": "Rebuild trie",
+                        "note": "top-k stored per node"
+                    },
+                    {
+                        "label": "Cache by prefix",
+                        "note": "serves the reads"
+                    },
+                    {
+                        "label": "Return top 5"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-exercises-q5",
+            "difficulty": "intermediate",
+            "tags": [
+                "news-feed",
+                "fan-out",
+                "cache",
+                "exercise"
+            ],
+            "question": "Design a news feed: do you push posts to followers or pull them at read time?",
+            "answer": "Fan-out on write pushes the post ID into each follower's feed cache, so reads are instant, but it's wasteful for accounts with millions of followers. Fan-out on read is slow under load. I'd go hybrid: push for normal users, pull for celebrities, caching post IDs only.",
+            "keyTakeaway": "Hybrid fan-out: push to normal users, pull for celebrities; cache capped ID lists.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Feed fan-out strategies",
+                "columns": [
+                    "Push on write",
+                    "Pull on read",
+                    "Hybrid"
+                ],
+                "rows": [
+                    {
+                        "label": "Read latency",
+                        "values": [
+                            "Instant",
+                            "Assembled per request",
+                            "Instant for most"
+                        ]
+                    },
+                    {
+                        "label": "Write cost",
+                        "values": [
+                            "High for celebrities",
+                            "Deferred to reads",
+                            "Bounded"
+                        ]
+                    },
+                    {
+                        "label": "Inactive users",
+                        "values": [
+                            "Wasted writes",
+                            "Cheap",
+                            "Cheap"
+                        ]
+                    },
+                    {
+                        "label": "Celebrity posts",
+                        "values": [
+                            "Explosion",
+                            "Traverses followers",
+                            "Pulled on read"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-exercises-q6",
+            "difficulty": "intermediate",
+            "tags": [
+                "geospatial",
+                "geohash",
+                "proximity",
+                "exercise"
+            ],
+            "question": "How do you find all businesses within a radius of a user's location at scale?",
+            "answer": "Two one-dimensional indexes on lat and long can't answer a region query well. So I'd encode two dimensions into one with geohash, where a shared prefix means nearby. I query the cells covering the radius plus their neighbors to handle boundaries. Quadtree and S2 use the same idea.",
+            "keyTakeaway": "Encode 2D into 1D (geohash or quadtree), index it, query covering cells plus neighbors.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Radius search with geohash",
+                "steps": [
+                    {
+                        "label": "User location",
+                        "note": "lat, long"
+                    },
+                    {
+                        "label": "Encode to geohash",
+                        "note": "shared prefix = nearby"
+                    },
+                    {
+                        "label": "Find covering cells",
+                        "note": "cover the radius"
+                    },
+                    {
+                        "label": "Add neighbor cells",
+                        "note": "boundary effects"
+                    },
+                    {
+                        "label": "Read the index",
+                        "note": "businesses in cells"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-exercises-q7",
+            "difficulty": "advanced",
+            "tags": [
+                "chat",
+                "websocket",
+                "presence",
+                "exercise"
+            ],
+            "question": "Design a chat system with reliable delivery, presence, and offline users.",
+            "answer": "I'd use persistent WebSocket connections to stateful chat servers, with service discovery routing each user to theirs, and presence from heartbeats. If the recipient is online, deliver directly, otherwise send a push notification. Ordering only needs per-conversation sequence numbers, so I key messages by (channel_id, message_id) in a key-value store.",
+            "keyTakeaway": "Stateful WebSocket servers, per-channel sequence numbers, KV store for the long tail.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Chat message delivery",
+                "actors": [
+                    "Sender",
+                    "Chat server",
+                    "Recipient",
+                    "Push service"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Send message"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "WebSocket if online"
+                    },
+                    {
+                        "from": 1,
+                        "to": 3,
+                        "label": "Push if offline"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "Ack per-channel sequence"
+                    },
+                    {
+                        "from": 3,
+                        "to": 2,
+                        "label": "Wake app to fetch"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-exercises-q8",
+            "difficulty": "advanced",
+            "tags": [
+                "video",
+                "transcoding",
+                "cdn",
+                "exercise"
+            ],
+            "question": "Design a video platform like YouTube: upload, transcode, and stream.",
+            "answer": "I separate metadata from bytes: the upload goes to blob storage while metadata goes to the database. Transcoding is a DAG of tasks, encoding each resolution, thumbnails and so on, so independent steps run in parallel. Output goes to the CDN and streams over HLS or DASH so the player adapts bitrate. Bandwidth dominates cost, so edge caching is economics.",
+            "keyTakeaway": "Upload to blob plus a DAG transcoding pipeline, stream adaptive bitrate from the CDN.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Video processing flow",
+                "steps": [
+                    {
+                        "label": "Upload to blob",
+                        "note": "Metadata in parallel"
+                    },
+                    {
+                        "label": "Enqueue transcode",
+                        "note": "DAG of tasks"
+                    },
+                    {
+                        "label": "Encode variants",
+                        "note": "Resolutions run parallel"
+                    },
+                    {
+                        "label": "Publish to CDN",
+                        "note": "Completion queue updates"
+                    },
+                    {
+                        "label": "Stream ABR",
+                        "note": "HLS or DASH chunks"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-exercises-q9",
+            "difficulty": "advanced",
+            "tags": [
+                "payment",
+                "ledger",
+                "idempotency",
+                "reconciliation",
+                "exercise"
+            ],
+            "question": "Design the payment backend for an e-commerce platform.",
+            "answer": "I'd never store card data. Capture goes to a payment service provider so we stay out of PCI scope. Throughput is modest, so correctness drives the design. I'd put idempotency keys on every payment order, bound the PSP retries, record paired debit and credit legs in an append-only ledger as the source of truth, and reconcile daily against PSP statements.",
+            "keyTakeaway": "Idempotent orders, append-only ledger, paired wallet legs, and a reconciliation loop.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Payment backend",
+                "steps": [
+                    {
+                        "label": "Checkout event",
+                        "note": "idempotent order"
+                    },
+                    {
+                        "label": "Payment service",
+                        "note": "persists, splits"
+                    },
+                    {
+                        "label": "Payment orders"
+                    },
+                    {
+                        "label": "Executor",
+                        "note": "submits to the PSP"
+                    },
+                    {
+                        "label": "Ledger entry",
+                        "note": "append-only"
+                    },
+                    {
+                        "label": "Reconciliation",
+                        "note": "compare with PSP"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-exercises-q10",
+            "difficulty": "advanced",
+            "tags": [
+                "stock-exchange",
+                "sequencing",
+                "event-sourcing",
+                "matching",
+                "exercise"
+            ],
+            "question": "Design a stock exchange: how do you match orders with strict ordering and low latency?",
+            "answer": "Orders pass risk checks, then a sequencer gives each symbol one strict order, because determinism beats parallelism here. A single-threaded matching engine per symbol keeps the book with price-time priority, and it scales by adding symbols, not threads. Everything is an event log, so state can be rebuilt by replay and a hot standby fed the same sequence recovers fast.",
+            "keyTakeaway": "Sequence first, match single-threaded per symbol, event log as the source of truth.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Order matching path",
+                "steps": [
+                    {
+                        "label": "Incoming order"
+                    },
+                    {
+                        "label": "Risk checks",
+                        "note": "exposure, funds"
+                    },
+                    {
+                        "label": "Sequencer",
+                        "note": "one strict order per symbol"
+                    },
+                    {
+                        "label": "Matching engine",
+                        "note": "single thread per symbol"
+                    },
+                    {
+                        "label": "Event log",
+                        "note": "source of truth"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-exercises-q11",
+            "difficulty": "intermediate",
+            "tags": [
+                "rate-limiting",
+                "token-bucket",
+                "sliding-window",
+                "algorithms"
+            ],
+            "question": "For a rate limiter, how do you choose between fixed window, sliding window, and token bucket?",
+            "answer": "Fixed window fails at the edges, since a full quota at second 59 and again at second 61 doubles the limit. Sliding window log is exact but memory grows with traffic. The sliding window counter is a cheap, close approximation. Token bucket is my default because it allows bursts while holding the average to the refill rate.",
+            "keyTakeaway": "Token bucket handles bursts naturally; sliding window counter is the cheap strict-limit approximation.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Rate limiter algorithms",
+                "columns": [
+                    "Fixed window",
+                    "Sliding window",
+                    "Token bucket"
+                ],
+                "rows": [
+                    {
+                        "label": "Bursts",
+                        "values": [
+                            "Spike at edges",
+                            "Smoothed",
+                            "Native"
+                        ]
+                    },
+                    {
+                        "label": "State per key",
+                        "values": [
+                            "One counter",
+                            "Log or two bins",
+                            "Counter plus timestamp"
+                        ]
+                    },
+                    {
+                        "label": "Refill model",
+                        "values": [
+                            "Hard reset",
+                            "Continuous",
+                            "Steady drip"
+                        ]
+                    },
+                    {
+                        "label": "Contract strictness",
+                        "values": [
+                            "Approximate",
+                            "Exact or near",
+                            "Averages allowed"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-exercises-q12",
+            "difficulty": "advanced",
+            "tags": [
+                "rate-limiting",
+                "quota",
+                "distributed-systems",
+                "consistency"
+            ],
+            "question": "How do you enforce a per-customer API quota accurately when requests land on hundreds of nodes at once?",
+            "answer": "Exact accounting needs an atomic decrement in a shared store like Redis with Lua, which costs a hot key and a round trip per request. Otherwise each node leases a batch of tokens from a central counter and checks locally, which stays honest within the lease size. Billing needs the atomic path, abuse protection doesn't.",
+            "keyTakeaway": "Lease quota batches from a central counter to local nodes; reserve atomic decrements for billing-grade accuracy.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Quota enforcement tier",
+                "condition": "Billing-grade accuracy required?",
+                "yes": {
+                    "label": "Atomic shared-store decrement",
+                    "note": "Exact, higher latency"
+                },
+                "no": {
+                    "label": "Local lease batching",
+                    "note": "Approximate, in-memory"
+                }
+            }
+        },
+        {
+            "id": "system-design-exercises-q13",
+            "difficulty": "intermediate",
+            "tags": [
+                "job-scheduler",
+                "cron",
+                "distributed-systems",
+                "queues"
+            ],
+            "question": "Design a distributed job scheduler that runs millions of cron jobs across a shared cluster.",
+            "answer": "I separate deciding from executing. Jobs live in a store keyed by next-run time, and the scheduler polls for due jobs and enqueues them but never runs anything. Workers pull from the queue, so the fleet scales by adding machines. To avoid double firing I'd use leader election or time-range leasing, and treat the queue as at-least-once.",
+            "keyTakeaway": "Schedulers pick due jobs and enqueue them; workers execute, with leasing to prevent double fire.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Distributed cron flow",
+                "steps": [
+                    {
+                        "label": "Scan due jobs",
+                        "note": "Time-partitioned polls"
+                    },
+                    {
+                        "label": "Enqueue task",
+                        "note": "At-least-once queue"
+                    },
+                    {
+                        "label": "Worker executes",
+                        "note": "Lease held during run"
+                    },
+                    {
+                        "label": "Report result",
+                        "note": "Persist run history"
+                    },
+                    {
+                        "label": "Reschedule next run",
+                        "note": "From cron expression"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-exercises-q14",
+            "difficulty": "advanced",
+            "tags": [
+                "job-scheduler",
+                "idempotency",
+                "fencing-tokens",
+                "distributed-systems"
+            ],
+            "question": "How do you stop the same scheduled job from running twice when the queue delivers at-least-once?",
+            "answer": "Exactly-once delivery is fiction, so I make execution idempotent. Each run gets a unique ID, and workers record an intent row before starting so duplicates skip. Fencing tokens from a lease store like etcd let the store reject a stalled worker once a replacement takes a higher token. A dead-letter queue stops poison jobs from eating the fleet.",
+            "keyTakeaway": "At-least-once delivery plus idempotent execution and fencing tokens beats chasing exactly-once.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Duplicate-safe job execution",
+                "actors": [
+                    "Queue",
+                    "Worker",
+                    "Intent store",
+                    "Target store"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "deliver run ID"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "record intent row"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "new, or duplicate: skip"
+                    },
+                    {
+                        "from": 1,
+                        "to": 3,
+                        "label": "write + fencing token"
+                    },
+                    {
+                        "from": 3,
+                        "to": 1,
+                        "label": "reject stale token"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-exercises-q15",
+            "difficulty": "intermediate",
+            "tags": [
+                "notifications",
+                "fan-out",
+                "message-queue",
+                "email"
+            ],
+            "question": "Design a notification service that fans out email, push, and SMS for millions of events a day.",
+            "answer": "Producers never talk to providers. Events land on a queue and channel workers send, so a slow SMS provider can't back up the product. A preferences lookup honors opt-outs, since messaging an opted-out user is a compliance bug. I'd also dedupe, rate-limit per user, and retry each channel on its own.",
+            "keyTakeaway": "Queue the event, resolve preferences and dedupe before render, retry each channel independently.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Notification fan-out",
+                "steps": [
+                    {
+                        "label": "Receive event",
+                        "note": "One normalized schema"
+                    },
+                    {
+                        "label": "Resolve preferences",
+                        "note": "Channels plus opt-outs"
+                    },
+                    {
+                        "label": "Dedupe check",
+                        "note": "Key on event ID"
+                    },
+                    {
+                        "label": "Render template",
+                        "note": "Per channel variant"
+                    },
+                    {
+                        "label": "Provider send",
+                        "note": "Retry with failover"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-exercises-q16",
+            "difficulty": "advanced",
+            "tags": [
+                "ticket-booking",
+                "seat-lock",
+                "idempotency",
+                "hot-keys"
+            ],
+            "question": "How do you stop two users from buying the same seat when thousands hit a popular event at once?",
+            "answer": "Seats get locked during checkout and sold after payment, with a TTL of five to ten minutes so abandoned carts expire. The lock must be atomic, like Redis SET NX or a conditional update, so there's no race. Overflow goes to a waiting room so the crowd never hits the database, and releasing on payment failure is first-class.",
+            "keyTakeaway": "Atomic check-and-lock per seat with a TTL, plus a waiting room to shed hot-event load.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Seat booking sequence",
+                "actors": [
+                    "Client",
+                    "Booking service",
+                    "Lock store",
+                    "Payment"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Request seat hold"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Atomic lock with TTL"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "Lock granted"
+                    },
+                    {
+                        "from": 1,
+                        "to": 3,
+                        "label": "Charge payment"
+                    },
+                    {
+                        "from": 3,
+                        "to": 1,
+                        "label": "Confirm or fail"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Mark sold or release"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-exercises-q17",
+            "difficulty": "advanced",
+            "tags": [
+                "ride-hailing",
+                "matching",
+                "geospatial",
+                "realtime"
+            ],
+            "question": "How does a ride-hailing app match a rider to a driver in under a second across a whole city?",
+            "answer": "The dispatch loop matters more than any lookup. Drivers stream GPS pings into an in-memory geo index using geohash or H3 cells. A request finds nearby drivers and scores them by ETA, then rating. The winner gets an offer with a countdown, around fifteen seconds, and a decline or timeout moves to the next candidate.",
+            "keyTakeaway": "Warm in-memory geo index of driver pings, scored offers with short timeouts, requeue on decline.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Rider to driver matching",
+                "steps": [
+                    {
+                        "label": "Rider request",
+                        "note": "pickup location"
+                    },
+                    {
+                        "label": "Query nearby drivers",
+                        "note": "in-memory geo index"
+                    },
+                    {
+                        "label": "Score candidates",
+                        "note": "ETA, rating, fairness"
+                    },
+                    {
+                        "label": "Offer with countdown",
+                        "note": "about fifteen seconds"
+                    },
+                    {
+                        "label": "Accept or requeue",
+                        "note": "decline retries"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-exercises-q18",
+            "difficulty": "intermediate",
+            "tags": [
+                "time-series",
+                "metrics",
+                "ingestion",
+                "downsampling"
+            ],
+            "question": "Design a metrics pipeline that ingests millions of time-series points per second for monitoring.",
+            "answer": "The write path is the design. Stateless collectors behind a queue batch thousands of points per write into a columnar time-series store keyed by series, tags and reversed timestamps. I'd downsample into minute and hour aggregates with tiered retention, and let dashboards read the pre-aggregated data through a cache.",
+            "keyTakeaway": "Batch writes through a queue, key by series plus reversed time, tier retention with downsampling.",
+            "diagram": {
+                "kind": "layers",
+                "title": "Metrics pipeline tiers",
+                "rows": [
+                    {
+                        "label": "Collectors",
+                        "note": "Stateless, queue-fronted"
+                    },
+                    {
+                        "label": "Batched ingestion",
+                        "note": "Thousands of points per write"
+                    },
+                    {
+                        "label": "Time-series store",
+                        "note": "Series key plus time"
+                    },
+                    {
+                        "label": "Rollups",
+                        "note": "One-minute and hourly"
+                    },
+                    {
+                        "label": "Dashboards and alerts",
+                        "note": "Pre-aggregated reads"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-exercises-q19",
+            "difficulty": "intermediate",
+            "tags": [
+                "feature-flags",
+                "sdk",
+                "low-latency",
+                "caching"
+            ],
+            "question": "How do you build a feature-flag service that serves millions of evaluations per second without becoming a single point of failure?",
+            "answer": "Evaluation has to survive everything else dying. Each service's SDK holds a local snapshot of the flags and evaluates in-process, so there's no network hop and it keeps the last known flags during an outage. Changes are pushed over a stream, with polling as backup. The control plane can stay boring since writes are rare.",
+            "keyTakeaway": "Evaluate flags in-process from pushed snapshots; the flag store must be able to die safely.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Flag distribution models",
+                "columns": [
+                    "Poll",
+                    "Push streaming"
+                ],
+                "rows": [
+                    {
+                        "label": "Freshness",
+                        "values": [
+                            "Seconds to minutes",
+                            "Milliseconds"
+                        ]
+                    },
+                    {
+                        "label": "Infrastructure",
+                        "values": [
+                            "Simple HTTP cache",
+                            "SSE or bus fan-out"
+                        ]
+                    },
+                    {
+                        "label": "Failure mode",
+                        "values": [
+                            "Stale flags",
+                            "Reconnect plus snapshot"
+                        ]
+                    },
+                    {
+                        "label": "Scale profile",
+                        "values": [
+                            "Cache-friendly pulls",
+                            "Connection count grows"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-exercises-q20",
+            "difficulty": "intermediate",
+            "tags": [
+                "leaderboard",
+                "redis",
+                "sorted-sets",
+                "gaming"
+            ],
+            "question": "How do you build a real-time game leaderboard that returns a player's rank among millions instantly?",
+            "answer": "I'd use a Redis sorted set, which ranks in logarithmic time. ZINCRBY updates scores, ZREVRANGE returns the top hundred, and ZREVRANK gives a player's rank without scanning. A single global set becomes a hot key, so I'd shard by region or season. I'd snapshot to durable storage, since Redis isn't the system of record.",
+            "keyTakeaway": "One Redis sorted set gives O(log n) rank queries; shard by season or region to dodge hot keys.",
+            "code": {
+                "language": "bash",
+                "snippet": "ZINCRBY leaderboard:season12 150 player:8412\nZREVRANGE leaderboard:season12 0 9 WITHSCORES\nZREVRANK leaderboard:season12 player:8412"
+            },
+            "diagram": {
+                "kind": "layers",
+                "title": "Leaderboard layers",
+                "rows": [
+                    {
+                        "label": "Merged top N",
+                        "note": "combine shard results"
+                    },
+                    {
+                        "label": "Sorted set per shard",
+                        "note": "season, region, friends"
+                    },
+                    {
+                        "label": "Redis sorted set",
+                        "note": "ZINCRBY, ZREVRANK, O(log n)"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-exercises-q21",
+            "difficulty": "intermediate",
+            "tags": [
+                "image-processing",
+                "pipeline",
+                "cdn",
+                "async"
+            ],
+            "question": "Design the image pipeline that turns one upload into a dozen responsive sizes without blocking the upload.",
+            "answer": "The upload only carries the original into blob storage. An object-created event goes onto a queue and resize workers write each variant under deterministic keys, so the CDN can cache them forever. For unpredictable shapes like OG images I'd generate on demand behind the CDN, with a lock to prevent a stampede.",
+            "keyTakeaway": "Upload once to blob storage, derive variants asynchronously with deterministic keys for CDN immutability.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Image pipeline",
+                "steps": [
+                    {
+                        "label": "Upload original",
+                        "note": "never blocks"
+                    },
+                    {
+                        "label": "Blob storage",
+                        "note": "bytes live here"
+                    },
+                    {
+                        "label": "Event to queue",
+                        "note": "object created"
+                    },
+                    {
+                        "label": "Resize workers",
+                        "note": "deterministic keys"
+                    },
+                    {
+                        "label": "CDN serves variants",
+                        "note": "cache forever"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-exercises-q22",
+            "difficulty": "intermediate",
+            "tags": [
+                "webhooks",
+                "retries",
+                "hmac",
+                "dead-letter"
+            ],
+            "question": "Design a webhook delivery service that reaches customer endpoints reliably despite their flaky servers.",
+            "answer": "Each event becomes a delivery task with an HMAC-signed payload so customers can verify it. Workers post with short timeouts and retry on exponential backoff with jitter, capped near a day, then dead-letter. I'd never retry forever, and I'd make the dead-letter queue visible so customers can replay. Receivers should dedupe on event ID.",
+            "keyTakeaway": "Sign payloads, retry with exponential backoff and jitter, then dead-letter with a visible replay path.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Webhook delivery outcome",
+                "condition": "POST succeeded in timeout?",
+                "yes": {
+                    "label": "Mark delivered",
+                    "note": "Log receipt, done"
+                },
+                "no": {
+                    "label": "Retry with backoff",
+                    "note": "Cap, then dead-letter"
+                }
+            }
+        },
+        {
+            "id": "system-design-exercises-q23",
+            "difficulty": "intermediate",
+            "tags": [
+                "session-cleanup",
+                "ttl",
+                "partitioning",
+                "database"
+            ],
+            "question": "How do you clean up billions of expired sessions and tokens without locking your database?",
+            "answer": "Where I can, I let the database do it, like Redis TTLs or DynamoDB and MongoDB TTL monitors. For relational rows I'd skip one giant nightly DELETE, which bloats the log and locks the table. I'd delete small batches by an indexed expiry column, or partition by time and drop whole partitions. Reads treat expired rows as gone.",
+            "keyTakeaway": "Prefer TTL engines and time-partition drops; batch small indexed deletes and tolerate laggy cleanup.",
+            "diagram": {
+                "kind": "compare",
+                "title": "Expiring billions of rows",
+                "columns": [
+                    "TTL or partition drop",
+                    "Batched DELETE"
+                ],
+                "rows": [
+                    {
+                        "label": "How",
+                        "values": [
+                            "database expires data",
+                            "small indexed batches"
+                        ]
+                    },
+                    {
+                        "label": "Watch",
+                        "values": [
+                            "nothing to sweep",
+                            "replication lag"
+                        ]
+                    },
+                    {
+                        "label": "Use when",
+                        "values": [
+                            "Redis, DynamoDB, partitions",
+                            "plain relational rows"
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-exercises-q24",
+            "difficulty": "advanced",
+            "tags": [
+                "collaborative-editing",
+                "crdt",
+                "operational-transform",
+                "realtime"
+            ],
+            "question": "How do collaborative editors like Google Docs keep concurrent edits consistent across clients?",
+            "answer": "Concurrent operations don't commute, so you either transform them or use a representation that does. OT, the Google Docs approach, has a central server serialize operations and transform them against concurrent ones. It's compact but hard to get right. CRDTs make merges commute, so no central serializer and offline editing works, at the cost of metadata and tombstone growth.",
+            "keyTakeaway": "OT transforms ops against a serialized history; CRDTs converge via commutative merges without a central serializer.",
+            "diagram": {
+                "kind": "sequence",
+                "title": "Concurrent edit sync",
+                "actors": [
+                    "Client A",
+                    "Edit server",
+                    "Client B"
+                ],
+                "messages": [
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Concurrent insert op"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "Concurrent delete op"
+                    },
+                    {
+                        "from": 1,
+                        "to": 0,
+                        "label": "Transformed opposing op"
+                    },
+                    {
+                        "from": 1,
+                        "to": 2,
+                        "label": "Transformed opposing op"
+                    },
+                    {
+                        "from": 0,
+                        "to": 1,
+                        "label": "Ack applied version"
+                    },
+                    {
+                        "from": 2,
+                        "to": 1,
+                        "label": "Ack applied version"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-exercises-q25",
+            "difficulty": "advanced",
+            "tags": [
+                "voting",
+                "fraud",
+                "idempotency",
+                "ranking"
+            ],
+            "question": "How do you design an online voting system where each user votes once but attackers retry constantly?",
+            "answer": "I'd separate enforcement from fraud. One vote per user is an idempotent write, like a unique key on user and item. To make fraud expensive I add velocity limits per account, IP and device. Votes get appended to a stream and rankings recomputed, so votes from accounts later convicted of fraud can be discounted retroactively.",
+            "keyTakeaway": "Idempotent one-vote keys absorb retries; append votes and recompute so convicted fraud is revocable.",
+            "diagram": {
+                "kind": "flow",
+                "title": "One vote per user",
+                "steps": [
+                    {
+                        "label": "Vote request",
+                        "note": "attackers retry"
+                    },
+                    {
+                        "label": "Unique key",
+                        "note": "user + item"
+                    },
+                    {
+                        "label": "Append to stream",
+                        "note": "never update in place"
+                    },
+                    {
+                        "label": "Recompute score"
+                    },
+                    {
+                        "label": "Revoke on fraud",
+                        "note": "drop the votes"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-exercises-q26",
+            "difficulty": "advanced",
+            "tags": [
+                "deduplication",
+                "simhash",
+                "minhash",
+                "lsh"
+            ],
+            "question": "How do you detect near-duplicate documents at a scale of billions, where exact hashes all differ?",
+            "answer": "Exact hashes are useless here, since one changed comma flips the whole hash, so I'd use locality-sensitive hashing. SimHash compresses weighted token features into a 64-bit fingerprint where near-duplicates differ by a few bits. I split it into four 16-bit bands, so candidates must match at least one band exactly. Then I verify with a real similarity check.",
+            "keyTakeaway": "LSH fingerprints like SimHash or MinHash find candidates by shared bands; verify with full similarity.",
+            "code": {
+                "language": "typescript",
+                "snippet": "const diff = simhashA ^ simhashB;\nconst isNearDuplicate = popcount(diff) <= 3;\nconst bandKeys = [0, 16, 32, 48].map((s) => (simhashA >> BigInt(s)) & 0xffffn);"
+            },
+            "diagram": {
+                "kind": "flow",
+                "title": "Near-duplicate pipeline",
+                "steps": [
+                    {
+                        "label": "Extract features",
+                        "note": "Weighted tokens or shingles"
+                    },
+                    {
+                        "label": "Fingerprint document",
+                        "note": "SimHash 64 bits"
+                    },
+                    {
+                        "label": "Index four bands",
+                        "note": "Exact-match band keys"
+                    },
+                    {
+                        "label": "Fetch candidates",
+                        "note": "Union of band hits"
+                    },
+                    {
+                        "label": "Verify similarity",
+                        "note": "Full Jaccard check"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-exercises-q27",
+            "difficulty": "advanced",
+            "tags": [
+                "notifications",
+                "prioritization",
+                "digest",
+                "engagement"
+            ],
+            "question": "How do you stop a notification service with a million senders from training users to ignore it?",
+            "answer": "Throughput is the easy part. The hard problem is limited user attention. I'd give every event a priority class, so password resets go out immediately and promotional traffic queues behind and is shed first. Frequency caps sit before rendering with per-user daily budgets per channel. Overflow collapses into a digest instead of being dropped, and an unread push escalates to email after an hour.",
+            "keyTakeaway": "Classify event priority, cap per-user frequency, downgrade overflow to digests, escalate channels deliberately.",
+            "diagram": {
+                "kind": "flow",
+                "title": "Notification attention budget",
+                "steps": [
+                    {
+                        "label": "Event arrives"
+                    },
+                    {
+                        "label": "Classify priority",
+                        "note": "transactional first"
+                    },
+                    {
+                        "label": "Frequency cap",
+                        "note": "per user, per channel"
+                    },
+                    {
+                        "label": "Overflow to digest",
+                        "note": "not silently dropped"
+                    },
+                    {
+                        "label": "Escalate channel",
+                        "note": "push, then email"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "system-design-exercises-q28",
+            "difficulty": "advanced",
+            "tags": [
+                "time-series",
+                "cardinality",
+                "labels",
+                "out-of-order"
+            ],
+            "question": "Your metrics database melts down every time a team adds a user-ID label to a metric, so what actually broke?",
+            "answer": "Each unique user ID label turns one metric into millions of time series. Cardinality, not traffic, kills time-series databases, because indexes, memory and query planning all scale with series count. I'd cap it at ingestion with a per-tenant budget and a hard limit per metric, and remap user IDs to coarse buckets like plan tier.",
+            "keyTakeaway": "Cardinality from high-unique labels, not request volume, kills TSDBs; budget and remap labels at ingestion.",
+            "diagram": {
+                "kind": "branch",
+                "title": "Cardinality gate",
+                "condition": "New series within budget?",
+                "yes": {
+                    "label": "Accept new series",
+                    "note": "Index and ingest"
+                },
+                "no": {
+                    "label": "Reject or remap",
+                    "note": "Bucket to coarse label"
+                }
+            }
+        }
+    ]
+}
