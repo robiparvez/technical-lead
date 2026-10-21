@@ -2,7 +2,7 @@
 
 This file holds the developer-facing details that used to live in the README: structure, the backend, design tokens, component behavior, deploy setup, versions and verification. For a plain description of the app, see the [README](../README.md).
 
-The live site is at https://robiparvez.github.io/technical-lead/.
+The site has no public host yet. It runs locally (see "What waits for P6").
 
 ## Run
 
@@ -70,6 +70,14 @@ The rebuild outbox, its dispatcher and `GET /v1/admin/rebuild` were removed once
 ### What waits for P6
 
 Everything production: hosting and the production database, `https://robiparvez.github.io` added to CORS and `trustedOrigins`, the `vars.API_URL` build variable, the `EXPORT_TOKEN` secret, a host that runs the Next server (with `API_URL` and `EXPORT_TOKEN` set), a deploy workflow for that host (the Pages workflow is gone), and the merge to `master`.
+
+## Shortcuts and small features
+
+- Press `/` anywhere to search questions, answers, takeaways and tags.
+- Press `Ctrl+B` (`Cmd+B` on a Mac) to hide the sidebar.
+- Click the full-screen button next to the theme button to fill the whole screen. Press `Esc` to leave it.
+- The site follows the system light or dark setting until the user clicks the sun or moon button.
+- The References page lists the sources used to choose the questions.
 
 ## Versions
 
