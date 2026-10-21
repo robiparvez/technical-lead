@@ -19,6 +19,7 @@ export const envSchema = z.object({
     TEST_DATABASE_URL: postgresUrl.optional(),
     BETTER_AUTH_SECRET: z.string().min(32, 'must be at least 32 characters'),
     TRUSTED_ORIGINS: z.string().optional(),
+    /** Reverse proxies in front of the API. Needed for per-client sign-in rate limits outside dev (P6). */
     TRUSTED_PROXIES: z.string().optional(),
     EXPORT_TOKEN: z.string().min(16, 'must be at least 16 characters'),
     SMTP_HOST: z.string().optional(),

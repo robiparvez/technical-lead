@@ -46,6 +46,30 @@ export type AuthInstance = ReturnType<typeof buildAuth>;
  * The bearer plugin converts `Authorization: Bearer <token>` into the session
  * cookie lookup and returns fresh tokens in the `set-auth-token` response
  * header (exposed to the browser via Access-Control-Expose-Headers).
+ *
+ * Security choices:
+ * - D3: no email verification, so sign-up signs straight in (autoSignIn).
+ * - Reset and password-changed mails are not awaited (sendMail never throws):
+ *   a slow mail server must not delay the answer, and a reset for a known
+ *   address must not answer slower than one for an unknown address.
+ * - The reset link works once, for 30 minutes.
+ * - D13: 24 h session, refreshed hourly while in use (the default updateAge of
+ *   1 day would never fire usefully with a 24 h expiry).
+ * - The rate limiter stores in the database, not memory (plan: Auth). The
+ *   library default is 3 per 60 s for a reset request (per client, not per
+ *   email) and 100 per 10 s for a reset submit. A reset request mails a real
+ *   inbox, so it gets a slower budget; the submit gets a tighter one against
+ *   token guessing.
+ * - Client IP: behind a proxy, better-auth walks x-forwarded-for from the
+ *   right, skips the TRUSTED_PROXIES hops, and rate-limits the first other IP.
+ *   With no proxies listed, no forwarded header is trusted, since a client
+ *   could spoof x-forwarded-for. Outside dev and test every client then shares
+ *   one bucket, so set TRUSTED_PROXIES before deploying behind a proxy (P6).
+ * - `role` is our column on the better-auth user table. `input: false` keeps
+ *   clients from granting it themselves; the only writer is
+ *   scripts/grant-admin.ts (plan: Auth).
+ * - better-auth has no callback for change-password, so the `after` hook sends
+ *   the password-changed mail.
  */
 export function buildAuth(overrides: AuthFactoryOverrides = {}) {
     const { db } = getDb();

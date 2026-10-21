@@ -193,6 +193,10 @@ function RailNode({ known, pending }: { known: boolean; pending: boolean }) {
 
 const HIGHLIGHTED = new Set(['typescript', 'javascript']);
 
+/**
+ * Renders a code snippet. For JS/TS, highlight() escapes the source before it
+ * reaches dangerouslySetInnerHTML, so the markup carries no raw snippet HTML.
+ */
 function CodeSnippet({ language, snippet }: { language: string; snippet: string }) {
     if (!HIGHLIGHTED.has(language)) {
         return (
