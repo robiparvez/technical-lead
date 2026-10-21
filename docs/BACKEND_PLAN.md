@@ -4,7 +4,7 @@
 >
 > **Superseded in part:** the site now reads PostgreSQL per request, so the rebuild pipeline in this plan (outbox, dispatcher, `GET /admin/rebuild`, `repository_dispatch`) was built and then removed. Read those sections as history.
 >
-> Revision 11. Revisions 1 to 3 merged a `nestjs-best-practices` review, three codebase reviews
+> Revision 12. Revisions 1 to 3 merged a `nestjs-best-practices` review, three codebase reviews
 > (frontend/data, backend/security, deploy pipeline) and a verification pass. Revision 4 recorded
 > the owner's decisions D1 to D5 and fixed eight findings from the revision 3 review. Revision 5
 > recorded the revision 4 defaults as D6 to D10. Revision 6 added D11 to D14 and the gaps they
@@ -12,8 +12,8 @@
 > skeleton loading states for API calls. Revision 9 adds D16, server-assigned readable ids for
 > new questions. Revision 10 folds in a review of revision 9: topic delete and create rules,
 > safer id assignment and outbox claiming, quiz event edge cases, and three wording fixes.
-> Revision 11 folds in the three residuals from the revision 10 verification. The list of
-> changes is at the bottom.
+> Revision 11 folds in the three residuals from the revision 10 verification. Revision 12
+> brings D3 and D13 in line with the code. The list of changes is at the bottom.
 
 ## Decisions
 
@@ -21,7 +21,7 @@
 |---|---|---|
 | D1 | **Database and hosting.** Development and verification use the local PostgreSQL 18 install (`C:\Program Files\PostgreSQL\18\bin\psql`, 18.2, listening on `localhost:5432`). Production hosting comes later, after development and verification are complete. | Decided |
 | D2 | **Source of truth.** The DB owns content after cutover. The committed JSON becomes a seed and a fallback snapshot. Hand edits to `src/data/topics/*.json` stop after cutover. | Decided |
-| D3 | **Email verification.** None in v1, and no mail provider. Admin access comes from a CLI script (see Auth), so an unverified signup cannot reach it. | Decided |
+| D3 | **Email verification and mail.** No email verification in v1. Password reset mail goes through a small plain-SMTP client (`SMTP_HOST`; MailHog in development). A real provider needs TLS and a login, so it needs a new package (D10) and the owner's approval, in P6. Admin access comes from a CLI script (see Auth), so an unverified signup cannot reach it. | Decided; mail added in revision 12 |
 | D4 | **Branch rule.** All backend work, this plan included, lives on `feat/nestjs-backend`. Nothing touches `master` until the hosting phase (P6), and P6 starts only with the owner's approval. | Decided |
 | D5 | **`CLAUDE.md`.** The owner works alone, so P0 untracks it with `git rm --cached CLAUDE.md`. The `.gitignore` line stays. The untrack is staged and goes into the first P0 commit. | Decided |
 | D6 | **CSP.** A post-build script hashes every inline script per HTML file and writes a per-page CSP meta tag. No `'unsafe-inline'`. Used in P4. | Decided |
@@ -31,7 +31,7 @@
 | D10 | **Package trust rule.** First-party packages only (NestJS, better-auth, Drizzle, and the libraries listed in Stack). A community package needs the owner's approval. Applies to all phases. | Decided |
 | D11 | **Group order.** Columns on `topics`: `group_label` plus `group_sort_order`. No `groups` table, because there are only 2 groups ("Technical", "Leadership & behavioral"). Move to a table only if groups gain their own fields. Used in P1. | Decided |
 | D12 | **Validation library.** zod for every DTO, including the `code` and `diagram` jsonb unions, through a hand-written `ZodValidationPipe` (about 10 lines). It replaces the class-validator global `ValidationPipe`. No `nestjs-zod` (D10). Used in P1. | Decided |
-| D13 | **Limits.** Session `expiresIn` 24 h, refreshed while in use. Public GETs: 60 requests per minute per IP. Auth routes: better-auth defaults. Cache TTL 5 min (a backstop, since writes invalidate). Event batch: 100. Delta arrays: 1,000 ids each (above the 532 questions, so a first sign-in fits one call). Request body: 100 KB. Used in P1 and P4. | Decided |
+| D13 | **Limits.** Session `expiresIn` 24 h, refreshed while in use. Public GETs: 60 requests per minute per IP, and `HEAD` counts like `GET`. Auth routes: sign-in, sign-up, password change and email change keep better-auth's rule of 3 requests per 10 s; a password reset request gets 3 per 10 min and a reset submit gets 10 per min. The limiter stores its counts in the database and keys them by client IP, so outside dev and test every client shares one bucket until `TRUSTED_PROXIES` is set. Cache TTL: 5 min on `/topics` and `/topics/:slug` (a backstop, since writes invalidate), 60 s on `/export`. Event batch: 100, with one batch running per user and 5 running in all (a refused batch gets 429). Delta arrays: 1,000 ids each (above the 532 questions, so a first sign-in fits one call). Request body: 100 KB. Used in P1 and P4. | Decided; revised in revision 12 |
 | D14 | **No sanitizer library.** Admin writes are stored as written and escaped on output. Code snippets must keep characters such as `<script>`, so an HTML sanitizer would damage them. Writes get length limits and reject control characters. Used in P3. | Decided |
 | D15 | **Skeleton loading.** Every view that waits on an API call with nothing to show yet renders `<Skeleton>` (`src/components/Skeleton.tsx`), shaped like the content it stands in for. Not `loading.tsx`: Next lists static export as unsupported for it (`node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/loading.md:134`), because it needs streaming. Skeletons render in a client component's loading branch or as a `<Suspense>` fallback. See Loading states. Used in P3 and P4; `/admin` already has it. | Decided |
 | D16 | **New question ids stay readable and are assigned by the server.** `POST /admin/questions` ignores any id the client sends and assigns `<prefix>-q<N>`, where N is one above the highest number among all of the topic's questions, deleted ones included (so no id is reused). The prefix is the topic's `question_id_prefix` column. This keeps ids short in `#question-id` links, DB rows and logs, and in the same form as the 532 existing ids such as `hr-q1`. The create transaction first takes `pg_advisory_xact_lock(hashtext(topic_slug))`, so two creates in one topic run one after the other and cannot pick the same N. A retry would not work here, because a unique violation aborts the whole PostgreSQL transaction, outbox row included. The primary key stays as a backstop: a violation returns 409. The editor shows the id read-only ("Assigned when you save"). History: the owner asked for UUIDs from the `uuid` package, then for the built-in `crypto.randomUUID()`, then chose readable ids after the readability cost was shown. No package was added, so D10 holds. Used in P3. | Decided |
@@ -47,7 +47,7 @@ Copy the file somewhere safe before you switch to `master`. The P6 merge removes
 | Detail | Options | Phase |
 |---|---|---|
 | How the admin edits content | **In progress:** a `/admin` page in the static site, designed against a mock (`src/lib/adminApi.ts`). Still open: how it checks the admin role before showing content, and whether it ships to Pages or stays local until P6. | P3 |
-| Password reset without email (D3) | a `server/` CLI script `npm run user:reset-password`, or no reset in v1 | P4 |
+| Password reset (D3) | **Done in revision 12:** reset by mail over plain SMTP. Still open: the production mail provider, with TLS and a login | P6 |
 | Swagger docs for zod DTOs | zod's JSON Schema output fed to `@ApiBody({ schema })`, or hand-written Swagger schemas | P1 |
 | Production host and Postgres provider | for example Railway or Fly.io, plus Neon | P6 |
 
@@ -65,7 +65,7 @@ commit-back needs only `contents: write` on its job. Check again at P6.
 | Auth | **better-auth 1.7.x**, email/password, **bearer plugin**, `trustedOrigins` | Bearer tokens because cookie sessions break cross-origin from GitHub Pages. OAuth is deferred. |
 | Hardening | `@nestjs/throttler`, `helmet`, **zod** with a global hand-written `ZodValidationPipe` (D12), global exception filter (`{ statusCode, message, error }`), env validation with `@nestjs/config` and a schema | The throttler exempts `/health/*` and `/export`. `/export` is outside the throttler and the build token protects it (compared in constant time). |
 | Logging | **nestjs-pino** 5.3.x + `app.enableShutdownHooks()` | Peers `@nestjs/* ^11.0.8 \|\| ^12.0.2`, Node `>=22.12.0` (checked on npm) |
-| Caching | In-memory TTL cache on public content endpoints, invalidated on admin writes | Valid for one instance. A second instance needs a DB version stamp instead. |
+| Caching | In-memory TTL cache on `/topics` and `/topics/:slug` (5 min) and on `/export` (60 s), cleared by every admin write | Valid for one instance. A second instance needs a DB version stamp instead. |
 | Docs | `@nestjs/swagger` at `/docs` | Disabled in production. zod DTOs carry no Swagger metadata, so see Open details. |
 
 **Location:** `server/`, a self-contained npm project on this branch.
@@ -92,7 +92,7 @@ server/
 │                        # EXPORT_TOKEN, DISPATCH_ENABLED, GITHUB_REPO_DISPATCH_TOKEN
 ├── drizzle.config.ts
 ├── scripts/
-│   └── grant-admin.ts   # npm run admin:grant -- <email>
+│   └── grant-admin.ts   # npm run admin:grant -- <email> [--yes | --revoke]
 └── src/
     ├── main.ts          # NestFactory.create(AppModule, { bodyParser: false }); better-auth
     │                    # handler mounted first, then express.json() for Nest routes; /v1 prefix,
@@ -141,10 +141,16 @@ re-run cannot erase admin edits. It sets each topic's `question_id_prefix` from 
   (`/technical-lead/login/`, since `trailingSlash` is on). Do not put tokens in query strings.
 - **Admin role comes only from `npm run admin:grant -- <email>`.** No signup path grants it. This
   closes the case where someone registers the admin address first, because email sign-up does not
-  require verification.
+  require verification. For the same reason the command only shows the account (id, name, created
+  time, active sessions) until you add `--yes`, so you can check that you made it. `--revoke`
+  returns the account to `user`.
 - Session: `expiresIn` 24 h, refreshed while in use (D13; the default is 7 days; confirm the
   better-auth option names at P1), `revokeSessionsOnPasswordReset: true`, `cookieCache` off, a
   sign-out-everywhere endpoint.
+- Password reset (D3): a reset request mails a link that works once, for 30 minutes. Submitting it
+  revokes the user's sessions. A reset or a password change then mails a "password changed"
+  notice. The server sends these mails without waiting for them, so a known address does not
+  answer slower than an unknown one.
 - Rate limiting: better-auth's limiter stores data in memory by default. Set its storage to the
   database, and set `trustedProxies` or `ipAddressHeaders`. Otherwise `x-forwarded-for` can be spoofed.
 - Token storage: localStorage is readable by any XSS. DB content reaches raw HTML in one place:
@@ -169,12 +175,12 @@ re-run cannot erase admin edits. It sets each topic's `question_id_prefix` from 
 | `/api/auth/*` (better-auth) | none | sign-up/in/out; `GET /api/auth/ok` smoke test |
 | `GET /health/live`, `GET /health/ready` | none | liveness; readiness with DB check. Not throttled. |
 | `GET /topics`, `GET /topics/:slug` | none | topics with counts; full topic (cached, throttled) |
-| `GET /questions?tag=&difficulty=&limit=&cursor=` | none | filtered, paginated list (throttled) |
-| `GET /export` | build token | all topics, groups and questions in one payload, uncached, with a content version hash. Used by `fetch-content.mjs`. |
+| `GET /questions?tag=&difficulty=&limit=&cursor=` | none | filtered list in site order (group, topic, then question), cursor-paginated. The opaque cursor holds all four sort keys, so a cursor from before revision 12 gets 400. Throttled. |
+| `GET /export` | build token | all topics, groups and questions in one payload, cached for 60 s and cleared by every admin write, with a content version hash. The Next server reads it on every page request; `fetch-content.mjs` is gone. |
 | `GET /progress/known` | user | `{ questionIds: string[] }` |
 | `POST /progress/known` | user | `{ add: string[], remove: string[] }`. Ids are validated against `questions`, arrays are capped, and unknown ids are dropped. |
 | `GET /quiz/state` | user | scores snapshot plus `reset_epoch` |
-| `POST /quiz/events` | user | capped batch of events, each with a client `event_id` and `client_ts`. The batch is not all-or-nothing: the response lists one result per event, `applied`, `duplicate` (a replayed `event_id`) or `rejected` with a reason, and a client drops a rejected event. Types: `attempt_started` (carries `client_attempt_id`, returns the server number), `answer_recorded` (references `client_attempt_id`; if the server has no such attempt, because the start event was lost or retention removed it, the event is `rejected` with 422), `reset` (for one topic, in one transaction: delete the user's `quiz_attempts` for the topic, set its `quiz_topic_totals` to zero, and increase `reset_epoch`; `quiz_events` rows stay, because they are the replay guard), `import_local` (one time, guarded by `quiz_state.imported_at`). Events run in order. Every quiz event carries the client's `reset_epoch`; on a mismatch with `quiz_state` the event comes back `rejected` with 409 and the client refetches `GET /quiz/state`. Per-event statuses (`applied`, `duplicate`, `rejected` with 422 or 409) are result codes inside the 200 batch response, not HTTP statuses. Validated: `correct <= answered`, bounded `points`, question ids belong to the topic, `client_ts` within 90 days. |
+| `POST /quiz/events` | user | capped batch of events, each with a client `event_id` and `client_ts`. The batch is not all-or-nothing: the response lists one result per event, `applied`, `duplicate` (a replayed `event_id`) or `rejected` with a reason, and a client drops a rejected event. Types: `attempt_started` (carries `client_attempt_id`, returns the server number), `answer_recorded` (references `client_attempt_id`; if the server has no such attempt, because the start event was lost or retention removed it, the event is `rejected` with 422), `reset` (for one topic, in one transaction: delete the user's `quiz_attempts` for the topic, set its `quiz_topic_totals` to zero, and increase `reset_epoch`; `quiz_events` rows stay, because they are the replay guard), `import_local` (one time, guarded by `quiz_state.imported_at`). Events run in order. Every quiz event carries the client's `reset_epoch`; on a mismatch with `quiz_state` the event comes back `rejected` with 409 and the client refetches `GET /quiz/state`. Per-event statuses (`applied`, `duplicate`, `rejected` with 422 or 409) are result codes inside the 200 batch response, not HTTP statuses. Validated: `correct <= answered`, bounded `points`, question ids belong to the topic, `client_ts` within 90 days. A user can have one batch running at a time and the API runs 5 in all; a request over either limit gets HTTP 429, and the client keeps its queue and retries. |
 | `GET /admin/topics` | admin | topic list for the `/admin` page: every topic, including drafts (no live question) and soft-deleted ones, each with `draft` and `deleted` flags and question counts. The public `GET /topics` omits them. Added in revision 11. |
 | `GET /admin/rebuild` | admin | outbox summary for the `/admin` page: `{ pending, lastSavedAt, requestedAt, failed }`, where `failed` counts rows whose retries are exhausted, so a dead pipeline is visible on the page. Added for the admin page design; `failed` added in revision 11. |
 | `GET /admin/topics/:slug/deleted` | admin | soft-deleted questions of one topic, newest first: `{ question, deletedAt }[]`. Added for the admin page; not built. |
@@ -326,6 +332,16 @@ P3 and P4 can run in parallel, except the last P3 step (the admin role check on 
 - **Bearer token in localStorage.** An XSS can read it. The per-page CSP and output escaping reduce the risk.
 - **Offline queue has a 90-day limit.** Older queued quiz events are dropped.
 - **No live rebuild before P6.** The dispatch pipeline runs only locally and in tests until hosting and the merge.
+
+## Changes in revision 12
+
+The code moved ahead of the plan on mail, limits and the admin command. This revision records what the code does.
+
+1. D3: password reset mail goes through a plain-SMTP client. The plan said no mail provider and a CLI reset. A production provider with TLS and a login is a P6 task.
+2. D13: the cache TTL is 5 min on the public topic endpoints and 60 s on `/export` (the plan said 5 min). Auth routes keep better-auth's 3 per 10 s for sign-in, sign-up, password change and email change, with custom rules for password reset (the plan said better-auth defaults). `HEAD` counts against the public limit. Quiz batches are capped at one per user and 5 in all.
+3. `GET /questions` orders by group, topic, then question. The cursor gained the group key, so older cursors get 400.
+4. `GET /export` is cached for 60 s and read by the Next server on each page request.
+5. `npm run admin:grant` shows the account and grants only with `--yes`. `--revoke` removes the role.
 
 ## Changes in revision 11
 

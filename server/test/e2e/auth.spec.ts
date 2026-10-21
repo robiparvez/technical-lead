@@ -9,7 +9,7 @@ import { buildAuth } from '../../src/auth/auth.factory.js';
 import { AdminGuard } from '../../src/auth/admin.guard.js';
 import { AuthGuard } from '../../src/auth/auth.guard.js';
 import { AUTH } from '../../src/auth/auth.tokens.js';
-import { grantAdmin } from '../../scripts/grant-admin.js';
+import { findAccount, grantAdmin, runCli } from '../../scripts/grant-admin.js';
 import { getDb } from '../../src/db/client.js';
 import { user as userTable } from '../../src/db/schema.js';
 
@@ -94,6 +94,43 @@ describe('npm run admin:grant', () => {
         const result = await grantAdmin(uniqueEmail('missing'));
         expect(result.ok).toBe(false);
         if (!result.ok) expect(result.error).toContain('No user');
+    });
+
+    it('shows the account facts the owner checks before granting', async () => {
+        const { email, userId } = await signUp(app, uniqueEmail('grant-show'));
+        const found = await findAccount(email);
+        expect(found).toMatchObject({ ok: true, account: { id: userId, email, role: 'user' } });
+        if (found.ok) {
+            expect(Date.now() - found.account.createdAt.getTime()).toBeLessThan(60_000);
+            expect(found.account.sessions).toBeGreaterThanOrEqual(1);
+        }
+        expect((await findAccount(uniqueEmail('nobody'))).ok).toBe(false);
+    });
+
+    it('the command line only shows the account until --yes is given, and --revoke demotes', async () => {
+        const { email, userId } = await signUp(app, uniqueEmail('grant-cli'));
+        const roleOf = async () => {
+            const [row] = await getDb().db.select().from(userTable).where(eq(userTable.id, userId));
+            return row?.role;
+        };
+
+        const dryRun = await runCli([email]);
+        expect(dryRun.ok).toBe(false);
+        expect(dryRun.lines.join('\n')).toContain(userId);
+        expect(dryRun.lines.join('\n')).toContain('--yes');
+        expect(await roleOf()).toBe('user');
+
+        expect((await runCli([email, '--yes'])).ok).toBe(true);
+        expect(await roleOf()).toBe('admin');
+
+        expect((await runCli([email, '--revoke'])).ok).toBe(true);
+        expect(await roleOf()).toBe('user');
+    });
+
+    it('prints the usage when no email is given', async () => {
+        const result = await runCli([]);
+        expect(result.ok).toBe(false);
+        expect(result.lines.join('\n')).toContain('Usage');
     });
 });
 

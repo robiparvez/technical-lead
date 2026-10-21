@@ -5,8 +5,8 @@ import { diagramSchema, difficultySchema } from '../common/content.schemas.js';
  * Admin write DTOs (plan: API endpoints admin rows, D13/D14). Limits match
  * the /admin editor's LIMITS (src/lib/adminApi.ts), which the seeded content
  * already satisfies. No sanitizer (D14): strings are stored as written, but
- * control characters (everything below 0x20 except tab and newline, plus
- * 0x7F) are rejected, because they never belong in content.
+ * control characters (everything below 0x20 except tab, newline and carriage
+ * return, plus 0x7F) are rejected, because they never belong in content.
  */
 
 // eslint-disable-next-line no-control-regex -- the point of the check (D14)

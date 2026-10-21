@@ -178,7 +178,7 @@ export function hashContentVersion(exportBody: ContentState['exportBody']): stri
 /**
  * Builds the full export payload: groups + topics + questions with the same
  * exclusions as the public endpoints, the technologies, and a content_version
- * hash. Never cached.
+ * hash.
  */
 @Injectable()
 export class ExportService {

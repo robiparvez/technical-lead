@@ -3,7 +3,13 @@ import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.js';
 import { quizAttempts, quizState, quizTopicTotals, questions, topics } from '../db/schema.js';
 import { uniqueViolationConstraint } from '../common/pg-errors.js';
-import type { ImportLocalTotals, QuizEvent, QuizEventResult } from './quiz.schemas.js';
+import {
+    MAX_PENALTY_PER_ANSWER,
+    MAX_POINTS_PER_ANSWER,
+    type ImportLocalTotals,
+    type QuizEvent,
+    type QuizEventResult,
+} from './quiz.schemas.js';
 
 /** Marker for a retryable attempt-number clash (see applyAttemptStarted). */
 export class AttemptNumberConflict extends Error {}
@@ -97,8 +103,8 @@ export class QuizEventHandlers {
             return this.reject(event, 'correct exceeds answered', 422);
         }
         if (
-            event.points > event.answered * 30 ||
-            event.points < -(event.answered * 15)
+            event.points > event.answered * MAX_POINTS_PER_ANSWER ||
+            event.points < -(event.answered * MAX_PENALTY_PER_ANSWER)
         ) {
             return this.reject(event, 'points out of range for the answer count', 422);
         }

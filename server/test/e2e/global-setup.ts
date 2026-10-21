@@ -5,6 +5,7 @@ import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { dirname, join } from 'node:path';
 import { runSeed } from '../support/seed.js';
+import { assertTestDatabaseUrl } from '../support/test-database.js';
 import * as schema from '../../src/db/schema.js';
 
 /**
@@ -15,10 +16,10 @@ import * as schema from '../../src/db/schema.js';
 function testDatabaseUrl(): string {
     if (process.env.TEST_DATABASE_URL) return process.env.TEST_DATABASE_URL;
     try {
-        const envPath = fileURLToPath(new URL('../.env', import.meta.url));
+        const envPath = fileURLToPath(new URL('../../.env', import.meta.url));
         const file = readFileSync(envPath, 'utf8');
         const match = /^TEST_DATABASE_URL=(.*)$/m.exec(file);
-        if (match?.[1]) return match[1].trim();
+        if (match?.[1]) return match[1].trim().replace(/^["']|["']$/g, '');
     } catch {
         // no .env file (CI): fall through to the default
     }
@@ -27,6 +28,7 @@ function testDatabaseUrl(): string {
 
 export default async function setup(): Promise<void> {
     const url = testDatabaseUrl();
+    assertTestDatabaseUrl(url);
     const admin = postgres(url, { max: 1 });
 
     await admin`drop schema if exists drizzle cascade`;

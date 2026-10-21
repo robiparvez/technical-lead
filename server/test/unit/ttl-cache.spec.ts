@@ -22,14 +22,12 @@ describe('TtlCacheService', () => {
         expect(cache.get('k')).toBeUndefined();
     });
 
-    it('delete and clear drop entries', () => {
+    it('clear drops every entry', () => {
         const cache = new TtlCacheService();
         cache.set('a', 1);
         cache.set('b', 2);
-        cache.delete('a');
-        expect(cache.get('a')).toBeUndefined();
-        expect(cache.get('b')).toBe(2);
         cache.clear();
+        expect(cache.get('a')).toBeUndefined();
         expect(cache.get('b')).toBeUndefined();
     });
 

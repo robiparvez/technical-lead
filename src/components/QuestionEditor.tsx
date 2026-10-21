@@ -6,6 +6,7 @@ import ResultMark from '@/components/ResultMark';
 import TextField from '@/components/TextField';
 import {
     LANGUAGES,
+    LIMITS,
     checkQuestion,
     deleteQuestion,
     parseDiagramSpec,
@@ -103,7 +104,7 @@ function fromDraft(d: Draft): { question: Question; diagramError?: string } {
 /**
  * Add or edit one question. Field errors appear once a field loses focus or
  * on save; the checks list beside the form runs live and mirrors the rules
- * the site build enforces. Saving with errors shows a summary that links to
+ * the server enforces on save. Saving with errors shows a summary that links to
  * each field. Back and Delete each ask before they throw work away.
  */
 export default function QuestionEditor({
@@ -292,7 +293,7 @@ export default function QuestionEditor({
                         id='q-question'
                         label='Question'
                         value={draft.question}
-                        max={300}
+                        max={LIMITS.question}
                         multiline
                         rows={2}
                         error={shown('question')}
@@ -304,7 +305,7 @@ export default function QuestionEditor({
                         label='Answer'
                         hint='Shown as one paragraph under the question.'
                         value={draft.answer}
-                        max={2000}
+                        max={LIMITS.answer}
                         multiline
                         rows={8}
                         error={shown('answer')}
@@ -316,7 +317,7 @@ export default function QuestionEditor({
                         label='Key takeaway'
                         hint='The quiz shows it as the correct option and as a wrong option for other questions, so make it a complete sentence that differs from every other takeaway in this topic.'
                         value={draft.keyTakeaway}
-                        max={240}
+                        max={LIMITS.keyTakeaway}
                         multiline
                         rows={2}
                         error={shown('keyTakeaway')}
@@ -379,7 +380,7 @@ export default function QuestionEditor({
                                         label='Snippet'
                                         hint='Write it as it should appear. The page shows it as text, so markup stays visible.'
                                         value={draft.codeSnippet}
-                                        max={4000}
+                                        max={LIMITS.snippet}
                                         multiline
                                         rows={8}
                                         mono
@@ -457,10 +458,10 @@ export default function QuestionEditor({
 
                 <aside className='admin-checks' aria-labelledby='checks-title'>
                     <h3 id='checks-title' className='admin-checks-title'>
-                        Site build checks
+                        Save checks
                     </h3>
                     <p className='field-hint'>
-                        The site build stops on any of these, so the page checks them as you type.
+                        The server rejects a save that fails any of these, so the page checks them as you type.
                     </p>
                     <ul className='admin-check-list'>
                         {checks.map((c) => (

@@ -107,7 +107,7 @@ For a production build, run `npm run build` and then `npm start`. The old GitHub
 
 ## Editing the content (for the site owner)
 
-Questions and topics can be edited in the browser on the `/admin` page. It is not linked from the site and search engines are told to skip it. To use it, create an account on the `/login` page, then grant that account the admin role from the command line (`npm run admin:grant -- <email>` inside `server/`). After you sign in, `/admin` shows the content editor, and the Account page there changes your password. If you forget it, use "Forgot password?" on the sign-in screen; in development the mail is caught by MailHog and you read it at http://localhost:8025 (setup in [docs/TECHNICAL.md](docs/TECHNICAL.md)). Saved edits go into the database, and the public site shows them the next time a page loads. Setup and details: [docs/TECHNICAL.md](docs/TECHNICAL.md).
+Questions and topics can be edited in the browser on the `/admin` page. It is not linked from the site and search engines are told to skip it. To use it, create an account on the `/login` page, then grant that account the admin role from the command line (`npm run admin:grant -- <email>` inside `server/` shows the account; check that you made it, then run it again with `--yes`). After you sign in, `/admin` shows the content editor, and the Account page there changes your password. If you forget it, use "Forgot password?" on the sign-in screen; in development the mail is caught by MailHog and you read it at http://localhost:8025 (setup in [docs/TECHNICAL.md](docs/TECHNICAL.md)). Saved edits go into the database, and the public site shows them the next time a page loads. Setup and details: [docs/TECHNICAL.md](docs/TECHNICAL.md).
 
 ## For developers
 

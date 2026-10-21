@@ -88,6 +88,7 @@ describe('admin guards', () => {
     it('rejects a signed-in non-admin with 403 on every admin route', async () => {
         const routes: [method: 'get' | 'post' | 'patch' | 'del', path: string][] = [
             ['get', '/v1/admin/topics'],
+            ['get', '/v1/admin/topics/hr-round'],
             ['post', '/v1/admin/topics'],
             ['patch', '/v1/admin/topics/hr-round'],
             ['del', '/v1/admin/topics/hr-round'],
@@ -450,5 +451,56 @@ describe('the cached /v1/export', () => {
         expect(titleOf(await read())).toBe('Before');
         await admin.patch(`/v1/admin/topics/${slug}`).send({ title: 'After' }).expect(200);
         expect(titleOf(await read())).toBe('After');
+    });
+});
+
+describe('PATCH /v1/admin/questions/:id replaces the question', () => {
+    const slug = `${TMP_SLUG_PREFIX}replace`;
+    const code = { language: 'typescript', snippet: 'const answer = 42;' };
+    const diagram = { kind: 'flow', title: 'Replace flow', steps: [{ label: 'One' }, { label: 'Two' }] };
+
+    it('clears the code and diagram that the body omits, and keeps the sort order', async () => {
+        await createTopic(slug, 'tmr');
+        const created = await admin
+            .post('/v1/admin/questions')
+            .send({ topicSlug: slug, ...questionBody('Replace takeaway for e2e.', { code, diagram }) })
+            .expect(201);
+        const saved = created.body.saved;
+        expect(saved).toMatchObject({ code, diagram });
+
+        const replacement = {
+            id: saved.id,
+            difficulty: saved.difficulty,
+            tags: saved.tags,
+            question: saved.question,
+            answer: saved.answer,
+            keyTakeaway: saved.keyTakeaway,
+        };
+        const replaced = await admin.patch(`/v1/admin/questions/${saved.id}`).send(replacement).expect(200);
+        expect(replaced.body.saved).toMatchObject({ code: null, diagram: null, sortOrder: saved.sortOrder });
+    });
+
+    it('rejects a body that omits a required field with 422 fields', async () => {
+        const topic = await admin.get(`/v1/admin/topics/${slug}`).expect(200);
+        const response = await admin
+            .patch(`/v1/admin/questions/${topic.body.questions[0].id}`)
+            .send({ difficulty: 'basic' })
+            .expect(422);
+        expect(Object.keys(response.body.fields)).toEqual(
+            expect.arrayContaining(['tags', 'question', 'answer', 'keyTakeaway']),
+        );
+    });
+});
+
+describe('moving a topic to another group', () => {
+    it('does not take the group order from a deleted topic', async () => {
+        const gone = `${TMP_SLUG_PREFIX}grp-gone`;
+        const mover = `${TMP_SLUG_PREFIX}grp-mover`;
+        await createTopic(gone, 'tmga', { groupLabel: 'Tmp Group', groupSortOrder: 5 });
+        await createTopic(mover, 'tmgb');
+        await admin.del(`/v1/admin/topics/${gone}`).expect(200);
+
+        const response = await admin.patch(`/v1/admin/topics/${mover}`).send({ group: 'Tmp Group' }).expect(422);
+        expect(response.body.fields.group).toMatch(/No topic uses the group/);
     });
 });

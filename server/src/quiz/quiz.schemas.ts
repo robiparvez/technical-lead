@@ -3,6 +3,13 @@ import { z } from 'zod';
 /** D13: at most 100 events per batch. */
 export const MAX_EVENTS_PER_BATCH = 100;
 
+/**
+ * Batches that may run at once, across all users. A running batch holds one
+ * DB connection and the pool is 10 (db/client.ts), so the rest of the API keeps
+ * the other connections. One batch per user: the per-user lock serializes them.
+ */
+export const MAX_CONCURRENT_BATCHES = 5;
+
 /** D8: events older than this are rejected and pruned server-side. */
 export const EVENT_WINDOW_DAYS = 90;
 
@@ -10,9 +17,9 @@ export const EVENT_WINDOW_DAYS = 90;
 export const ATTEMPT_RETENTION = 20;
 
 /** Highest single-answer reward (advanced, src/lib/quiz.ts POINTS). */
-const MAX_POINTS_PER_ANSWER = 30;
+export const MAX_POINTS_PER_ANSWER = 30;
 /** Highest single-answer penalty (advanced, src/lib/quiz.ts POINTS). */
-const MAX_PENALTY_PER_ANSWER = 15;
+export const MAX_PENALTY_PER_ANSWER = 15;
 
 const isoTimestamp = z
     .string()

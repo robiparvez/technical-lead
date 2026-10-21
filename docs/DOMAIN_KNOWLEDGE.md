@@ -77,7 +77,7 @@ The repo contains two cooperating systems:
 4. **Quiz engine** (`/quiz`, `/quiz/<slug>`) — 4-option "pick the right takeaway" quiz, scored 10/20/30 by difficulty, wrong answers cost half; consecutive attempts never repeat questions; history and per-topic totals (`src/lib/quiz.ts`, `src/lib/scores.ts`). Full algorithm in §7, W2.
 5. **Progress tracking** — "Mark as known" per question; `12/28`-style counters in the sidebar and on home cards for every topic and technology (`TopicNav.tsx:56-110`).
 6. **Optional accounts and sync** (`/login`) — email/password sign-in (better-auth); signed in, the known set and quiz scores replicate to the server and follow the user across devices; signed out or offline, everything stays local and the site behaves identically (degraded-mode notice only).
-7. **Admin content editing** (`/admin`, unlinked, `noindex`) — browser editor for topics and questions with live "site build checks", field-level 422 errors, soft-delete/restore, and a rebuild status line. Role-gated to the `admin` role.
+7. **Admin content editing** (`/admin`, unlinked, `noindex`) — browser editor for topics and questions with live "save checks", field-level 422 errors, and soft-delete/restore. Role-gated to the `admin` role.
 8. **Content export pipeline** — the database is the source of truth after cutover: admin edits → `rebuild_outbox` → GitHub dispatch → fetch `/v1/export` → regenerate `src/data/manifest.json` + `src/data/topics/*.json` → static rebuild (§7, W5).
 9. **References page** (`/references`) — the 21 sources consulted when choosing questions; editorial accountability for content provenance (PROMPT.md: "List all sources on a References page").
 10. **Environment niceties** — light/dark/system theme with pre-paint script, fullscreen mode, `/` search shortcut, `Ctrl+B` sidebar toggle, reduced-motion support.
@@ -320,7 +320,7 @@ sequenceDiagram
 - **Update question**: `topicSlug` must equal the current one (questions can't move topics, 422); omitted `code`/`diagram` become null; omitted `sortOrder` is kept.
 - **Delete question** → soft delete; id stays reserved (R2/R4); listed under "Deleted questions" (newest first); **Restore** reactivates under the original id unless the takeaway was claimed (422 `fields.restore`).
 - **Delete topic** → soft delete; leaves every public surface; slug stays reserved forever; no restore endpoint in v1 (R3/R4).
-- **UI safety**: the editor mirrors the pipeline's checks live ("Site build checks" panel), blocks navigation while dirty, focuses an error summary whose links jump to each field, and renders server 422 `fields` messages per field.
+- **UI safety**: the editor mirrors the server's checks live ("Save checks" panel), blocks navigation while dirty, focuses an error summary whose links jump to each field, and renders server 422 `fields` messages per field.
 
 ### W5 — Edit → rebuild → public site (the content pipeline)
 
@@ -370,7 +370,7 @@ Before `feat/nestjs-backend`, topic JSON was hand-edited. Post-cutover (D2) the 
 | --- | --- |
 | `GET /v1/topics` | Live topics with live question counts; drafts excluded; ordered by (group, sort). 5-min cache. |
 | `GET /v1/topics/:slug` | Topic + full questions; **404 for missing, soft-deleted, or zero-live-question topics**. |
-| `GET /v1/questions` | Keyset-paginated across topics (`limit` 1–100 default 20; opaque base64url cursor `{t,s,i}`; invalid cursor → 400; `tag`, `difficulty` filters). Excludes soft-deleted rows. |
+| `GET /v1/questions` | Keyset-paginated across topics (`limit` 1–100 default 20; opaque base64url cursor `{g,t,s,i}`; invalid cursor → 400; `tag`, `difficulty` filters). Excludes soft-deleted rows. |
 | `GET /v1/export` | **Token-gated** (`x-export-token`, constant-time compare, D7); never cached, exempt from throttler. Full content + `contentVersion` (sha256 of body). |
 | `GET /v1/health/live` · `/v1/health/ready` | Liveness (no DB) / readiness (`select 1`, 503 on failure). |
 

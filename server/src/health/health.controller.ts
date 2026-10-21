@@ -1,10 +1,12 @@
-import { Controller, Get, Inject, ServiceUnavailableException } from '@nestjs/common';
+import { Controller, Get, Inject, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 import type { Database } from '../db/client.js';
 import { DB } from '../db/db.module.js';
 
 @Controller('health')
 export class HealthController {
+    private readonly logger = new Logger(HealthController.name);
+
     constructor(@Inject(DB) private readonly db: Database) {}
 
     /** Liveness: the process is up. No database touch, never throttled. */
@@ -19,10 +21,8 @@ export class HealthController {
         try {
             await this.db.execute(sql`select 1`);
         } catch (error) {
-            throw new ServiceUnavailableException({
-                message: 'database unavailable',
-                cause: error,
-            });
+            this.logger.error('Readiness check failed', error instanceof Error ? error.stack : String(error));
+            throw new ServiceUnavailableException('database unavailable');
         }
         return { status: 'ok', db: 'up' };
     }

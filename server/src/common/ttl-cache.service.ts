@@ -7,7 +7,7 @@ interface CacheEntry {
 
 /**
  * In-memory TTL cache for public content endpoints (plan: Stack / D13).
- * Single-instance by design; admin writes in P3 call the invalidation methods.
+ * Single-instance by design; admin writes call clear().
  * Default TTL is 5 minutes.
  */
 @Injectable()
@@ -27,10 +27,6 @@ export class TtlCacheService {
 
     set<T>(key: string, value: T, ttlMs: number = TtlCacheService.DEFAULT_TTL_MS): void {
         this.entries.set(key, { value, expiresAt: Date.now() + ttlMs });
-    }
-
-    delete(key: string): void {
-        this.entries.delete(key);
     }
 
     clear(): void {

@@ -34,12 +34,14 @@ export const questionListItemSchema = questionDtoSchema.extend({
 export type QuestionListItemDto = z.infer<typeof questionListItemSchema>;
 
 const cursorPayloadSchema = z.object({
+    g: z.number().int(),
     t: z.number().int(),
     s: z.number().int(),
     i: z.string().min(1),
 });
 
 export interface QuestionCursor {
+    groupSortOrder: number;
     topicSortOrder: number;
     sortOrder: number;
     id: string;
@@ -47,7 +49,7 @@ export interface QuestionCursor {
 
 export function encodeQuestionCursor(cursor: QuestionCursor): string {
     return Buffer.from(
-        JSON.stringify({ t: cursor.topicSortOrder, s: cursor.sortOrder, i: cursor.id }),
+        JSON.stringify({ g: cursor.groupSortOrder, t: cursor.topicSortOrder, s: cursor.sortOrder, i: cursor.id }),
         'utf8',
     ).toString('base64url');
 }
@@ -55,7 +57,7 @@ export function encodeQuestionCursor(cursor: QuestionCursor): string {
 export function decodeQuestionCursor(raw: string): QuestionCursor | undefined {
     try {
         const payload = cursorPayloadSchema.parse(JSON.parse(Buffer.from(raw, 'base64url').toString('utf8')));
-        return { topicSortOrder: payload.t, sortOrder: payload.s, id: payload.i };
+        return { groupSortOrder: payload.g, topicSortOrder: payload.t, sortOrder: payload.s, id: payload.i };
     } catch {
         return undefined;
     }

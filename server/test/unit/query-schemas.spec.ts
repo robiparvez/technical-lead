@@ -8,7 +8,7 @@ import {
 
 describe('question cursor codec', () => {
     it('round-trips a cursor', () => {
-        const cursor = { topicSortOrder: 3, sortOrder: 27, id: 'hr-q28' };
+        const cursor = { groupSortOrder: 1, topicSortOrder: 3, sortOrder: 27, id: 'hr-q28' };
         const encoded = encodeQuestionCursor(cursor);
         expect(encoded).not.toContain(' ');
         expect(decodeQuestionCursor(encoded)).toEqual(cursor);
@@ -22,6 +22,11 @@ describe('question cursor codec', () => {
             'utf8',
         ).toString('base64url');
         expect(decodeQuestionCursor(wrongShape)).toBeUndefined();
+    });
+
+    it('rejects a cursor made before the group order was added', () => {
+        const old = Buffer.from(JSON.stringify({ t: 3, s: 27, i: 'hr-q28' }), 'utf8').toString('base64url');
+        expect(decodeQuestionCursor(old)).toBeUndefined();
     });
 });
 

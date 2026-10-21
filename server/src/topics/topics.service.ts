@@ -101,15 +101,4 @@ export class TopicsService {
         this.cache.set(topicDetailKey(slug), dto);
         return dto;
     }
-
-    /** For later admin writes: drop one topic (and the list counts). */
-    invalidateTopic(slug?: string): void {
-        if (slug) this.cache.delete(topicDetailKey(slug));
-        this.cache.delete(LIST_CACHE_KEY);
-    }
-
-    /** For later admin writes: drop everything. */
-    invalidateAll(): void {
-        this.cache.clear();
-    }
 }

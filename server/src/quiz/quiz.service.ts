@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { and, eq, sql } from 'drizzle-orm';
 import type { Database } from '../db/client.js';
 import { DB } from '../db/db.module.js';
@@ -7,6 +7,7 @@ import { AttemptNumberConflict, ClientAttemptReplay, QuizEventHandlers, type Tx 
 import {
     ATTEMPT_RETENTION,
     EVENT_WINDOW_DAYS,
+    MAX_CONCURRENT_BATCHES,
     type QuizEvent,
     type QuizEventResult,
     type QuizStateDto,
@@ -26,9 +27,15 @@ const EVENT_WINDOW_MS = EVENT_WINDOW_DAYS * 24 * 60 * 60 * 1000;
  * EVENT_WINDOW_DAYS (=90, by applied_at) are pruned. A periodic timer would
  * do the same work less predictably, and the API is a single instance
  * (plan: Known limitations — single-instance cache).
+ *
+ * A user can run one batch at a time and the API MAX_CONCURRENT_BATCHES in
+ * all, so a loop of parallel requests cannot use up the DB pool. A refused
+ * batch answers 429; the web client keeps its queue and retries.
  */
 @Injectable()
 export class QuizService {
+    private readonly busyUsers = new Set<string>();
+
     constructor(
         @Inject(DB) private readonly db: Database,
         private readonly handlers: QuizEventHandlers,
@@ -64,12 +71,20 @@ export class QuizService {
      * attempt into a single transaction.
      */
     async applyEvents(userId: string, events: QuizEvent[]): Promise<QuizEventResult[]> {
-        const results: QuizEventResult[] = [];
-        for (const event of events) {
-            results.push(await this.applyOne(userId, event));
+        if (this.busyUsers.has(userId) || this.busyUsers.size >= MAX_CONCURRENT_BATCHES) {
+            throw new HttpException('Too many quiz syncs at once. Try again shortly.', HttpStatus.TOO_MANY_REQUESTS);
         }
-        await this.enforceRetention(userId);
-        return results;
+        this.busyUsers.add(userId);
+        try {
+            const results: QuizEventResult[] = [];
+            for (const event of events) {
+                results.push(await this.applyOne(userId, event));
+            }
+            await this.enforceRetention(userId);
+            return results;
+        } finally {
+            this.busyUsers.delete(userId);
+        }
     }
 
     private async applyOne(userId: string, event: QuizEvent): Promise<QuizEventResult> {

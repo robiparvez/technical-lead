@@ -117,7 +117,7 @@ export class AdminTopicsService {
             if (constraint === 'topics_pkey') {
                 throw new ConflictException('the topic already exists');
             }
-            if (constraint !== undefined) {
+            if (constraint === 'topics_question_id_prefix_unique') {
                 throw new ConflictException('the question id prefix is already taken');
             }
             throw error;
@@ -190,7 +190,8 @@ export class AdminTopicsService {
         const [row] = await tx
             .select({ groupSortOrder: topics.groupSortOrder })
             .from(topics)
-            .where(eq(topics.groupLabel, label))
+            .where(and(eq(topics.groupLabel, label), isNull(topics.deletedAt)))
+            .orderBy(asc(topics.sortOrder))
             .limit(1);
         if (!row) {
             throw new UnprocessableException(

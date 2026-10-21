@@ -14,9 +14,10 @@ import {
 /**
  * Filtered, cursor-paginated public question list ordered by the site's topic
  * order, then question order. Stable ordering key is
- * (topics.sort_order, questions.sort_order, questions.id) — the cursor is
- * that triple, base64url-encoded. Soft-deleted questions and questions of
- * soft-deleted topics are excluded.
+ * (topics.group_sort_order, topics.sort_order, questions.sort_order,
+ * questions.id) — the cursor is that tuple, base64url-encoded. Topic sort
+ * orders are only unique inside a group, so the group order comes first.
+ * Soft-deleted questions and questions of soft-deleted topics are excluded.
  */
 @Injectable()
 export class QuestionsService {
@@ -36,13 +37,14 @@ export class QuestionsService {
         }
         if (cursor) {
             conditions.push(
-                sql`(${topics.sortOrder}, ${questions.sortOrder}, ${questions.id}) > (${cursor.topicSortOrder}, ${cursor.sortOrder}, ${cursor.id})`,
+                sql`(${topics.groupSortOrder}, ${topics.sortOrder}, ${questions.sortOrder}, ${questions.id}) > (${cursor.groupSortOrder}, ${cursor.topicSortOrder}, ${cursor.sortOrder}, ${cursor.id})`,
             );
         }
         const rows = await this.db
             .select({
                 id: questions.id,
                 topicSlug: topics.slug,
+                topicGroupSortOrder: topics.groupSortOrder,
                 topicSortOrder: topics.sortOrder,
                 difficulty: questions.difficulty,
                 tags: questions.tags,
@@ -56,7 +58,12 @@ export class QuestionsService {
             .from(questions)
             .innerJoin(topics, eq(questions.topicSlug, topics.slug))
             .where(and(...conditions))
-            .orderBy(asc(topics.sortOrder), asc(questions.sortOrder), asc(questions.id))
+            .orderBy(
+                asc(topics.groupSortOrder),
+                asc(topics.sortOrder),
+                asc(questions.sortOrder),
+                asc(questions.id),
+            )
             .limit(query.limit + 1);
         const hasMore = rows.length > query.limit;
         const page = hasMore ? rows.slice(0, query.limit) : rows;
@@ -79,6 +86,7 @@ export class QuestionsService {
             nextCursor:
                 hasMore && lastRow
                     ? encodeQuestionCursor({
+                          groupSortOrder: lastRow.topicGroupSortOrder,
                           topicSortOrder: lastRow.topicSortOrder,
                           sortOrder: lastRow.sortOrder,
                           id: lastRow.id,

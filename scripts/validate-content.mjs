@@ -10,7 +10,7 @@
 //   2. keyTakeaway is non-empty and unique per topic
 //   3. string diagram ids exist in diagram-ids.json
 //   4. all committed question ids still exist in the candidate content
-//      (a fetch must never silently drop questions)
+//      (guards a caller that passes a committed set apart from the candidate)
 //   5. no exported topic is empty (an empty/draft topic is legal data, but
 //      the caller must exclude it before validation)
 //   6. topics in one group share one group_sort_order
@@ -28,11 +28,11 @@
 
 /**
  * @typedef {Object} ValidationRules
- * @property {TechnologyRule[]} technologies  parsed src/data/technologies.json (the tag map)
+ * @property {TechnologyRule[]} technologies  the technologies table rows (the tag map)
  * @property {string[]} diagramIds            ids from src/data/diagram-ids.json
  * @property {Iterable<string>} committedQuestionIds
- *   every question id the committed snapshot carries (src/data/topics/*.json
- *   for the fetch; the questions table when the server validates a write)
+ *   every question id the committed content carries (the questions table
+ *   when the server validates a write)
  */
 
 /**
@@ -150,7 +150,7 @@ export function validateContent(topics, rules) {
         }
     }
 
-    // Rule 4: all committed question ids still exist (a fetch never drops questions).
+    // Rule 4: all committed question ids still exist.
     for (const committedId of committedIds) {
         if (!candidateIds.has(committedId)) {
             errors.push(`committed question id "${committedId}" is missing from the candidate content`);
@@ -158,8 +158,7 @@ export function validateContent(topics, rules) {
     }
 
     // Rule 6: topics in one group share one group_sort_order. Only checked
-    // when the caller passes group data (the server always does; the fetch
-    // derives it from the export's groups array).
+    // when the caller passes group data (the server always does).
     if (usesGroups) {
         const ordersByLabel = new Map();
         const labelsByOrder = new Map();
