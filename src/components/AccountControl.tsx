@@ -1,29 +1,36 @@
 'use client';
 
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useSync } from '@/components/SyncProvider';
 import { Skeleton } from '@/components/Skeleton';
 
 /**
  * Account control (plan: Frontend additions): in the desktop header after the
- * theme controls (`inline`), and stacked in the phone menu. Accounts are for the
- * site admin, so a visitor sees nothing here: signed out renders no control
- * and no sign-in link (the admin opens /login or /admin directly). While a
+ * theme controls (`inline`), and stacked in the phone menu. Signed out it is
+ * an "Admin login" link to /login, so the admin can sign in from any page; it
+ * is hidden on /login and /admin, which already show the form. While a
  * session check runs it is one skeleton line (D15); signed in it shows the
  * email and a sign out button, which clears the token, the local stores and
  * every pending sync queue.
  */
 export default function AccountControl({ inline = false }: { inline?: boolean }) {
     const { status, email, notice, error, retry, signOut } = useSync();
+    const pathname = usePathname();
 
-    if (status === 'signed-out') return null;
+    if (status === 'signed-out' && /^\/(login|admin)(\/|$)/.test(pathname)) return null;
 
     return (
         <div className={inline ? 'account account-inline' : 'account'}>
             {status === 'checking' ? (
                 <Skeleton label='Checking sign-in' line />
+            ) : status === 'signed-out' ? (
+                <Link className='btn' href='/login'>
+                    Admin login
+                </Link>
             ) : status === 'signed-in' ? (
                 <p className='account-email' title={email ?? undefined}>
-                    {email}
+                    <Link href='/admin'>{email}</Link>
                 </p>
             ) : (
                 <p className='account-error' role='alert' title={error ?? undefined}>

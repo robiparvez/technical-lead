@@ -27,7 +27,7 @@ function safeNext(raw: string | null): string {
 
 export default function LoginPage() {
     return (
-        <div className='auth'>
+        <div className='auth auth-card'>
             <AdminSignInHeader />
             <Suspense fallback={<Skeleton label='Loading the sign-in form' field button />}>
                 <LoginForm />

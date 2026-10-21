@@ -1947,6 +1947,21 @@ select.input {
     font-size: var(--text-sm);
     line-height: var(--leading-ui);
 }
+.account-email a {
+    color: inherit;
+    border-radius: var(--radius-xs);
+}
+.account-email a:hover {
+    color: var(--color-text-primary);
+    text-decoration: underline;
+    text-decoration-color: var(--color-accent);
+    text-decoration-thickness: var(--border-width-2);
+    text-underline-offset: var(--space-3xs);
+}
+.account-email a:focus-visible {
+    outline: var(--border-width-2) solid var(--color-accent);
+    outline-offset: var(--space-3xs);
+}
 .account-error,
 .account-notice {
     margin: 0;
@@ -2027,4 +2042,109 @@ select.input {
 }
 .auth-signed-in p {
     margin: 0;
+}
+
+/* Sign-in card: a bordered panel with a short accent rule above the title.
+   Border only, no fill (the canvas shows through). */
+.auth.auth-card {
+    margin-inline: auto;
+    margin-block: var(--space-lg);
+    padding: var(--space-lg);
+    border: var(--border-width-1) solid var(--color-border-control);
+    border-radius: var(--radius-md);
+}
+.auth-card .topic-header {
+    margin-bottom: var(--space-lg);
+}
+.auth-card .topic-header::before {
+    content: '';
+    display: block;
+    width: var(--space-xl);
+    margin-bottom: var(--space-sm);
+    border-top: var(--border-width-2) solid var(--color-accent);
+}
+.auth-card .topic-title {
+    font-size: var(--text-lg);
+    line-height: var(--leading-title-sm);
+}
+.auth-card .topic-meta {
+    margin-top: var(--space-2xs);
+    font-size: var(--text-sm);
+    line-height: var(--leading-ui);
+    color: var(--color-text-secondary);
+}
+.auth-card .auth-form {
+    gap: var(--space-md);
+}
+.auth-card .auth-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-xs);
+}
+.auth-card .auth-actions .btn {
+    width: 100%;
+}
+.auth-card .auth-actions .text-link {
+    border: 0;
+    align-self: center;
+    min-height: 44px;
+    padding-inline: var(--space-xs);
+}
+/* Orb panel (ThreeUI): sizing the package ships in its own style.css, scoped
+   here so its global rules stay out of the site. The package paints a fixed
+   near-black fill inline; the override lets the canvas sit on the themed page. */
+.auth-orb {
+    margin-top: var(--space-lg);
+    height: 18rem;
+    border: var(--border-width-1) solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+.auth-orb .threeui-background {
+    position: relative;
+    isolation: isolate;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: transparent !important;
+}
+.auth-orb .threeui-background > canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Wide screens: title on the left, form on the right, so the card fills the
+   content area instead of floating in blank space. */
+@media (min-width: 60rem) {
+    .auth.auth-card {
+        max-width: none;
+        margin-block: 0;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-xl);
+        align-items: start;
+        padding: var(--space-xl);
+    }
+    .auth-card .topic-header {
+        grid-column: 1;
+        margin-bottom: 0;
+    }
+    .auth-card .topic-title {
+        font-size: var(--text-xl);
+        line-height: var(--leading-title);
+    }
+    .auth-card > :not(.topic-header) {
+        grid-column: 2;
+        padding-inline-start: var(--space-xl);
+        border-inline-start: var(--border-width-1) solid var(--color-border-subtle);
+    }
+}
+@media (max-width: 40rem) {
+    .auth.auth-card {
+        margin-block: 0;
+        padding: var(--space-md);
+    }
 }

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import AuthOrb from '@/components/AuthOrb';
 import { Skeleton } from '@/components/Skeleton';
 import SyncErrorNotice from '@/components/SyncErrorNotice';
 import TextField from '@/components/TextField';
@@ -23,8 +24,9 @@ export function AdminSignInHeader() {
         <header className='topic-header'>
             <h1 className='topic-title'>Admin sign-in</h1>
             <p className='topic-meta'>
-                For the site admin, to edit topics and questions. Visitors do not need an account.
+                For the site admin. Visitors do not need an account.
             </p>
+            <AuthOrb />
         </header>
     );
 }
@@ -148,7 +150,6 @@ export function AdminSignInForm({ next, onSignedIn }: { next: string; onSignedIn
                     id='name'
                     label='Name'
                     value={name}
-                    max={80}
                     autoComplete='name'
                     error={fieldErrors.name}
                     onChange={setName}
@@ -159,7 +160,6 @@ export function AdminSignInForm({ next, onSignedIn }: { next: string; onSignedIn
                 label='Email'
                 type='email'
                 value={emailValue}
-                max={200}
                 autoComplete='email'
                 error={fieldErrors.email}
                 onChange={setEmailValue}
@@ -175,7 +175,6 @@ export function AdminSignInForm({ next, onSignedIn }: { next: string; onSignedIn
                             : undefined
                     }
                     value={password}
-                    max={200}
                     autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'}
                     error={fieldErrors.password}
                     onChange={setPassword}
@@ -195,7 +194,7 @@ export function AdminSignInForm({ next, onSignedIn }: { next: string; onSignedIn
                 </p>
             )}
             <div className='auth-actions'>
-                <button type='submit' className='btn' disabled={busy}>
+                <button type='submit' className='btn btn-primary' disabled={busy}>
                     {busy
                         ? 'Working…'
                         : mode === 'sign-in'

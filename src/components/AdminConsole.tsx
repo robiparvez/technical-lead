@@ -185,7 +185,7 @@ export default function AdminConsole({
 
     if (access === 'signed-out')
         return (
-            <div className='auth'>
+            <div className='auth auth-card'>
                 <AdminSignInHeader />
                 <AdminSignInForm
                     next='/admin'

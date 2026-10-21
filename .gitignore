@@ -7,6 +7,8 @@
 .zcode/
 CLAUDE.md
 /brag-output*/
+.archify/
+docs/
 
 # dependencies
 /node_modules

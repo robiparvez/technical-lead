@@ -111,7 +111,7 @@ Remotion license: free for individuals, including personal use
 - `src/lib/auth.ts` — better-auth client (bearer token captured from the `set-auth-token` header into localStorage) plus the API base URL
 - `src/lib/sync.ts`, `src/components/SyncProvider.tsx` — the sync engine and its provider: localStorage queues for known-question ops and quiz events, flushed per the Backend sync rules; signed out, it makes no calls at all
 - `src/app/reset-password/`, `src/app/admin/account/`, `src/components/PasswordForms.tsx` — the reset page the emailed link lands on (new password twice, token from `?token=`) and the signed-in change-password form (current password, new password twice; other devices are signed out and this session gets a fresh token). The "Forgot password?" form is a mode of `AdminSignIn.tsx`
-- `src/app/login/`: admin sign-in / sign-up page; redirects to `?next=` and defaults to `/admin`. The site shows no sign-in link to visitors
+- `src/app/login/`: admin sign-in / sign-up page; redirects to `?next=` and defaults to `/admin`. Signed-out visitors see an "Admin login" link in the header and phone menu (hidden on `/login` and `/admin`)
 - `src/lib/adminApi.ts` — admin API client for `/admin`: typed calls to the `/v1/admin/*` endpoints through the bearer wrapper, plus the client-side validation that mirrors the server's (the server validates again on every save)
 
 ## Token-to-component mapping
