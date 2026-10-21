@@ -1,6 +1,6 @@
 # Technical Lead Study Guide
 
-A free study site for people preparing for a Technical Lead interview. It has 532 questions with model answers, a quiz for every topic, and a place to track what you already know.
+A free study site for people preparing for a Technical Lead interview. It has 592 questions with model answers, a quiz for every topic, and a place to track what you already know.
 
 **At a glance**
 
@@ -12,7 +12,7 @@ A free study site for people preparing for a Technical Lead interview. It has 53
 
 ## What it is
 
-The questions follow a Technical Lead job description: 5 to 7 years of experience, full-stack work, plus leading a team. The guide covers what that role asks for. There are 14 technical topics, such as microservices, databases, system design and security. There are also 6 topics on the people side of the job, such as code review, mentoring, working with stakeholders and the HR round.
+The questions follow a Technical Lead job description: 5 to 7 years of experience, full-stack work, plus leading a team. The guide covers what that role asks for. There are 15 technical topics, such as microservices, databases, system design, security and NestJS. There are also 6 topics on the people side of the job, such as code review, mentoring, working with stakeholders and the HR round.
 
 Visitors never need an account. Their progress and quiz scores stay in their own browser. Accounts exist only for the site admin, who edits the content (see "Editing the content"). The admin's progress also syncs to the backend.
 

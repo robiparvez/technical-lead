@@ -3,7 +3,7 @@
 > **Out of date in four places.** This file describes the design as of the first backend cutover (static export on GitHub Pages, content in JSON, a rebuild pipeline). The code has since changed. Read the sections below with these corrections:
 >
 > | Section topic | Then | Now |
-> |---|---|---|
+> | --- | --- | --- |
 > | Hosting and build | Static export on GitHub Pages, per-page CSP hashes (`csp-hashes.mjs`) | A Next server renders every page per request; the Pages deploy and the CSP script are removed; hosting is the open P6 decision |
 > | Content source | Topic JSON and `manifest.json` in `src/data/`, synced by `fetch-content.mjs` | PostgreSQL is the only source; the Next server reads `GET /v1/export` per request (`src/lib/content.ts`); no content JSON is in the app; technologies are a table; the export is cached for 60 s and cleared by every admin write |
 > | Rebuild pipeline (outbox, dispatcher, `repository_dispatch`, `GET /v1/admin/rebuild`, W5, W6, §9.3) | Admin write inserts an outbox row, the dispatcher triggers a rebuild | Removed. An admin edit shows on the next page load. Each admin write still runs the shared validator in its transaction (`ContentService.assertValid`) |
