@@ -32,7 +32,6 @@ function buildMessage(from: string, mail: Mail): string {
         `Date: ${new Date().toUTCString()}`,
         'MIME-Version: 1.0',
         'Content-Type: text/plain; charset=utf-8',
-        // base64 body: no line-length limit, no dot-stuffing, any character
         'Content-Transfer-Encoding: base64',
         '',
         body,
@@ -53,7 +52,7 @@ function smtpSend(host: string, port: number, from: string, mail: Mail): Promise
         const socket = connect({ host, port });
         socket.setTimeout(TIMEOUT_MS, () => socket.destroy(new Error('SMTP timeout')));
         let buffer = '';
-        let step = -1; // -1: waiting for the 220 greeting
+        let step = -1;
         const fail = (error: Error) => {
             socket.destroy();
             reject(error);
@@ -65,7 +64,6 @@ function smtpSend(host: string, port: number, from: string, mail: Mail): Promise
         });
         socket.on('data', (chunk) => {
             buffer += chunk.toString('utf8');
-            // a reply ends at a line whose fourth character is a space ("250 ok"; "250-" continues)
             let end: number;
             while ((end = buffer.search(/^\d{3} .*\r?\n/m)) !== -1) {
                 const lineEnd = buffer.indexOf('\n', end) + 1;

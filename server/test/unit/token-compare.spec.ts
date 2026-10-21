@@ -14,7 +14,6 @@ describe('safeTokenEqual (D7)', () => {
     });
 
     it('is not trivially timing-comparable: comparing digests, not lengths', () => {
-        // sanity: empty vs empty is a match (both hash to the same digest)
         expect(safeTokenEqual('', '')).toBe(true);
     });
 });

@@ -114,7 +114,6 @@ describe('content module wrapper (CONTENT_RULES_DIR)', () => {
                 { id: 't-q1', difficulty: 'basic' as const, tags: ['react'], question: 'q', answer: 'a', keyTakeaway: 'k' },
             ],
         };
-        // the passed list names only a tag the question carries
         expect(service.validate([topic], ['t-q1'], [{ slug: 'react', label: 'React', tags: ['react'] }]).ok).toBe(true);
         const failing = service.validate([topic], ['t-q1'], [{ slug: 'vue', label: 'Vue', tags: ['vue'] }]);
         expect(failing.ok).toBe(false);

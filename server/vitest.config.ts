@@ -27,7 +27,6 @@ const TEST_DATABASE_URL =
     'postgres://postgres@127.0.0.1:5432/technical_lead_test';
 
 export default defineConfig({
-    // Vitest 5 transforms with oxc: legacy decorators + metadata for Nest DI.
     oxc: {
         target: 'node22',
         decorator: { legacy: true, emitDecoratorMetadata: true },
@@ -48,8 +47,6 @@ export default defineConfig({
                     include: ['test/e2e/**/*.spec.ts'],
                     setupFiles: ['test/setup.ts'],
                     globalSetup: ['test/e2e/global-setup.ts'],
-                    // The spec files share one database; run them one at a time
-                    // (each still gets its own app instance via module isolation).
                     fileParallelism: false,
                     testTimeout: 30_000,
                     hookTimeout: 60_000,

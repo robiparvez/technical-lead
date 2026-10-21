@@ -60,12 +60,8 @@ export function buildAuth(overrides: AuthFactoryOverrides = {}) {
         trustedOrigins: parseTrustedOrigins(process.env.TRUSTED_ORIGINS),
         emailAndPassword: {
             enabled: true,
-            // D3: no email verification, so sign-up signs straight in.
             autoSignIn: true,
             revokeSessionsOnPasswordReset: true,
-            // Mails are not awaited (sendMail never throws): a slow mail server
-            // must not delay the answer, and a reset for a known address must
-            // not answer slower than one for an unknown address.
             sendResetPassword: (data) => {
                 void sendResetPasswordMail(data);
                 return Promise.resolve();
@@ -74,24 +70,16 @@ export function buildAuth(overrides: AuthFactoryOverrides = {}) {
                 void sendPasswordChangedMail(user.email);
                 return Promise.resolve();
             },
-            // the reset link works once, for 30 minutes
             resetPasswordTokenExpiresIn: 30 * 60,
         },
         session: {
-            // D13: 24 h session, refreshed while in use (default updateAge is
-            // 1 day, which with a 24 h expiry would never fire usefully).
             expiresIn: 60 * 60 * 24,
             updateAge: 60 * 60,
             cookieCache: { enabled: false },
         },
         rateLimit: {
-            // Plan: Auth — the limiter stores in the DATABASE, not memory.
             storage: 'database',
             enabled: overrides.rateLimitEnabled ?? process.env.NODE_ENV !== 'test',
-            // The library default for these paths is 3 per 60 s (reset request,
-            // per client, not per email) and 100 per 10 s (reset submit). A
-            // reset request mails a real inbox, so it gets a slower budget;
-            // the submit gets a tighter one against token guessing.
             customRules: {
                 '/request-password-reset': { window: 10 * 60, max: 3 },
                 '/reset-password': { window: 60, max: 10 },
@@ -99,25 +87,15 @@ export function buildAuth(overrides: AuthFactoryOverrides = {}) {
         },
         advanced: {
             ipAddress: trustedProxies.length
-                ? // Behind a proxy: better-auth walks x-forwarded-for from the
-                  // right, skips these hops, and rate-limits the first other IP.
-                  { ipAddressHeaders: ['x-forwarded-for'], trustedProxies }
-                : // No proxy (local dev): trust no forwarded header, since a
-                  // client could spoof x-forwarded-for. Outside dev and test
-                  // every client then shares one bucket, so set TRUSTED_PROXIES
-                  // before deploying behind a proxy (P6).
-                  { ipAddressHeaders: [], trustedProxies: [] },
+                ? { ipAddressHeaders: ['x-forwarded-for'], trustedProxies }
+                : { ipAddressHeaders: [], trustedProxies: [] },
         },
         user: {
-            // `role` is our column on the better-auth user table. input:false
-            // keeps clients from granting it themselves; the only writer is
-            // scripts/grant-admin.ts (plan: Auth).
             additionalFields: {
                 role: { type: 'string', required: true, defaultValue: 'user', input: false },
             },
         },
         hooks: {
-            // better-auth has no callback for change-password, so notice it here
             after: createAuthMiddleware(async (ctx) => {
                 if (ctx.path !== '/change-password' || ctx.context.returned instanceof Error) return;
                 const email = ctx.context.session?.user.email ?? ctx.context.newSession?.user.email;

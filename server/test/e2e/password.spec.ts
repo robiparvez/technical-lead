@@ -78,7 +78,6 @@ describe('forgot password', () => {
 
         await signIn(account.email, OLD).expect(401);
         await signIn(account.email, 'a-brand-new-pass-1').expect(200);
-        // the session from before the reset no longer works
         await authed(app, account.token).get('/v1/progress/known').expect(401);
 
         await client(app)
@@ -192,7 +191,7 @@ describe('rate limits on the reset routes', () => {
             4,
         );
         expect(statuses).toEqual([200, 200, 200, 429]);
-        expect(retryAfter).toBeGreaterThan(60); // the 10-minute window, not the library's 60 s
+        expect(retryAfter).toBeGreaterThan(60);
     });
 
     it('allows 10 reset submissions per minute, then answers 429', async () => {

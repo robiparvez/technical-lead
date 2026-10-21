@@ -82,14 +82,12 @@ export class QuizService {
                 code: 422,
             };
         }
-        // attempt_started retries on a number clash; each pass is a fresh tx.
         for (let attempt = 0; attempt < 3; attempt += 1) {
             try {
                 return await this.applyInTransaction(userId, event, clientTs);
             } catch (error) {
                 if (error instanceof AttemptNumberConflict) continue;
                 if (error instanceof ClientAttemptReplay) {
-                    // The same client_attempt_id under a new event_id: replay.
                     if (event.type !== 'attempt_started') {
                         return { event_id: event.event_id, status: 'duplicate' };
                     }
@@ -136,14 +134,10 @@ export class QuizService {
         const db = this.db;
 
         return db.transaction(async (tx) => {
-            // Serialize this user's event transactions: ensure the state row
-            // exists, then lock it. Concurrent events (same user) queue here,
-            // which makes the duplicate check and number assignment race-free.
             await tx.insert(quizState).values({ userId }).onConflictDoNothing();
             await tx.select().from(quizState).where(eq(quizState.userId, userId)).for('update');
             const [state] = await tx.select().from(quizState).where(eq(quizState.userId, userId));
 
-            // A replayed event_id is a no-op (the PK is user_id + event_id).
             const seen = await tx
                 .select({ eventId: quizEvents.eventId })
                 .from(quizEvents)
@@ -152,7 +146,6 @@ export class QuizService {
                 return this.duplicateResult(tx, userId, event);
             }
 
-            // Stale epoch: the client must refetch GET /quiz/state (revision 11).
             if (event.reset_epoch !== (state?.resetEpoch ?? 0)) {
                 return {
                     event_id: event.event_id,
@@ -165,7 +158,6 @@ export class QuizService {
             const applied = await this.handlers.applyByType(tx, userId, event, clientTs);
             if (applied.status !== 'applied') return applied;
 
-            // Record the applied event last, as the replay guard.
             await tx
                 .insert(quizEvents)
                 .values({ userId, eventId: event.event_id, clientTs, payload: event });

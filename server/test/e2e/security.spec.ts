@@ -51,7 +51,6 @@ describe('GET /v1/export (D7)', () => {
                 0,
             ),
         ).toBe(592);
-        // the site reads its technology tag map from here, not from a file
         expect(response.body.technologies).toHaveLength(14);
         expect(response.body.technologies[0]).toEqual({ slug: 'kafka', label: 'Kafka', tags: ['kafka'] });
     });
@@ -104,7 +103,6 @@ describe('throttler (D13)', () => {
     });
 
     it('public GETs return 429 past 60 requests per minute', async () => {
-        // Requests already spent on public GETs in this file: 1 (limit=abc) + 5 (health, exempt) -> 1.
         for (let i = 0; i < 59; i += 1) {
             const response = await client(app).get('/v1/topics');
             expect(response.status).toBe(200);
@@ -112,7 +110,6 @@ describe('throttler (D13)', () => {
         const blocked = await client(app).get('/v1/topics').expect(429);
         expect(blocked.body.statusCode).toBe(429);
         expect(Object.keys(blocked.body).sort()).toEqual(['error', 'message', 'statusCode']);
-        // /health and /export stay reachable after the block.
         await client(app).get('/v1/health/live').expect(200);
         await client(app).get('/v1/export').expect(401);
     }, 60_000);

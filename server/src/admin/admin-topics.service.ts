@@ -115,12 +115,9 @@ export class AdminTopicsService {
         } catch (error) {
             const constraint = uniqueViolationConstraint(error);
             if (constraint === 'topics_pkey') {
-                // Backstop: a concurrent create won the slug race (the
-                // pre-check above already covers the normal path).
                 throw new ConflictException('the topic already exists');
             }
             if (constraint !== undefined) {
-                // The question_id_prefix unique index lost a race.
                 throw new ConflictException('the question id prefix is already taken');
             }
             throw error;

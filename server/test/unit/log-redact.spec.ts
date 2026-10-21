@@ -27,6 +27,6 @@ describe('log redaction', () => {
         });
 
         expect(output).not.toContain('SECRET');
-        expect(output).toContain('application/json'); // other headers stay
+        expect(output).toContain('application/json');
     });
 });

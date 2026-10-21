@@ -26,7 +26,6 @@ import {
  */
 
 const here = dirname(fileURLToPath(import.meta.url));
-// server/src/content -> server is two levels up, the repo root three.
 const serverRoot = join(here, '..', '..');
 const repoRoot = join(serverRoot, '..');
 

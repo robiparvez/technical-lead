@@ -65,13 +65,9 @@ export class QuizEventHandlers {
         } catch (error) {
             const constraint = uniqueViolationConstraint(error);
             if (constraint === 'quiz_attempts_user_topic_number_idx') {
-                // A concurrent writer took the number; retry with a fresh
-                // one. Each event is its own transaction, so this is legal.
                 throw new AttemptNumberConflict();
             }
             if (constraint === 'quiz_attempts_user_client_attempt_idx') {
-                // The transaction is aborted; the marker is resolved
-                // outside with a fresh lookup.
                 throw new ClientAttemptReplay();
             }
             throw error;
@@ -90,7 +86,6 @@ export class QuizEventHandlers {
             .select()
             .from(quizAttempts)
             .where(and(eq(quizAttempts.userId, userId), eq(quizAttempts.clientAttemptId, event.client_attempt_id)));
-        // The start event was lost or retention removed the attempt.
         if (!attempt || attempt.topicSlug !== event.topic_slug) {
             return this.reject(event, 'unknown attempt', 422);
         }
@@ -130,8 +125,6 @@ export class QuizEventHandlers {
         if (!topicExists) {
             return this.reject(event, 'unknown topic', 422);
         }
-        // One transaction: clear attempts, zero totals, bump the epoch.
-        // quiz_events rows stay — they are the replay guard.
         await tx
             .delete(quizAttempts)
             .where(and(eq(quizAttempts.userId, userId), eq(quizAttempts.topicSlug, event.topic_slug)));
@@ -179,8 +172,6 @@ export class QuizEventHandlers {
                 })
                 .onConflictDoUpdate({
                     target: [quizTopicTotals.userId, quizTopicTotals.topicSlug],
-                    // add, never replace: the user may already have synced
-                    // totals from another device
                     set: {
                         score: sql`${quizTopicTotals.score} + ${total.score}`,
                         correct: sql`${quizTopicTotals.correct} + ${total.correct}`,

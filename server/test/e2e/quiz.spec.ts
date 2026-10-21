@@ -116,7 +116,6 @@ describe('POST /v1/quiz/events', () => {
         const [first, second] = response.body.results;
         expect(first.status).toBe('applied');
         expect(second.status).toBe('applied');
-        // the server assigns distinct attempt numbers
         expect(first.number).not.toBe(second.number);
     });
 
@@ -156,14 +155,12 @@ describe('POST /v1/quiz/events', () => {
         await sendEvents([resetEvent(topicSlug, 0)]);
         const state = await getState();
         expect(state.body.resetEpoch).toBe(1);
-        // an event carrying the old epoch comes back rejected with 409
         const response = await sendEvents([started(topicSlug, { reset_epoch: 0 })]);
         expect(response.body.results[0]).toMatchObject({
             status: 'rejected',
             code: 409,
         });
         expect(response.body.results[0].reason).toContain('reset_epoch');
-        // the same event with the fresh epoch applies
         const fresh = await sendEvents([started(topicSlug, { reset_epoch: 1 })]);
         expect(fresh.body.results[0].status).toBe('applied');
     });
@@ -205,7 +202,6 @@ describe('POST /v1/quiz/events', () => {
         ]);
         expect(unknownQuestion.body.results[0]).toMatchObject({ status: 'rejected', code: 422 });
 
-        // a real question id, but from the other topic
         const foreignQuestion = await sendEvents([
             answered(topicSlug, clientAttemptId, {
                 question_id: topicQuestions.get(otherTopicSlug)![0],
@@ -269,7 +265,6 @@ describe('reset', () => {
             .from(quizAttempts)
             .where(and(eq(quizAttempts.userId, userId), eq(quizAttempts.topicSlug, topicSlug)));
         expect(attempts).toHaveLength(0);
-        // quiz_events rows stay as the replay guard
         const events = await db
             .select()
             .from(quizEvents)
@@ -302,7 +297,6 @@ describe('import_local', () => {
         });
         expect(state.body.importedAt).toBeTruthy();
 
-        // prune quiz_events as retention would; imported_at lives in quiz_state
         const { db } = getDb();
         await db.delete(quizEvents).where(eq(quizEvents.userId, userId));
 
@@ -371,7 +365,6 @@ describe('retention (D8)', () => {
         expect(attempts).toHaveLength(20);
         const numbers = attempts.map((a) => a.number).sort((a, b) => a - b);
         expect(new Set(numbers).size).toBe(20);
-        // the newest 20 survive: the top of the number range
         expect(numbers[numbers.length - 1]).toBe(Math.max(...numbers));
 
         const otherAttempts = await db

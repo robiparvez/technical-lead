@@ -74,11 +74,8 @@ describe('POST /v1/progress/known', () => {
     });
 
     it('an unmark survives a stale-client re-upload (device A unmarks after device B re-uploads)', async () => {
-        // device A marks two questions
         await post({ add: [questionIds[0]!, questionIds[1]!] });
-        // device B, offline since before A's unmark... re-uploads its old set
         await post({ add: [questionIds[0]!], remove: [] });
-        // device A unmarks q0 last: the remove lands after the stale add
         await post({ remove: [questionIds[0]!] });
         const response = await authed(app, token).get('/v1/progress/known').expect(200);
         expect(response.body.questionIds).toContain(questionIds[1]);

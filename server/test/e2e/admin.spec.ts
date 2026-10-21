@@ -54,7 +54,6 @@ beforeAll(async () => {
 
 afterAll(async () => {
     if (pg) {
-        // test artifacts: users cascade their sessions/known-marks/quiz rows
         await pg`delete from "user" where email like 'admin-e2e-%' or email like 'plain-e2e-%'`;
         await pg`delete from questions where topic_slug like ${TMP_SLUG_PREFIX + '%'}`;
         await pg`delete from topics where slug like ${TMP_SLUG_PREFIX + '%'}`;
@@ -134,7 +133,6 @@ describe('topics: drafts, uniqueness, immutability', () => {
         expect(
             exported.body.topics.some((t: { slug: string }) => t.slug === `${TMP_SLUG_PREFIX}draft`),
         ).toBe(false);
-        // still a full export: the draft changes nothing
         expect(exported.body.topics).toHaveLength(21);
     });
 
@@ -160,7 +158,6 @@ describe('topics: drafts, uniqueness, immutability', () => {
             .send({ title: 'E2E draft, retitled' })
             .expect(200);
         expect(response.body.title).toBe('E2E draft, retitled');
-        // group (label) round-trips through the UI-facing alias
         const reGrouped = await admin
             .patch(`/v1/admin/topics/${TMP_SLUG_PREFIX}draft`)
             .send({ group: 'Leadership & behavioral' })
@@ -171,7 +168,6 @@ describe('topics: drafts, uniqueness, immutability', () => {
             .send({ group: 'Technical' })
             .expect(200);
 
-        // cache invalidation on a live topic: an edit shows up at once
         const before = await client(app).get('/v1/topics/hr-round').expect(200);
         const original = before.body.questions.find((q: { id: string }) => q.id === 'hr-q1');
         await admin
@@ -181,7 +177,6 @@ describe('topics: drafts, uniqueness, immutability', () => {
         const after = await client(app).get('/v1/topics/hr-round').expect(200);
         const edited = after.body.questions.find((q: { id: string }) => q.id === 'hr-q1');
         expect(edited.answer).toBe(`${original.answer} (e2e edit)`);
-        // restore the seeded answer through the same path
         await admin.patch('/v1/admin/questions/hr-q1').send(original).expect(200);
     });
 
@@ -223,9 +218,6 @@ describe('questions: D16 id assignment', () => {
     });
 
     it('returns 422 fields.keyTakeaway when a create duplicates a live takeaway', async () => {
-        // The insert trips the partial unique index before the shared
-        // validator's 422 can fire; the constraint name must steer the
-        // response to 422 with a fields map (not the D16 409 backstop).
         const response = await admin
             .post('/v1/admin/questions')
             .send({ topicSlug: slug, ...questionBody('Beta takeaway for e2e.') })
@@ -234,7 +226,6 @@ describe('questions: D16 id assignment', () => {
         expect(response.body.fields.keyTakeaway).toMatch(/tmx-q2/);
         expect(response.body.fields.keyTakeaway).toMatch(/takeaway.*differ/);
 
-        // nothing was written: still exactly two live rows in the topic
         const [counts] = await pg`select count(*)::int as n from questions where topic_slug = ${slug} and deleted_at is null`;
         expect(counts.n).toBe(2);
     });
@@ -248,7 +239,6 @@ describe('questions: D16 id assignment', () => {
             .expect(422);
         expect(response.body.fields.keyTakeaway).toMatch(/tmx-q2/);
 
-        // rolled back: tmx-q1 keeps its own takeaway
         const [row] = await pg`select key_takeaway from questions where id = 'tmx-q1'`;
         expect(row.key_takeaway).toBe('Alpha takeaway for e2e.');
     });
@@ -288,7 +278,6 @@ describe('questions: D16 id assignment', () => {
         await admin.del('/v1/admin/questions/tmx-q1').expect(200);
         const [deletedRow] = await pg`select key_takeaway from questions where id = 'tmx-q1'`;
 
-        // move the deleted takeaway onto a live question
         const list = await admin.get(`/v1/admin/topics/${slug}`).expect(200);
         const q2 = list.body.questions.find((q: { id: string }) => q.id === 'tmx-q2');
         await admin
@@ -299,7 +288,6 @@ describe('questions: D16 id assignment', () => {
         const restore = await admin.post('/v1/admin/questions/tmx-q1/restore').expect(422);
         expect(restore.body.fields.restore).toMatch(/tmx-q2/);
 
-        // put the takeaway back, then the restore succeeds
         await admin
             .patch('/v1/admin/questions/tmx-q2')
             .send({ ...q2, keyTakeaway: q2.keyTakeaway })
@@ -325,7 +313,7 @@ describe('questions: D16 id assignment', () => {
         expect(new Set(ids).size).toBe(5);
         for (const id of ids) expect(id).toMatch(/^tmx-q\d+$/);
         const maxNumber = Math.max(...ids.map((id) => Number(id.replace('tmx-q', ''))));
-        expect(maxNumber).toBe(8); // q1..q3 exist, so q4..q8
+        expect(maxNumber).toBe(8);
     });
 
     it('rejects id and topic changes on PATCH', async () => {
@@ -375,7 +363,6 @@ describe('the shared validator guards every write', () => {
         expect(response.body.error).toBe('Unprocessable Entity');
         expect(response.body.fields.tags).toMatch(new RegExp(single.tag.replace(/[+.#]/g, '\\$&')));
 
-        // the write rolled back: the tag is still there
         const [still] = await pg`select tags from questions where id = ${single.id}`;
         expect(still.tags).toContain(single.tag);
     });
@@ -408,32 +395,27 @@ describe('soft-deleted topics', () => {
             .expect(201);
         const questionId = created.body.saved.id as string;
 
-        // a user marks it known before the delete
         await plain.post('/v1/progress/known').send({ add: [questionId], remove: [] }).expect(200);
 
         const response = await admin.del(`/v1/admin/topics/${slug}`).expect(200);
         expect(response.body.deleted).toBe(true);
-        expect(response.body.questions).toHaveLength(1); // questions stay
+        expect(response.body.questions).toHaveLength(1);
 
-        // public surface omits the topic
         const publicList = await client(app).get('/v1/topics').expect(200);
         expect(publicList.body.topics.some((t: { slug: string }) => t.slug === slug)).toBe(false);
         await client(app).get(`/v1/topics/${slug}`).expect(404);
         const exported = await client(app).get('/v1/export').set('x-export-token', EXPORT_TOKEN).expect(200);
         expect(exported.body.topics.some((t: { slug: string }) => t.slug === slug)).toBe(false);
 
-        // data survives: question row still live, known-mark still there
         const [questionRow] = await pg`select deleted_at from questions where id = ${questionId}`;
         expect(questionRow.deleted_at).toBeNull();
         const [knownRow] = await pg`select count(*)::int as n from user_known_questions where question_id = ${questionId}`;
         expect(knownRow.n).toBe(1);
 
-        // the admin list still shows it, flagged
         const adminList = await admin.get('/v1/admin/topics').expect(200);
         const listed = adminList.body.topics.find((t: { slug: string }) => t.slug === slug);
         expect(listed).toMatchObject({ deleted: true, draft: false });
 
-        // slug stays reserved
         const recreate = await admin
             .post('/v1/admin/topics')
             .send({
@@ -462,12 +444,10 @@ describe('the cached /v1/export', () => {
             .post('/v1/admin/questions')
             .send({ topicSlug: slug, ...questionBody('Cache takeaway for e2e.') })
             .expect(201);
-        expect(titleOf(await read())).toBe('Before'); // now cached
+        expect(titleOf(await read())).toBe('Before');
 
-        // a change made behind the API's back is not seen while the entry is fresh...
         await pg`update topics set title = 'Behind the back' where slug = ${slug}`;
         expect(titleOf(await read())).toBe('Before');
-        // ...but an admin write clears the cache, so the next read is current
         await admin.patch(`/v1/admin/topics/${slug}`).send({ title: 'After' }).expect(200);
         expect(titleOf(await read())).toBe('After');
     });

@@ -32,7 +32,6 @@ describe('GET /v1/topics', () => {
         expect(topics[0]).toMatchObject({ slug: 'microservices', groupLabel: 'Technical' });
         expect(topics[20]).toMatchObject({ slug: 'hr-round', groupLabel: 'Leadership & behavioral' });
         expect(topics.reduce((sum: number, t: { questionCount: number }) => sum + t.questionCount, 0)).toBe(592);
-        // Site order: group order first, then topic order.
         expect(topics.map((t: { slug: string }) => t.slug)).toEqual([
             'microservices', 'api-design', 'databases', 'stripe-payments', 'event-driven',
             'front-end', 'react-nextjs', 'backend-runtime', 'cloud-serverless', 'cicd-release',
@@ -88,9 +87,7 @@ describe('GET /v1/questions', () => {
 
         expect(seen).toHaveLength(592);
         expect(new Set(seen).size).toBe(592);
-        // First question of the catalog is the first question of the first topic.
         expect(seen[0]).toBe('microservices-q1');
-        // Ordered by topic order then question order: no api-design question before microservices ones.
         expect(seen[25]).toBe('microservices-q26');
     });
 

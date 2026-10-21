@@ -137,15 +137,9 @@ export class AdminQuestionsService {
         } catch (error) {
             const constraint = uniqueViolationConstraint(error);
             if (constraint === 'questions_pkey') {
-                // Primary-key backstop (plan: D16). Unreachable unless the
-                // advisory lock is bypassed; a retry cannot live inside the
-                // aborted transaction.
                 throw new ConflictException(`question id clash creating in "${topicSlug}"`);
             }
             if (constraint === TAKEAWAY_LIVE_INDEX) {
-                // The insert lost the race with the partial unique index
-                // before the shared validator ran; same contract as the
-                // validator's 422 (fields map naming the field).
                 throw await this.takeawayClashException(topicSlug, body.keyTakeaway, 'created');
             }
             throw error;
@@ -206,9 +200,6 @@ export class AdminQuestionsService {
             return result;
         } catch (error) {
             if (uniqueViolationConstraint(error) === TAKEAWAY_LIVE_INDEX) {
-                // PATCHing a takeaway onto a live duplicate hits the partial
-                // unique index before the shared validator's 422 can; same
-                // fields-map contract as the validator and restore paths.
                 throw await this.takeawayClashException(topicSlug, body.keyTakeaway, 'saved');
             }
             throw error;
@@ -262,8 +253,6 @@ export class AdminQuestionsService {
             await this.content.assertValid(tx);
             return loadTopicDetail(tx, row.topicSlug);
         }).catch((error: unknown) => {
-            // A live question took this takeaway after the check above; the
-            // partial unique index rejected the update. Same 422 as the check.
             if (uniqueViolationConstraint(error) === TAKEAWAY_LIVE_INDEX) {
                 throw new UnprocessableException(
                     {

@@ -29,8 +29,6 @@ export default async function setup(): Promise<void> {
     const url = testDatabaseUrl();
     const admin = postgres(url, { max: 1 });
 
-    // "drizzle" holds the migrator's journal table; reset it too, or a
-    // second run sees the migrations as applied and skips them.
     await admin`drop schema if exists drizzle cascade`;
     await admin`drop schema if exists public cascade`;
     await admin`create schema public`;

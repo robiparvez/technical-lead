@@ -40,7 +40,6 @@ import { closeDb } from './db/client.js';
                 },
             }),
         }),
-        // D13: 60 requests / minute / IP on public GETs (guard below scopes it).
         ThrottlerModule.forRoot({
             throttlers: [{ name: 'public-get', ttl: 60_000, limit: 60 }],
         }),
@@ -55,7 +54,6 @@ import { closeDb } from './db/client.js';
         AdminModule,
     ],
     providers: [
-        // registered through DI (not `new` in main.ts) so the filter can inject providers
         { provide: APP_FILTER, useClass: AllExceptionsFilter },
         {
             provide: APP_GUARD,

@@ -27,17 +27,11 @@ export async function createApp(): Promise<INestApplication> {
 
     app.useLogger(app.get(Logger));
     const config = app.get(ConfigService);
-    // Trust X-Forwarded-For only from the proxies listed in TRUSTED_PROXIES.
-    // With none listed (no proxy, local dev) the header is ignored, so a client
-    // cannot forge req.ip to dodge the public-GET throttler.
     const trustedProxies = parseTrustedProxies(config.get<string>('TRUSTED_PROXIES'));
     app.getHttpAdapter().getInstance().set('trust proxy', trustedProxies.length > 0 ? trustedProxies : false);
 
     app.use(
         helmet({
-            // The API serves JSON to cross-origin fetches, not documents, so a
-            // Content-Security-Policy adds nothing here; the Next server sets
-            // the site's headers (next.config.ts).
             contentSecurityPolicy: false,
             crossOriginResourcePolicy: { policy: 'cross-origin' },
         }),
@@ -47,15 +41,12 @@ export async function createApp(): Promise<INestApplication> {
         origin: parseTrustedOrigins(config.get<string>('TRUSTED_ORIGINS')),
     });
 
-    // The raw better-auth handler, outside Nest's router (see auth.mount.ts).
     mountBetterAuth(app, app.get(AUTH));
 
     app.use(json({ limit: '100kb' }));
 
     app.setGlobalPrefix('v1');
 
-    // API docs only on a developer machine: an unset NODE_ENV on a real deploy
-    // must not publish them.
     if (config.get('NODE_ENV') === 'development') {
         const swaggerConfig = new DocumentBuilder()
             .setTitle('technical-lead API')

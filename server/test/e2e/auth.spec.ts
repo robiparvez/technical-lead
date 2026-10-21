@@ -53,7 +53,7 @@ describe('sign-up', () => {
     });
 
     it('never grants admin, whatever address signs up', async () => {
-        const email = uniqueEmail('admin'); // even an admin-looking address
+        const email = uniqueEmail('admin');
         const { userId } = await signUp(app, email);
         const { db } = getDb();
         const [row] = await db.select().from(userTable).where(eq(userTable.id, userId));
@@ -134,7 +134,6 @@ describe('guards resolve from the DI container', () => {
 });
 
 describe('sign-in rate limit outside dev and test', () => {
-    // counts live in the database for 10 s; later tests must not inherit them
     afterEach(async () => {
         await getDb().db.execute(sql`delete from rate_limit`);
     });
@@ -194,7 +193,6 @@ describe('sign-in rate limit outside dev and test', () => {
             signInStatuses(['9.9.3.1', '9.9.3.1', '9.9.3.1', '9.9.3.1']),
         );
         expect(same).toEqual([401, 401, 401, 429]);
-        // the proxy appends the real client IP on the right; the client controls only the left
         const spoofed = await asProduction('127.0.0.1', () =>
             signInStatuses(['1.1.1.1, 9.9.4.1', '2.2.2.2, 9.9.4.1', '3.3.3.3, 9.9.4.1', '4.4.4.4, 9.9.4.1']),
         );
@@ -204,22 +202,18 @@ describe('sign-in rate limit outside dev and test', () => {
 
 describe('rate limiting (storage: database)', () => {
     it('blocks the 4th sign-in inside the window and stores counts in the DB', async () => {
-        // A dedicated instance with the limiter forced on, mounted on a bare
-        // node server: the app instance keeps the limiter off in test env so
-        // the rest of the suite can sign up freely.
         const auth = buildAuth({ rateLimitEnabled: true });
         const server = http.createServer(toNodeHandler(auth));
         await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
         const port = (server.address() as { port: number }).port;
         try {
-            // better-auth's special rule for sign-in: 3 per 10 seconds.
             for (let i = 0; i < 3; i += 1) {
                 const response = await fetch(`http://127.0.0.1:${port}/api/auth/sign-in/email`, {
                     method: 'POST',
                     headers: { 'content-type': 'application/json' },
                     body: JSON.stringify({ email: uniqueEmail('limited'), password: 'x'.repeat(8) }),
                 });
-                expect(response.status).toBe(401); // wrong password, but allowed
+                expect(response.status).toBe(401);
             }
             const blocked = await fetch(`http://127.0.0.1:${port}/api/auth/sign-in/email`, {
                 method: 'POST',
@@ -229,7 +223,6 @@ describe('rate limiting (storage: database)', () => {
             expect(blocked.status).toBe(429);
             expect(blocked.headers.get('x-retry-after')).toBeTruthy();
 
-            // Storage is the database, not memory.
             const { db } = getDb();
             const rows = await db.execute<{ count: number }>(
                 sql`select count(*)::int as count from rate_limit`,

@@ -39,9 +39,9 @@ describe('sendMail', () => {
 
     it('does not throw when the SMTP server is down', async () => {
         await smtp.close();
-        process.env.SMTP_PORT = '1'; // nothing listens here
+        process.env.SMTP_PORT = '1';
         await expect(sendMail({ to: 'a@example.com', subject: 'Hi', text: 'x' })).resolves.toBeUndefined();
-        smtp = await startFakeSmtp(); // afterEach closes it
+        smtp = await startFakeSmtp();
     });
 });
 

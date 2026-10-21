@@ -19,17 +19,11 @@ export const envSchema = z.object({
     TEST_DATABASE_URL: postgresUrl.optional(),
     BETTER_AUTH_SECRET: z.string().min(32, 'must be at least 32 characters'),
     TRUSTED_ORIGINS: z.string().optional(),
-    // Comma-separated IPs or CIDR ranges of the reverse proxies in front of the
-    // API. Needed for per-client sign-in rate limits outside dev (P6).
     TRUSTED_PROXIES: z.string().optional(),
     EXPORT_TOKEN: z.string().min(16, 'must be at least 16 characters'),
-    // Outgoing mail: plain SMTP (MailHog in dev). Without SMTP_HOST nothing is
-    // sent. See src/mail/send-mail.ts.
     SMTP_HOST: z.string().optional(),
     SMTP_PORT: z.string().regex(/^\d+$/, 'must be a number').optional(),
     MAIL_FROM: z.string().optional(),
-    // Directory holding diagram-ids.json for the shared
-    // content validator (P2, D9). Relative paths resolve against server/.
     CONTENT_RULES_DIR: z.string().optional(),
 });
 

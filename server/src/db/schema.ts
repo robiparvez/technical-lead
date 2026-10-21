@@ -30,8 +30,6 @@ const createdAt = () =>
 const updatedAt = () =>
     timestamp('updated_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow();
 
-// --- better-auth (no auth code yet; schema only, installed so shapes match) ---
-
 export const user = pgTable('user', {
     id: text('id').primaryKey(),
     name: text('name').notNull(),
@@ -83,17 +81,12 @@ export const verification = pgTable('verification', {
     updatedAt: updatedAt(),
 });
 
-// better-auth's rate-limit storage when rateLimit.storage = "database" (plan:
-// Auth). `lastRequest` is epoch milliseconds; bigint/number matches the
-// better-auth field type (bigint: true), not a timestamp.
 export const rateLimit = pgTable('rate_limit', {
     id: text('id').primaryKey(),
     key: text('key').notNull().unique(),
     count: integer('count').notNull(),
     lastRequest: bigint('last_request', { mode: 'number' }).notNull(),
 });
-
-// --- content ---
 
 export const topics = pgTable('topics', {
     slug: text('slug').primaryKey(),
@@ -125,24 +118,18 @@ export const questions = pgTable(
     },
     (table) => [
         index('questions_topic_slug_idx').on(table.topicSlug),
-        // Partial unique: soft-deleted rows must not block takeaway reuse.
         uniqueIndex('questions_topic_slug_key_takeaway_live_idx')
             .on(table.topicSlug, table.keyTakeaway)
             .where(sql`deleted_at is null`),
     ],
 );
 
-// Technology pages: each entry lists the question tags that name it (the web
-// app shows a technology once at least 3 questions carry one of its tags).
-// Seeded once from src/data/technologies.json; the database owns it after.
 export const technologies = pgTable('technologies', {
     slug: text('slug').primaryKey(),
     label: text('label').notNull(),
     tags: text('tags').array().notNull(),
     sortOrder: integer('sort_order').notNull(),
 });
-
-// --- per-user data ---
 
 export const userKnownQuestions = pgTable(
     'user_known_questions',
@@ -233,8 +220,6 @@ export const quizState = pgTable('quiz_state', {
     resetEpoch: integer('reset_epoch').notNull().default(0),
     importedAt: timestamp('imported_at', { withTimezone: true, mode: 'date' }),
 });
-
-// --- relations (drizzle query API) ---
 
 export const topicsRelations = relations(topics, ({ many }) => ({
     questions: many(questions),

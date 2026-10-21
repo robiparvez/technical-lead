@@ -49,8 +49,6 @@ function assertNoControlCharsDeep(
     }
 }
 
-// --- topics ---
-
 /** Lowercase letters, numbers, single hyphens (plan: POST /admin/topics). */
 const kebab = z
     .string()
@@ -86,8 +84,6 @@ export const topicUpdateSchema = z.object({
     questionIdPrefix: z.string().optional(),
 });
 export type TopicUpdateDto = z.infer<typeof topicUpdateSchema>;
-
-// --- questions ---
 
 const TAG_PATTERN = /^[a-z0-9][a-z0-9+.#-]*$/;
 

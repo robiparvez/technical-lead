@@ -33,8 +33,6 @@ export const questionListItemSchema = questionDtoSchema.extend({
 });
 export type QuestionListItemDto = z.infer<typeof questionListItemSchema>;
 
-// --- GET /v1/questions query ---
-
 const cursorPayloadSchema = z.object({
     t: z.number().int(),
     s: z.number().int(),

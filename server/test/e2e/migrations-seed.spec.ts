@@ -70,7 +70,6 @@ describe('migrations + seed', () => {
         const prefixes = await db
             .select({ prefix: schema.topics.questionIdPrefix })
             .from(schema.topics);
-        // Prefixes are not always the slug (plan, D11/D16 context).
         expect(prefixes).toContainEqual({ prefix: 'hr' });
         expect(prefixes).toContainEqual({ prefix: 'stripe' });
         expect(new Set(prefixes.map((p) => p.prefix)).size).toBe(21);
@@ -133,7 +132,6 @@ describe('migrations + seed', () => {
             .where(sql`${schema.questions.id} = 'hr-q1'`);
         expect(row?.deletedAt).not.toBeNull();
 
-        // restore for the other spec files
         await db
             .update(schema.questions)
             .set({ deletedAt: null })

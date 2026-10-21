@@ -42,8 +42,6 @@ export class AdminController {
         private readonly questions: AdminQuestionsService,
     ) {}
 
-    // --- topics ---------------------------------------------------------------
-
     @Get('topics')
     async listTopics(): Promise<{ topics: AdminTopicListItemDto[] }> {
         return { topics: await this.topics.listTopics() };
@@ -85,8 +83,6 @@ export class AdminController {
     ): Promise<{ question: unknown; deletedAt: Date }[]> {
         return this.questions.listDeletedQuestions(slug);
     }
-
-    // --- questions ------------------------------------------------------------
 
     @Post('questions')
     async createQuestion(

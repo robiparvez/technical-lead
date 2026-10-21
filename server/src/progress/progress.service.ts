@@ -38,7 +38,6 @@ export class ProgressService {
 
         return db.transaction(async (tx) => {
             if (add.length > 0) {
-                // Only live questions can be marked known.
                 const known = await tx
                     .select({ id: questions.id })
                     .from(questions)

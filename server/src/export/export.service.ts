@@ -105,9 +105,6 @@ export async function collectContentState(exec: Executor): Promise<ContentState>
         })
         .from(questions)
         .innerJoin(topics, eq(questions.topicSlug, topics.slug))
-        // Live questions of LIVE topics only: a soft-deleted topic's
-        // questions are neither exported nor "committed" for rule 4, or a
-        // topic delete would trip the committed-id check.
         .where(and(isNull(questions.deletedAt), isNull(topics.deletedAt)))
         .orderBy(asc(topics.groupSortOrder), asc(topics.sortOrder), asc(questions.sortOrder), asc(questions.id));
 
@@ -130,8 +127,6 @@ export async function collectContentState(exec: Executor): Promise<ContentState>
         );
     }
 
-    // Draft topics (no live question) stay out of the export and out of
-    // validation (validator rule 5: the caller excludes empty topics).
     const exportedTopics = topicRows
         .filter((topic) => (byTopic.get(topic.slug)?.length ?? 0) > 0)
         .map((topic) =>
@@ -143,7 +138,6 @@ export async function collectContentState(exec: Executor): Promise<ContentState>
             }),
         );
 
-    // Groups rebuilt from the topic rows, in group order.
     const groupsByOrder = new Map<number, { label: string; topicSlugs: string[] }>();
     for (const topic of exportedTopics) {
         const source = topicRows.find((row) => row.slug === topic.slug)!;
