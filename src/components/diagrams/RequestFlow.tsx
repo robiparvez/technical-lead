@@ -20,11 +20,9 @@ export default function RequestFlow() {
     const frame = useCurrentFrame();
     const { durationInFrames } = useVideoConfig();
 
-    // segments: to gateway, to orders, to db, response back, hold, loop fade-free restart
-    const s1 = seg(frame, 0, 40); // client -> gateway
-    const s2 = seg(frame, 40, 85); // gateway -> orders
-    const s3 = seg(frame, 85, 115); // orders -> db
-    // response: db -> orders, orders -> gateway, gateway -> client, one third each
+    const s1 = seg(frame, 0, 40);
+    const s2 = seg(frame, 40, 85);
+    const s3 = seg(frame, 85, 115);
     const r1 = seg(frame, 115, 135);
     const r2 = seg(frame, 135, 155);
     const r3 = seg(frame, 155, 175);
@@ -36,7 +34,6 @@ export default function RequestFlow() {
     return (
         <AbsoluteFill>
             <svg viewBox='0 0 720 400' width='100%' height='100%'>
-                {/* client */}
                 <circle
                     cx={CLIENT.x}
                     cy={CLIENT.y}
@@ -55,7 +52,6 @@ export default function RequestFlow() {
                     client
                 </text>
 
-                {/* gateway */}
                 <rect
                     x={GATEWAY.x1}
                     y={GATEWAY.y1}
@@ -73,7 +69,6 @@ export default function RequestFlow() {
                     auth, routing, limits
                 </text>
 
-                {/* client-gateway path */}
                 <line
                     x1='82'
                     y1='180'
@@ -84,7 +79,6 @@ export default function RequestFlow() {
                 />
                 {chevron(148, 180, 0, active(0, 40) ? C.accent : C.secondary)}
 
-                {/* services */}
                 {SERVICES.map((s) => {
                     const isOrders = s.name === 'Orders';
                     const hot = isOrders && frame >= 40 && frame < 190;
@@ -109,7 +103,6 @@ export default function RequestFlow() {
                             >
                                 {s.name}
                             </text>
-                            {/* gateway -> service */}
                             <line
                                 x1='280'
                                 y1='180'
@@ -128,7 +121,6 @@ export default function RequestFlow() {
                     );
                 })}
 
-                {/* orders db */}
                 <rect
                     x={DB.x1}
                     y={DB.y1}
@@ -158,7 +150,6 @@ export default function RequestFlow() {
                 />
                 {chevron(588, 70, 5, active(85, 175) ? C.accent : C.secondary)}
 
-                {/* response marker */}
                 {frame >= 115 && frame < 200 && (
                     <text x='360' y='368' textAnchor='middle' fontSize='11' fill={C.secondary}>
                         response returns to the client over the same path
@@ -170,7 +161,6 @@ export default function RequestFlow() {
                     </text>
                 )}
 
-                {/* moving request dots (position motion); each shows only while its leg runs */}
                 <Dot points={[[CLIENT.x + 20, 180], [gx, 180]]} p={s1} />
                 <Dot points={[[280, 180], [400, 65]]} p={s2} />
                 <Dot points={[[540, 65], [DB.x1, 70]]} p={s3} />

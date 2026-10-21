@@ -79,8 +79,6 @@ export async function apiFetch<T>(
     return (await response.json()) as T;
 }
 
-// ---------- DTOs: known-question progress (progress.schemas.ts) ----------
-
 /** GET /v1/progress/known and the POST response: the resulting full set. */
 export interface KnownSetDto {
     questionIds: string[];
@@ -91,8 +89,6 @@ export interface KnownDeltaDto {
     add: string[];
     remove: string[];
 }
-
-// ---------- DTOs: quiz sync (quiz.schemas.ts) ----------
 
 /** GET /v1/quiz/state: totals snapshot plus reset_epoch. */
 export interface QuizTopicTotalDto {
@@ -169,8 +165,6 @@ export type QuizEventResultDto =
 export interface QuizEventsResponseDto {
     results: QuizEventResultDto[];
 }
-
-// ---------- endpoints ----------
 
 export function getKnownSet(): Promise<KnownSetDto> {
     return apiFetch<KnownSetDto>('/v1/progress/known');

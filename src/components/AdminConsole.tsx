@@ -46,8 +46,6 @@ export default function AdminConsole({
     techTagLabels: Record<string, string>;
 }) {
     const [accessState, setAccess] = useState<Access>('checking');
-    // signing out while the editor is open (any Sign out button) drops it at
-    // once and shows the sign-in screen, without waiting for a new role check
     const { status: syncStatus } = useSync();
     const access: Access =
         syncStatus === 'signed-out' && (accessState === 'allowed' || accessState === 'denied')
@@ -67,7 +65,6 @@ export default function AdminConsole({
     const [difficulty, setDifficulty] = useState<'' | Difficulty>('');
     const returnFocus = useRef<string | null>(null);
 
-    // role check (only when a token is stored; plan: /admin role check row)
     useEffect(() => {
         let live = true;
         const check = async (): Promise<Access> => {
@@ -75,7 +72,6 @@ export default function AdminConsole({
             try {
                 const { data } = await authClient.getSession();
                 if (!data?.user) return 'signed-out';
-                // role is our server-side column; the stock client type omits it
                 const role = (data.user as { role?: string }).role;
                 return role === 'admin' ? 'allowed' : 'denied';
             } catch {
@@ -90,7 +86,6 @@ export default function AdminConsole({
         };
     }, [accessAttempt]);
 
-    // fetch the topic list once the role is known
     useEffect(() => {
         if (access !== 'allowed') return;
         listTopics()
@@ -123,7 +118,6 @@ export default function AdminConsole({
         setTopicAttempt((a) => a + 1);
     };
 
-    // after returning to the list, put focus back on the row (or button) that opened the editor
     useEffect(() => {
         if (view.kind !== 'list' || !returnFocus.current) return;
         document.getElementById(returnFocus.current)?.focus();
@@ -172,7 +166,6 @@ export default function AdminConsole({
         setFilter('');
         setDifficulty('');
         adminToast.done(`Question ${restored.id} restored.`);
-        // the restored row renders on the next commit
         requestAnimationFrame(() => document.getElementById(`row-${restored.id}`)?.focus());
     };
 
@@ -190,8 +183,6 @@ export default function AdminConsole({
 
     if (access === 'checking') return <Skeleton label='Checking admin access' field rows={6} />;
 
-    // nobody signed in: the admin landing page is the sign-in screen itself;
-    // after a successful sign-in the role check runs again in place
     if (access === 'signed-out')
         return (
             <div className='auth'>

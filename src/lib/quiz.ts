@@ -46,7 +46,6 @@ export function buildRound(source: QuizSource[], previousIds: string[] = []): Qu
     const size = attemptSize(source.length);
     const previous = new Set(previousIds);
     const fresh = shuffle(source.filter((q) => !previous.has(q.id)));
-    // only short if the topic shrank since the last attempt; top up from the rest
     const picked =
         fresh.length >= size
             ? fresh.slice(0, size)

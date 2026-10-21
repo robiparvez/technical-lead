@@ -44,7 +44,6 @@ const API_URL = process.env.API_URL ?? 'http://127.0.0.1:3001';
 
 function exportToken(): string {
     if (process.env.EXPORT_TOKEN) return process.env.EXPORT_TOKEN;
-    // development convenience: the API's own .env already holds the token
     try {
         const env = readFileSync(join(process.cwd(), 'server', '.env'), 'utf8');
         for (const line of env.split(/\r?\n/)) {

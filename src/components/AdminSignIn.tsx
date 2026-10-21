@@ -43,8 +43,6 @@ export function AdminSignInForm({ next, onSignedIn }: { next: string; onSignedIn
     const [busy, setBusy] = useState(false);
 
     if (status === 'checking') {
-        // the session check runs before the form: a returning reader should
-        // not type credentials that would make a second account
         return <Skeleton label='Checking your session' field button />;
     }
 
@@ -96,7 +94,6 @@ export function AdminSignInForm({ next, onSignedIn }: { next: string; onSignedIn
                     setFormError(sent.error.message || 'That did not work. Try again.');
                     return;
                 }
-                // the server answers the same for every address, so this does too
                 setResetSent(true);
                 return;
             }
@@ -117,12 +114,9 @@ export function AdminSignInForm({ next, onSignedIn }: { next: string; onSignedIn
                 );
                 return;
             }
-            // the token is already captured by the auth client's onSuccess
-            // hook; the sync provider reacts to it while the page changes
             if (onSignedIn) onSignedIn();
             else router.push(next);
         } catch (error) {
-            // keep the friendly message, but leave the cause in the console
             console.error('sign-in request failed', error);
             setFormError('The study server could not be reached. Try again.');
         } finally {

@@ -19,8 +19,6 @@ export function createStore<T>(
     const listeners = new Set<(next: T, prev: T) => void>();
     let cache: T | null = null;
 
-    // Drop the cache when another tab writes, even if nothing here subscribes
-    // (the sync queues don't): a stale queue would overwrite the other tab's ops.
     if (typeof window !== 'undefined') {
         window.addEventListener('storage', (e) => {
             if (e.key === key) cache = null;
@@ -42,7 +40,7 @@ export function createStore<T>(
     function subscribe(callback: () => void) {
         const onStorage = (e: StorageEvent) => {
             if (e.key !== key) return;
-            cache = null; // another tab wrote; re-read on next snapshot
+            cache = null;
             callback();
         };
         window.addEventListener(changeEvent, callback);
@@ -54,7 +52,6 @@ export function createStore<T>(
     }
 
     function getServerSnapshot(): T {
-        // hydration renders before localStorage is read, so markup matches the server
         return empty;
     }
 

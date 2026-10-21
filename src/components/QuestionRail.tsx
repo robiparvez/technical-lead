@@ -96,14 +96,10 @@ function QuestionCard({
     const [open, setOpen] = useState(false);
     const answerId = `${question.id}-answer`;
 
-    // Search results and quiz reviews link to /topics/<slug>#<question-id>;
-    // the linked card opens itself. The hash is read after mount so server
-    // and hydration markup match.
     useEffect(() => {
         const openIfTarget = () => {
             if (window.location.hash !== `#${question.id}`) return;
             setOpen(true);
-            // scroll once the answer has rendered; scroll-padding keeps it below the sticky header
             requestAnimationFrame(() =>
                 document.getElementById(question.id)?.scrollIntoView({ block: 'start' }),
             );
@@ -128,7 +124,6 @@ function QuestionCard({
                 </span>
                 <ChevronGlyph />
             </button>
-            {/* links sit outside the toggle: a link inside a button is invalid HTML */}
             {question.tags.length > 0 && (
                 <ul className='q-tags' aria-label='Tags'>
                     {question.tags.map((tag) => (
@@ -196,7 +191,6 @@ function RailNode({ known, pending }: { known: boolean; pending: boolean }) {
     );
 }
 
-// sugar-high tokenizes JavaScript-family syntax only; SQL and YAML stay plain
 const HIGHLIGHTED = new Set(['typescript', 'javascript']);
 
 function CodeSnippet({ language, snippet }: { language: string; snippet: string }) {
@@ -207,7 +201,6 @@ function CodeSnippet({ language, snippet }: { language: string; snippet: string 
             </pre>
         );
     }
-    // highlight() escapes the source, so the markup carries no raw snippet HTML
     return (
         <pre className='code'>
             <code dangerouslySetInnerHTML={{ __html: highlight(snippet) }} />

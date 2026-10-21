@@ -4,7 +4,6 @@ import FullscreenToggle from '@/components/FullscreenToggle';
 import ThemeSwitch from '@/components/ThemeSwitch';
 import { AppFrame } from '@/components/Shell';
 
-// sonner reads these custom properties, so the toasts follow the site theme
 const TOAST_THEME = {
     '--normal-bg': 'var(--color-canvas)',
     '--normal-text': 'var(--color-text-primary)',

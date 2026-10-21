@@ -16,8 +16,6 @@ export default async function Home() {
         questionIds: t.questions.map((question) => question.id),
     }));
 
-    // The ?q= query is read in the browser; the fallback is the topic index,
-    // which needs no search index.
     return (
         <Suspense
             fallback={

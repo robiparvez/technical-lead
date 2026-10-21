@@ -42,7 +42,6 @@ export interface SyncState {
 }
 
 const DEFAULT_STATE: SyncState = {
-    // the prerendered pages and the no-token case: local data, no skeletons
     status: 'signed-out',
     email: null,
     notice: null,
@@ -64,10 +63,7 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const [state, setState] = useState<Omit<SyncState, 'retry' | 'signOut'>>(DEFAULT_STATE);
     const runningRef = useRef(false);
-    // a run() requested while one is in flight; it replays when that one ends
     const rerunRef = useRef(false);
-    // 'checking' shows skeletons only until the FIRST sync answers; later
-    // background flushes keep the signed-in UI stable
     const syncedOnceRef = useRef(false);
     const flushTimerRef = useRef<number | null>(null);
 
@@ -86,7 +82,6 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
         try {
             session = await authClient.getSession();
         } catch {
-            // network failure: keep the local data and offer a retry
             setState((s) => ({
                 ...s,
                 status: 'error',
@@ -95,8 +90,6 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
             return;
         }
 
-        // an HTTP error (500, 502, 429) is a sick server, not a dead
-        // session: keep the data and offer a retry
         if (session.error && session.error.status !== 401) {
             setState((s) => ({
                 ...s,
@@ -108,8 +101,6 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
 
         const user = session.data?.user;
         if (!user) {
-            // a stored token the server does not accept: signed out for
-            // real, and the local data goes with it (plan: Auth)
             clearStoredToken();
             clearSyncData();
             syncedOnceRef.current = false;
@@ -127,7 +118,6 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
                 error: null,
             });
         } catch (error) {
-            // sign-out made this run stale; the queued re-run sets the state
             if (error instanceof SyncCancelledError) return;
             if (error instanceof UnauthorizedSyncError) {
                 clearStoredToken();
@@ -166,14 +156,10 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
     }, [run]);
 
     const signOut = useCallback(() => {
-        // best effort: the server revokes the session; offline, the token
-        // dies at its 24 h expiry either way
         void authClient.signOut().catch(() => {});
         clearStoredToken();
         clearSyncData();
         syncedOnceRef.current = false;
-        // the token change re-runs run(), which lands on 'signed-out';
-        // /admin shows the admin sign-in screen when nobody is signed in
         router.push('/admin');
     }, [router]);
 
@@ -194,7 +180,6 @@ export function SyncProvider({ children }: { children: React.ReactNode }) {
             }, FLUSH_DELAY_MS);
         };
         const onOnline = () => {
-            // queued work made while offline flushes as soon as the network returns
             if (getStoredToken() !== null) void run();
         };
 

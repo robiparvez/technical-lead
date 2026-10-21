@@ -36,7 +36,6 @@ interface Draft {
     diagramJson: string;
 }
 
-// error summary order follows the form
 const FIELD_ORDER = ['question', 'answer', 'keyTakeaway', 'tags', 'codeLanguage', 'codeSnippet', 'diagram', 'diagramJson'];
 const FIELD_INPUT: Record<string, string> = {
     question: 'q-question',
@@ -153,7 +152,6 @@ export default function QuestionEditor({
     useEffect(() => {
         if (confirm) confirmRef.current?.focus();
     }, [confirm]);
-    // warn before a reload or tab close drops unsaved edits
     useEffect(() => {
         if (!dirty) return;
         const warn = (e: BeforeUnloadEvent) => e.preventDefault();
@@ -184,7 +182,6 @@ export default function QuestionEditor({
             if (apiError.fields) {
                 const { mapped, unmapped } = mapServerFields(apiError.fields, draft.diagramMode === 'custom');
                 setServerFields(mapped);
-                // keys with no input on this form (form, difficulty, ...) show in the toast
                 adminToast.failed(
                     'Question not saved',
                     unmapped.length ? unmapped.join(' ') : 'Fix the problems listed in the form, then try again.',

@@ -46,11 +46,9 @@ export function Results({
     tag: string;
 }) {
     const { known } = useKnownQuestions();
-    // both sections start unfolded so the prerendered markup matches
     const [technologiesOpen, setTechnologiesOpen] = useState(true);
     const [topicsOpen, setTopicsOpen] = useState(true);
     const q = query.trim().toLowerCase();
-    // a search query wins over a tag filter; the search box only writes ?q=
     const tagFilter = q ? '' : tag.trim();
 
     if (!q && !tagFilter) {

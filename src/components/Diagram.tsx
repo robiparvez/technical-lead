@@ -27,8 +27,6 @@ interface AnimatedDef {
     inputProps?: { spec: DiagramSpec };
 }
 
-// Typed against diagram-ids.json: an id listed there with no component here
-// (or a component for an id that file does not list) fails type-checking.
 const ANIMATED: Record<DiagramId, AnimatedDef> = {
     'request-flow': {
         component: RequestFlow,
@@ -111,8 +109,6 @@ function AnimatedDiagram({ def }: { def: AnimatedDef }) {
     const [player, setPlayer] = useState<PlayerRef | null>(null);
     const [failed, setFailed] = useState(false);
     const [playing, setPlaying] = useState(false);
-    // Whole seconds only: React skips same-value updates, so the readout
-    // re-renders once a second instead of on every frame.
     const [seconds, setSeconds] = useState(0);
     const fps = def.fps;
 

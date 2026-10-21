@@ -17,7 +17,6 @@ const Y = 120;
 const H = 60;
 const W = 110;
 
-// phase boundaries in frames
 const PH = { start: 0, lint: 40, build: 90, stage: 140, canary: 190, full: 280 };
 
 export default function CiCdFlow() {
@@ -67,7 +66,6 @@ export default function CiCdFlow() {
                     );
                 })}
 
-                {/* connectors */}
                 {[0, 1, 2, 3].map((i) => {
                     const x1 = STAGES[i].x + W;
                     const x2 = STAGES[i + 1].x;
@@ -80,12 +78,10 @@ export default function CiCdFlow() {
                     );
                 })}
 
-                {/* the same artifact flows through every environment */}
                 <text x='360' y='60' textAnchor='middle' fontSize='11' fill={C.secondary}>
                     one artifact, built once, promoted unchanged through environments
                 </text>
 
-                {/* canary meter */}
                 {frame >= PH.canary && (
                     <g>
                         <rect x='210' y='230' width='300' height='14' rx='7' fill='none' stroke={C.secondary} strokeWidth='1.5' />
@@ -104,7 +100,6 @@ export default function CiCdFlow() {
                     </text>
                 )}
 
-                {/* moving commit dot */}
                 <circle cx={dotX} cy={Y + H / 2} r='6' fill='none' stroke={C.accent} strokeWidth='3' />
             </svg>
         </AbsoluteFill>

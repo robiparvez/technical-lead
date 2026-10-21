@@ -62,8 +62,6 @@ export class UnauthorizedSyncError extends Error {
     }
 }
 
-// ---------- queues (localStorage, append-only between flushes) ----------
-
 interface KnownQueue {
     ops: KnownDeltaDto[];
 }
@@ -106,8 +104,6 @@ const knownBootstrapStore = createStore<boolean>(
     (raw) => raw === true,
 );
 
-// ---------- listener plumbing ----------
-
 /** Sync-driven store writes must not enqueue ops about themselves. */
 let suppressEnqueue = 0;
 
@@ -130,7 +126,6 @@ let quizEnqueueCount = 0;
 
 function uuidOrNull(): string | null {
     if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
-    // no uuid source: the event cannot be built (legacy attempts behave the same)
     return null;
 }
 
@@ -168,7 +163,6 @@ export function initSyncListeners(): void {
             const before = prev[slug];
             const after = next[slug];
             if (before && !after) {
-                // the local reset wiped this topic: one reset event per topic
                 const eventId = uuidOrNull();
                 if (eventId) {
                     events.push({
@@ -184,11 +178,10 @@ export function initSyncListeners(): void {
             if (!after) continue;
             const prevLast = before?.attempts.at(-1);
             const last = after.attempts.at(-1);
-            if (!last || !last.clientAttemptId) continue; // legacy attempt: no events
+            if (!last || !last.clientAttemptId) continue;
             const eventId = uuidOrNull();
-            if (!eventId) continue; // no uuid source: this browser cannot sync
+            if (!eventId) continue;
             if (!prevLast || prevLast.startedAt !== last.startedAt) {
-                // a new attempt was appended (also when history hit its cap)
                 events.push({
                     type: 'attempt_started',
                     event_id: eventId,
@@ -199,7 +192,6 @@ export function initSyncListeners(): void {
                     question_ids: last.questionIds,
                 });
             } else if (last.answered > prevLast.answered) {
-                // questions are answered in round order: index prevLast.answered
                 const questionId = last.questionIds[prevLast.answered];
                 if (questionId !== undefined) {
                     events.push({
@@ -224,8 +216,6 @@ export function initSyncListeners(): void {
     });
 }
 
-// ---------- sign-out / dead-session cleanup ----------
-
 /**
  * Clears every pending queue and the local stores (plan: Auth — sign-out
  * clears the token, the local known-questions set, local scores and pending
@@ -233,12 +223,11 @@ export function initSyncListeners(): void {
  * clears the token first.
  */
 export function clearSyncData(): void {
-    generation += 1; // a sync still in flight must not write its results back
+    generation += 1;
     withSuppress(() => {
         knownQueueStore.set({ ops: [] });
         quizQueueStore.set({ events: [] });
         epochStore.set(0);
-        // the next account uploads this browser's signed-out marks again
         knownBootstrapStore.set(false);
         knownStore.set(new Set<string>());
         scoresStore.set({});
@@ -262,8 +251,6 @@ function ensureCurrent(): void {
     if (runGeneration !== generation) throw new SyncCancelledError();
 }
 
-// ---------- the sync run ----------
-
 export interface SyncOutcome {
     /** Human-visible note about dropped or rejected queued events, if any. */
     notice: string | null;
@@ -275,7 +262,6 @@ export interface SyncOutcome {
  * network/API errors (the caller keeps the local data and offers a retry).
  */
 export async function runSync(): Promise<SyncOutcome> {
-    // one sync at a time across tabs, so two tabs never replay the same queue
     return navigator.locks ? await navigator.locks.request('tl-sync', runLocked) : runLocked();
 }
 
@@ -307,7 +293,6 @@ async function syncKnown(): Promise<void> {
         for (const id of op.add) merged.add(id);
     }
     if (!knownBootstrapStore.get()) {
-        // first sign-in on this device: the local set is uploaded as adds
         for (const id of knownStore.get()) merged.add(id);
     }
 
@@ -316,7 +301,6 @@ async function syncKnown(): Promise<void> {
 
     let authoritative = merged;
     if (add.length > 0 || remove.length > 0) {
-        // D13 caps each array; the deltas are disjoint, so chunked calls agree
         for (let i = 0; i < Math.max(add.length, remove.length); i += DELTA_CHUNK) {
             const response = await applyKnownDelta({
                 add: add.slice(i, i + DELTA_CHUNK),
@@ -327,12 +311,10 @@ async function syncKnown(): Promise<void> {
         }
     }
 
-    // the replayed ops are settled; ops appended during the calls survive
     knownQueueStore.set({ ops: knownQueueStore.get().ops.slice(ops.length) });
     knownBootstrapStore.set(true);
 
     if (knownEnqueueCount === counterBefore) {
-        // no local toggle raced this sync: the server set is the truth
         withSuppress(() => knownStore.set(authoritative));
     }
 }
@@ -343,7 +325,6 @@ async function syncQuiz(notices: string[]): Promise<void> {
     ensureCurrent();
     epochStore.set(state.resetEpoch);
 
-    // drop events too old for the server's 90-day window, with a notice
     const fresh = quizQueueStore.get().events.filter(
         (event) => Date.now() - new Date(event.client_ts).getTime() <= EVENT_WINDOW_MS,
     );
@@ -361,8 +342,6 @@ async function syncQuiz(notices: string[]): Promise<void> {
 
     await flushQuizEvents(notices);
 
-    // signed-in totals are authoritative; skip the overlay if a local answer
-    // raced the refetch (its event is still queued and settles next flush)
     const counterBefore = quizEnqueueCount;
     const finalState = await getQuizState();
     ensureCurrent();
@@ -374,7 +353,6 @@ async function syncQuiz(notices: string[]): Promise<void> {
 
 /** One-time upload of the local totals; the server guards it with importedAt. */
 async function importLocalTotals(state: { resetEpoch: number }): Promise<void> {
-    // snapshot counters first: events appended during the POST must survive
     const queueLength = quizQueueStore.get().events.length;
     const totals: ImportLocalTotalsDto[] = Object.entries(scoresStore.get())
         .filter(([, t]) => t.attemptCount > 0 || t.score !== 0 || t.correct > 0 || t.wrong > 0)
@@ -386,11 +364,9 @@ async function importLocalTotals(state: { resetEpoch: number }): Promise<void> {
             attempt_count: t.attemptCount,
         }));
     const eventId = uuidOrNull();
-    if (!eventId) return; // no uuid source: retry the import on a later sync
+    if (!eventId) return;
     const event: ImportLocalEventDto = {
         type: 'import_local',
-        // send even when empty: an account with no local history is still
-        // marked imported, so a later sign-in can never import over real data
         totals,
         event_id: eventId,
         client_ts: new Date().toISOString(),
@@ -400,11 +376,8 @@ async function importLocalTotals(state: { resetEpoch: number }): Promise<void> {
     ensureCurrent();
     const result = results[0];
     if (result && (result.status === 'applied' || result.status === 'duplicate')) {
-        // every event queued before the snapshot is inside the import
         quizQueueStore.set({ events: quizQueueStore.get().events.slice(queueLength) });
     }
-    // a 422 rejection ("already imported") leaves the queue in place: another
-    // device raced the import, so this device's queued events replay instead
 }
 
 /** Sends batches until the queue drains; consumes events as the server rules. */
@@ -421,7 +394,6 @@ async function flushQuizEvents(notices: string[]): Promise<void> {
         } catch (error) {
             ensureCurrent();
             if (isApiError(error) && (error.statusCode === 400 || error.statusCode === 422)) {
-                // the batch itself is malformed (a client bug): drop it, not the queue
                 quizQueueStore.set({ events: quizQueueStore.get().events.slice(batch.length) });
                 notices.push('Dropped a malformed batch of quiz events.');
                 continue;
@@ -437,14 +409,13 @@ async function flushQuizEvents(notices: string[]): Promise<void> {
         const reconciles: Array<[string, number]> = [];
         for (const event of batch) {
             const result = byId.get(event.event_id);
-            if (!result) break; // the server owes one result per event; stop here
+            if (!result) break;
             if (result.status === 'rejected' && result.code === 409) {
                 epochConflict = true;
                 break;
             }
             consumed += 1;
             if (result.status === 'rejected') {
-                // a rejected event is dropped (plan: API endpoints /quiz/events)
                 rejected += 1;
             } else if (result.number !== undefined && event.type === 'attempt_started') {
                 reconciles.push([event.client_attempt_id, result.number]);
@@ -471,7 +442,6 @@ async function flushQuizEvents(notices: string[]): Promise<void> {
             const state = await getQuizState();
             ensureCurrent();
             epochStore.set(state.resetEpoch);
-            // re-tag what is still queued and try again with the fresh epoch
             quizQueueStore.set({
                 events: quizQueueStore.get().events.map((event) => ({
                     ...event,
@@ -482,7 +452,6 @@ async function flushQuizEvents(notices: string[]): Promise<void> {
         }
 
         if (consumed === 0) {
-            // nothing consumed and no conflict: refuse to spin on the same batch
             throw new Error('the server did not answer every queued quiz event');
         }
     }
@@ -506,12 +475,11 @@ function reconcileAttemptNumber(clientAttemptId: string, number: number): void {
 function overlayTotals(topics: Record<string, { score: number; correct: number; wrong: number; attemptCount: number }>): void {
     const current = scoresStore.get();
     const next: Scores = {};
-    // server topics too: a new device has no local entry for them yet
     for (const slug of new Set([...Object.keys(current), ...Object.keys(topics)])) {
         const localAttempts = current[slug]?.attempts ?? [];
         const total = topics[slug];
         const attemptCount = total?.attemptCount ?? 0;
-        if (!current[slug] && attemptCount === 0 && !total?.score) continue; // nothing to show
+        if (!current[slug] && attemptCount === 0 && !total?.score) continue;
         next[slug] = {
             score: total?.score ?? 0,
             correct: total?.correct ?? 0,

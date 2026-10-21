@@ -11,12 +11,8 @@ import ThemeSwitch from '@/components/ThemeSwitch';
 import { getTechnologySummaries } from '@/data/technologies';
 import { getContentOrNull } from '@/lib/content';
 
-// The site reads PostgreSQL through the API on every request (lib/content.ts),
-// so no page is prerendered at build time.
 export const dynamic = 'force-dynamic';
 
-// Applies a saved theme choice before first paint, so a dark reader never
-// sees a light flash. The key and JSON format match ThemeSwitch's store.
 const THEME_SCRIPT = `try{var t=JSON.parse(localStorage.getItem('tl-theme'));if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}`;
 
 const geist = Geist({
@@ -35,7 +31,6 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-    // with the API down the shell still renders (empty nav); each page then shows its own error
     const content = await getContentOrNull();
     const groups = (content?.groups ?? []).map((group) => ({
         label: group.label,
@@ -48,7 +43,6 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     const technologies = content ? await getTechnologySummaries() : [];
 
     return (
-        // data-theme is set by the script below before hydration
         <html lang='en' className={`${geist.variable} ${geistMono.variable}`} suppressHydrationWarning>
             <head>
                 <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
@@ -60,7 +54,6 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                 <Shell
                     nav={<TopicNav key='nav' groups={groups} technologies={technologies} />}
                     search={<SearchBox key='search' />}
-                    // Shell renders this slot in the header and the phone top bar
                     theme={
                         <>
                             <FullscreenToggle />

@@ -18,7 +18,6 @@ export default async function TopicQuizPage({ params }: { params: Promise<{ slug
     const topic = await getTopic(slug);
     if (!topic) notFound();
 
-    // send only what the quiz needs, not full answers and code
     const source = topic.questions.map((q) => ({
         id: q.id,
         difficulty: q.difficulty,
@@ -26,6 +25,5 @@ export default async function TopicQuizPage({ params }: { params: Promise<{ slug
         keyTakeaway: q.keyTakeaway,
     }));
 
-    // key resets the round when navigating between topic quizzes
     return <QuizRunner key={topic.slug} slug={topic.slug} title={topic.title} source={source} />;
 }

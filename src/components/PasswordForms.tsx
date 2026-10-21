@@ -146,8 +146,6 @@ export function ChangePasswordForm() {
         setFormError(null);
         adminToast.saving('Changing the password');
         try {
-            // other devices are signed out; this session gets a fresh token
-            // that the auth client stores from the response header
             const result = await authClient.changePassword({
                 currentPassword: current,
                 newPassword: password,

@@ -1,11 +1,6 @@
 import { getContent } from '@/lib/content';
 import type { Topic } from './types';
 
-// The content loader. Topics, questions and groups come from the NestJS API
-// (PostgreSQL) on every request (lib/content.ts); no JSON file is read here.
-// Server components call these; client files import only types from '@/data'
-// or '@/data/types'.
-
 export async function getTopicGroups() {
     return (await getContent()).groups;
 }

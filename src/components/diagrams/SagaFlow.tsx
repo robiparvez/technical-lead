@@ -12,7 +12,6 @@ const W = 140;
 const XS = [30, 200, 370, 540];
 const NAMES = ['Order', 'Payment', 'Inventory', 'Shipping'];
 
-// phase boundaries in frames (30fps): forward steps, failure, compensation
 const PH = { fwd0: 0, fwd1: 45, fwd2: 90, fwd3: 135, fail: 180, comp1: 210, comp2: 255, done: 300 };
 
 export default function SagaFlow() {
@@ -22,7 +21,6 @@ export default function SagaFlow() {
     const failed = frame >= PH.fail;
     const compensated = [frame >= PH.done, frame >= PH.comp2, frame >= PH.comp1, frame >= PH.fail];
 
-    // forward dots between services
     const fwdDot = (i: number, from: number, to: number) => {
         const p = seg(frame, from, to);
         if (p <= 0 || p >= 1) return null;
@@ -40,7 +38,6 @@ export default function SagaFlow() {
             />
         );
     };
-    // compensation dots travel backwards
     const backDot = (i: number, from: number, to: number) => {
         const p = seg(frame, from, to);
         if (p <= 0 || p >= 1) return null;
@@ -111,7 +108,6 @@ export default function SagaFlow() {
                     );
                 })}
 
-                {/* shipping failure mark */}
                 {failed && (
                     <text
                         x={XS[3] + W / 2}
@@ -135,7 +131,6 @@ export default function SagaFlow() {
                     </text>
                 )}
 
-                {/* forward event arrows */}
                 {[0, 1, 2].map((i) => {
                     const from = [PH.fwd0, PH.fwd1, PH.fwd2][i];
                     const to = [PH.fwd1, PH.fwd2, PH.fwd3][i];
@@ -166,7 +161,6 @@ export default function SagaFlow() {
                     );
                 })}
 
-                {/* compensation arrows (reverse direction, below) */}
                 {[2, 1, 0].map((i) => {
                     const visible = frame >= [PH.comp1, PH.comp2, PH.done][2 - i];
                     const x2 = XS[i] + W,
@@ -205,7 +199,6 @@ export default function SagaFlow() {
                 {backDot(2, PH.comp1, PH.comp2)}
                 {backDot(1, PH.comp2, PH.done)}
 
-                {/* narrative line */}
                 <text x='360' y='40' textAnchor='middle' fontSize='11' fill={C.secondary}>
                     {frame < PH.fail
                         ? 'each service commits locally, then publishes an event'

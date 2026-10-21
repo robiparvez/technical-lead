@@ -18,8 +18,6 @@ interface QuizTopic {
 /** Quiz home: total score, scoring rules, and one card per topic. */
 export default function QuizIndex({ topics }: { topics: QuizTopic[] }) {
     const { scores, reset } = useQuizScores();
-    // score lines are skeletons until the first GET /quiz/state answers
-    // (plan: Loading states); signed out, local scores render at once
     const { status } = useSync();
     const scoresPending = status === 'checking';
 

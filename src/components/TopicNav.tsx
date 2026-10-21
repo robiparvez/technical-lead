@@ -35,15 +35,11 @@ export default function TopicNav({
     groups: NavGroup[];
     technologies: NavTechnology[];
 }) {
-    // trailingSlash export paths end in '/'; compare without it (root stays '/')
     const pathname = usePathname().replace(/(.)\/$/, '$1');
     const { known } = useKnownQuestions();
     const { scores } = useQuizScores();
-    // while the first known-questions sync runs, each count is a placeholder
-    // (plan: Loading states); signed out, counts render at once
     const { status } = useSync();
     const countsPending = status === 'checking';
-    // both sections start unfolded so the prerendered markup matches
     const [technologiesOpen, setTechnologiesOpen] = useState(true);
     const [topicsOpen, setTopicsOpen] = useState(true);
     const id = useId();

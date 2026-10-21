@@ -44,11 +44,7 @@ export const LIMITS = {
     diagramJson: 6000,
 };
 
-// ---------- validation (the client runs it live; the server runs it again on save) ----------
-
-// existing tags include "n+1", so allow + . # after the first character
 const TAG_PATTERN = /^[a-z0-9][a-z0-9+.#-]*$/;
-// D14: no sanitizer, but control characters other than tab and newline are rejected
 const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/;
 
 export interface CheckContext {
@@ -109,7 +105,6 @@ export function checkQuestion(q: Question, ctx: CheckContext): CheckResult {
     else if (new Set(q.tags).size !== q.tags.length) fields.tags = 'Remove the repeated tag.';
     else if (q.tags.length > LIMITS.tags) fields.tags = `Use ${LIMITS.tags} tags or fewer.`;
 
-    // a technology tag this question drops, where it was the last carrier, would fail the build
     const before = ctx.topic.questions.find((o) => o.id === ctx.originalId)?.tags ?? [];
     const orphaned = before.filter((t) => !q.tags.includes(t) && ctx.techTagCounts[t] === 1);
     if (!fields.tags && orphaned.length)
@@ -133,7 +128,6 @@ export function checkQuestion(q: Question, ctx: CheckContext): CheckResult {
         {
             id: 'takeaway',
             label: 'Key takeaway differs from the rest of this topic',
-            // an empty takeaway fails the required check, not this one
             ok: !duplicate,
             detail: duplicate ? `Same as ${duplicate.id}` : undefined,
         },
@@ -183,7 +177,6 @@ export function parseDiagramSpec(raw: string): DiagramSpec | string {
         );
         if (bad) return `Each message "from" and "to" must be an actor index from 0 to ${count - 1}.`;
     }
-    // shortcut: item shapes inside the lists are not checked here; the server's zod schema (D12) checks them
     return spec as DiagramSpec;
 }
 
@@ -194,8 +187,6 @@ export function checkTopicDetails(d: TopicDetails): Record<string, string> {
     if (!GROUPS.includes(d.group)) fields.group = 'Choose a group.';
     return fields;
 }
-
-// ---------- server DTOs (hand-synced with server/src/admin) ----------
 
 interface AdminQuestionDto {
     id: string;
@@ -264,8 +255,6 @@ export interface DeletedQuestion {
     deletedAt: string;
 }
 
-// ---------- endpoints ----------
-
 /** GET /v1/admin/topics: every topic, drafts and soft-deleted included. */
 export async function listTopics(): Promise<AdminTopicSummary[]> {
     const response = await apiFetch<{ topics: (Omit<AdminTopicSummary, 'group'> & { groupLabel: string })[] }>(
@@ -311,7 +300,6 @@ export async function saveQuestion(
         isUpdate ? `/v1/admin/questions/${ctx.originalId}` : '/v1/admin/questions',
         {
             method: isUpdate ? 'PATCH' : 'POST',
-            // the client never sends an id on create (D16)
             body: isUpdate ? { ...questionPayload(q), id: ctx.originalId } : { ...questionPayload(q), topicSlug: slug },
         },
     );
@@ -321,7 +309,7 @@ export async function saveQuestion(
 /** DELETE /v1/admin/questions/:id: soft; the id stays reserved. */
 export async function deleteQuestion(slug: string, id: string): Promise<AdminTopic> {
     const dto = await apiFetch<AdminTopicDetailDto>(`/v1/admin/questions/${id}`, { method: 'DELETE' });
-    void slug; // the id addresses the question; the slug keeps the UI signature
+    void slug;
     return toTopic(dto);
 }
 

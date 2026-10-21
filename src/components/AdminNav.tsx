@@ -11,7 +11,6 @@ const SECTIONS = [
 
 /** Sidebar and phone-menu navigation for the admin frame. */
 export default function AdminNav() {
-    // trailingSlash export paths end in '/'; compare without it (root stays '/')
     const pathname = usePathname().replace(/(.)\/$/, '$1');
 
     return (

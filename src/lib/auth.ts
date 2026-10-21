@@ -37,7 +37,6 @@ export function getStoredToken(): string | null {
 }
 
 export function setStoredToken(token: string): void {
-    // the hourly refresh resends the same token; only announce real changes
     if (getStoredToken() === token) return;
     try {
         window.localStorage.setItem(TOKEN_KEY, token);
@@ -60,10 +59,6 @@ export function clearStoredToken(): void {
 export const authClient = createAuthClient({
     baseURL: API_URL,
     fetchOptions: {
-        // The library defaults to credentials: 'include' when Request supports
-        // it, which cross-origin needs Access-Control-Allow-Credentials for.
-        // The bearer flow carries no cookies — the token is the credential —
-        // so omit them and keep the request CORS-simple for the API.
         credentials: 'omit',
         auth: {
             type: 'Bearer',

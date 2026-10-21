@@ -3,13 +3,6 @@ import type { Question } from './types';
 
 export type { Technology };
 
-// Question tags mix tools ("kafka") with concepts ("caching"), so each
-// technology lists the tags that name it. The technology list lives in the
-// technologies table (PostgreSQL) and arrives with the content (lib/content.ts);
-// the server's validator rejects an edit that leaves a technology tag with no
-// question, so a mistyped tag cannot reach here.
-
-// A technology page needs enough questions to be worth a click.
 const MIN_QUESTIONS = 3;
 
 export interface TechnologyQuestion {

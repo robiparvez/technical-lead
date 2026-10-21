@@ -16,9 +16,6 @@ import { Skeleton } from '@/components/Skeleton';
 
 /** Only same-app paths, so a crafted ?next= cannot redirect off-site. */
 function safeNext(raw: string | null): string {
-    // Resolve like a browser does ("/\evil.com" and "/<tab>/evil.com" become
-    // "//evil.com"), then accept only a result that stayed on the dummy origin.
-    // Without a ?next=, an admin lands on the admin page.
     const base = 'http://app.invalid';
     try {
         const url = new URL(raw ?? '/admin', base);

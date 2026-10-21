@@ -40,8 +40,6 @@ export default function QuizRunner({
     const attemptCount = scores[slug]?.attemptCount ?? 0;
     const attempts = scores[slug]?.attempts ?? [];
     const size = attemptSize(source.length);
-    // topic score lines are skeletons until the first GET /quiz/state answers
-    // (plan: Loading states); signed out, local scores render at once
     const { status } = useSync();
     const scoresPending = status === 'checking';
 
@@ -56,7 +54,6 @@ export default function QuizRunner({
     const headingRef = useRef<HTMLHeadingElement>(null);
     const radioName = useId();
 
-    // move focus to the new question or the summary so screen readers follow
     useEffect(() => {
         if (phase !== 'intro') headingRef.current?.focus();
     }, [phase, index]);

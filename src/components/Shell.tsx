@@ -7,7 +7,6 @@ import { FOCUS_SEARCH_EVENT, REVEAL_SEARCH_EVENT } from '@/components/SearchBox'
 import AccountControl from '@/components/AccountControl';
 import { SyncProvider } from '@/components/SyncProvider';
 
-// matches the sidebar breakpoint in app.css
 const DESKTOP_QUERY = '(min-width: 60rem)';
 
 /**
@@ -65,8 +64,6 @@ export function AppFrame({
     const openSearch = () => setPanel((p) => (p === 'search' ? 'none' : 'search'));
     const openMenu = () => setPanel((p) => (p === 'menu' ? 'none' : 'menu'));
 
-    // keep focus on a live toggle when the focused one unmounts;
-    // the focus lands in the effect, after React commits the swap
     const pendingFocus = useRef<'inline' | 'floating' | null>(null);
     const hideSidebar = () => {
         pendingFocus.current = 'floating';
@@ -80,9 +77,7 @@ export function AppFrame({
     useEffect(() => {
         const reveal = () => {
             if (!hasSearch) return;
-            // the desktop header search is always visible; only phone needs a panel
             if (!window.matchMedia(DESKTOP_QUERY).matches) setPanel('search');
-            // focus once React has committed the revealed panel
             requestAnimationFrame(() => window.dispatchEvent(new Event(FOCUS_SEARCH_EVENT)));
         };
         const onKey = (e: KeyboardEvent) => {
@@ -95,14 +90,11 @@ export function AppFrame({
                 e.preventDefault();
                 reveal();
             }
-            // Ctrl+B (Cmd+B on macOS) toggles the desktop sidebar from anywhere
-            // except rich-text editors, where it means bold
             const toggleKey =
                 (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'b';
             if (toggleKey && !target.isContentEditable && window.matchMedia(DESKTOP_QUERY).matches) {
                 e.preventDefault();
                 if (sidebarOpen) {
-                    // focus would be lost with the unmounted sidebar; hand it to the floating toggle
                     if (document.getElementById('sidebar')?.contains(document.activeElement)) {
                         pendingFocus.current = 'floating';
                     }
@@ -156,7 +148,6 @@ export function AppFrame({
                 {theme}
             </header>
 
-            {/* close the menu once a link in it is followed, including the current page */}
             <div
                 id='phone-menu'
                 className='phone-panel'
