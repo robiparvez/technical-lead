@@ -3,7 +3,7 @@
  * design-system: tokens.css · designed-as-app · enrichment: none · motion: none (instant states)
  * contrast: pass (40-41) · tokens: pass (48) · mobile: pass (34, 50-57)
  */
-/* App styles. Semantic tokens only. The page canvas in reset.css is the only fill; no gradients. */
+/* App styles. Semantic tokens only. Fills (canvas, dark card surface) live in reset.css only; no gradients. */
 
 *,
 *::before,
@@ -2045,7 +2045,7 @@ select.input {
 }
 
 /* Sign-in card: a bordered panel with a short accent rule above the title.
-   Border only, no fill (the canvas shows through). */
+   Fill comes from reset.css (dark mode only; the canvas shows through in light). */
 .auth.auth-card {
     margin-inline: auto;
     margin-block: var(--space-lg);

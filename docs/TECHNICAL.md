@@ -148,6 +148,7 @@ Every color token is `light-dark(light, dark)`. The OS preference picks the bran
 7. Added Geist Mono (`font.family.mono`) via `next/font`.
 8. Space scale gap: `space.8` (18px) is too tight for section separation; sections compose `calc(var(--space-8) * 2)` = 36px instead of a new token, as instructed.
 9. Reading-comfort redesign (supersedes parts of 1, 2, 6, and 8; see PROMPT.md): low-glare light and dark themes that follow `prefers-color-scheme` or a saved choice; a themed page canvas (never pure white or black) is the only fill; DESIGN.md's hex palette, px type scale, and space scale replaced by OKLCH colors, a rem type scale with a 17px body, and a 4px-to-80px space scale; muted syntax colors for TypeScript snippets via `sugar-high`; `shadow.1` removed (unused).
+10. Dark palette retuned to a cool slate: canvas `oklch(19.9% 0.015 262)`, teal accent `oklch(75.8% 0.097 192)` (dark only; light keeps terracotta), and a card fill `color.surface` = `oklch(24.2% 0.019 258)`, transparent in light mode. Supersedes the "no fills" part of 1 and 9 for dark mode. The fill is set only in `reset.css`, on cards (`.q-card`, `.index-card`, `.result-card`, `.search-empty`, `.player-frame`, `pre.code`, `.admin-*` panels, `.auth-card`). Controls stay unfilled. The accent is still never text.
 
 ## Component behavior
 
@@ -183,6 +184,6 @@ Every interactive component: keyboard, pointer, touch. State rules live in `src/
 
 - `npm run build` passes; every page is server-rendered per request.
 - Greps over `src/` (including SVG) excluding `tokens.css`/`reset.css`: zero gradient values, zero background declarations, zero raw hex.
-- `reset.css` holds the canvas background for `html` and the sticky `.site-header`, and otherwise only `transparent`/`none` backgrounds.
-- Computed `background-color` on body, buttons, inputs, cards, code blocks, badges, mark, and `__remotion-player` (Player root): all `rgba(0, 0, 0, 0)`; only `html` and `.site-header` carry the canvas color.
-- Rendered contrast on the canvas (light / dark): primary text 12.73 / 11.95, secondary text 6.36 / 6.59, accent 4.56 / 6.58, control borders 3.19 / 3.29, syntax tokens 5.71-7.00 / 7.97-8.70.
+- `reset.css` holds the canvas background for `html` and the sticky `.site-header`, the dark-mode card fill (`--color-surface`), and otherwise only `transparent`/`none` backgrounds.
+- Computed `background-color` on body, buttons, inputs, badges, mark, and `__remotion-player` (Player root): all `rgba(0, 0, 0, 0)`. Cards and code blocks are `rgba(0, 0, 0, 0)` in light and the surface color in dark. Only `html` and `.site-header` carry the canvas color.
+- Rendered contrast (light on canvas / dark on canvas, dark on surface): primary text 12.68 / 14.63, 13.19; secondary text 6.35 / 7.21, 6.50; accent 4.56 / 8.74, 7.88; control borders 3.19 / 3.51, 3.17; syntax tokens 5.73-7.01 / 8.53-9.35, 7.69-8.43.
