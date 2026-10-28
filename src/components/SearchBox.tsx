@@ -83,6 +83,7 @@ export default function SearchBox() {
                 value={value}
                 autoComplete='off'
                 aria-keyshortcuts='/'
+                suppressHydrationWarning
                 onChange={(e) => setValue(e.target.value)}
             />
             {!value && (
