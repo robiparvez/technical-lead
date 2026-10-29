@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import FoldToggle from '@/components/FoldToggle';
 import type { SearchEntry } from '@/data';
 import { useKnownQuestions } from '@/lib/progress';
@@ -21,14 +21,68 @@ interface TechnologySummary {
     questionIds: string[];
 }
 
+/** Fetches the search index from /search-index/ once a query or tag filter is set; relative so it follows the base path. */
+function useSearchIndex(wanted: boolean) {
+    const [index, setIndex] = useState<SearchEntry[] | null>(null);
+    const [failed, setFailed] = useState(false);
+    const [attempt, setAttempt] = useState(0);
+
+    useEffect(() => {
+        if (!wanted || index) return;
+        let current = true;
+        fetch('search-index/')
+            .then((response) => {
+                if (!response.ok) throw new Error(`search index answered ${response.status}`);
+                return response.json() as Promise<SearchEntry[]>;
+            })
+            .then((entries) => {
+                if (current) setIndex(entries);
+            })
+            .catch(() => {
+                if (current) setFailed(true);
+            });
+        return () => {
+            current = false;
+        };
+    }, [wanted, index, attempt]);
+
+    const retry = () => {
+        setFailed(false);
+        setAttempt((n) => n + 1);
+    };
+    return { index, failed, retry };
+}
+
 /** Home index driven by the ?q= and ?tag= queries in the URL; needs a Suspense boundary. */
-export default function SearchResults(props: {
-    topics: TopicSummary[];
-    technologies: TechnologySummary[];
-    index: SearchEntry[];
-}) {
+export default function SearchResults(props: { topics: TopicSummary[]; technologies: TechnologySummary[] }) {
     const params = useSearchParams();
-    return <Results {...props} query={params.get('q') ?? ''} tag={params.get('tag') ?? ''} />;
+    const query = params.get('q') ?? '';
+    const tag = params.get('tag') ?? '';
+    const searching = query.trim() !== '' || tag.trim() !== '';
+    const { index, failed, retry } = useSearchIndex(searching);
+
+    if (searching && !index) {
+        return (
+            <div>
+                <header className='topic-header'>
+                    <h1 className='topic-title'>Searching</h1>
+                </header>
+                {failed ? (
+                    <div className='search-empty' role='alert'>
+                        <p>The search results did not load.</p>
+                        <button type='button' className='btn' onClick={retry}>
+                            Try again
+                        </button>
+                    </div>
+                ) : (
+                    <div className='search-empty' role='status'>
+                        <p>Loading results.</p>
+                    </div>
+                )}
+            </div>
+        );
+    }
+    return <Results {...props} index={index ?? []} query={query} tag={tag} />;
 }
 
 /** Home index: topic and technology cards, live search results, or the questions carrying one tag. */

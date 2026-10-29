@@ -1,14 +1,10 @@
 import { Suspense } from 'react';
 import SearchResults, { Results } from '@/components/SearchResults';
-import { getSearchIndex, getTopics } from '@/data';
+import { getTopics } from '@/data';
 import { getTechnologySummaries } from '@/data/technologies';
 
 export default async function Home() {
-    const [allTopics, technologies, searchIndex] = await Promise.all([
-        getTopics(),
-        getTechnologySummaries(),
-        getSearchIndex(),
-    ]);
+    const [allTopics, technologies] = await Promise.all([getTopics(), getTechnologySummaries()]);
     const topics = allTopics.map((t) => ({
         slug: t.slug,
         title: t.title,
@@ -22,7 +18,7 @@ export default async function Home() {
                 <Results topics={topics} technologies={technologies} index={[]} query='' tag='' />
             }
         >
-            <SearchResults topics={topics} technologies={technologies} index={searchIndex} />
+            <SearchResults topics={topics} technologies={technologies} />
         </Suspense>
     );
 }

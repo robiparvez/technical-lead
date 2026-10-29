@@ -98,7 +98,7 @@ Remotion license: free for individuals, including personal use
 - `src/data/technologies.ts` — async helpers over the technologies from the database (`technologies` table: slug, label, tags, sort order). A technology with fewer than 3 matching questions is hidden
 - `src/data/diagram-ids.json` — the animated diagram id set, shared with the server's content validator; `src/components/Diagram.tsx` types its `ANIMATED` keys against it, so a missing component fails type-checking
 - `src/components/QuestionRail.tsx` — difficulty rail with stations and progress glyphs; each card lists its tags as links to `/?tag=<tag>`
-- `src/components/SearchResults.tsx` — home index ("Study guide"): topic cards and technology cards, `?q=` search results, or the questions carrying one `?tag=` across all topics
+- `src/components/SearchResults.tsx` — home index ("Study guide"): topic cards and technology cards, `?q=` search results, or the questions carrying one `?tag=` across all topics. The page sends no answers: the component fetches the search index from `src/app/search-index/route.ts` (`GET /search-index/`) the first time a query or tag is set, and shows a loading note, or an error with a retry button
 - `src/app/technologies/[slug]/page.tsx` — one page per technology: every matching question across all topics on the difficulty rail, each card labelled with its topic
 - `src/components/Diagram.tsx` — diagram host: every diagram plays as a looping @remotion/player animation
 - `src/components/diagrams/` — Remotion compositions: hand-built diagrams and `SpecDiagram`, which animates any JSON-authored `DiagramSpec`
