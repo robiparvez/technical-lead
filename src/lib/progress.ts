@@ -11,7 +11,7 @@ import { createStore } from '@/lib/storage';
 export const knownStore = createStore<Set<string>>(
     'tl-known-questions',
     new Set<string>(),
-    (raw) => new Set<string>(raw as string[]),
+    (raw) => new Set<string>(Array.isArray(raw) ? raw.filter((id): id is string => typeof id === 'string') : []),
     (known) => [...known],
 );
 
