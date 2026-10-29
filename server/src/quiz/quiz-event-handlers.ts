@@ -108,6 +108,11 @@ export class QuizEventHandlers {
         ) {
             return this.reject(event, 'points out of range for the answer count', 422);
         }
+        const wrong = event.answered - event.correct;
+        const recordedWrong = attempt.answered - attempt.correct;
+        if (event.answered < attempt.answered || event.correct < attempt.correct || wrong < recordedWrong) {
+            return this.reject(event, 'stale answer event', 422);
+        }
 
         const delta = {
             points: event.points - attempt.points,

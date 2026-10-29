@@ -241,6 +241,70 @@ describe('POST /v1/quiz/events', () => {
     });
 });
 
+describe('answer_recorded ordering', () => {
+    async function startAttempt() {
+        const epoch = (await getState()).body.resetEpoch as number;
+        const attempt = started(topicSlug, { reset_epoch: epoch });
+        await sendEvents([attempt]);
+        return { epoch, clientAttemptId: String(attempt.client_attempt_id) };
+    }
+
+    async function topicTotals() {
+        return (await getState()).body.topics[topicSlug];
+    }
+
+    it('rejects an older answer event and leaves the totals unchanged', async () => {
+        const { epoch, clientAttemptId } = await startAttempt();
+        await sendEvents([
+            answered(topicSlug, clientAttemptId, { answered: 2, correct: 1, points: 5, reset_epoch: epoch }),
+        ]);
+        const before = await topicTotals();
+
+        const response = await sendEvents([
+            answered(topicSlug, clientAttemptId, { answered: 1, correct: 1, points: 10, reset_epoch: epoch }),
+        ]);
+
+        expect(response.body.results[0]).toMatchObject({ status: 'rejected', code: 422 });
+        expect(response.body.results[0].reason).toContain('stale');
+        expect(await topicTotals()).toEqual(before);
+    });
+
+    it('counts a replayed event once', async () => {
+        const { epoch, clientAttemptId } = await startAttempt();
+        const event = answered(topicSlug, clientAttemptId, {
+            answered: 2,
+            correct: 1,
+            points: 5,
+            reset_epoch: epoch,
+        });
+        const first = await sendEvents([event]);
+        const afterFirst = await topicTotals();
+
+        const replay = await sendEvents([event]);
+
+        expect(first.body.results[0].status).toBe('applied');
+        expect(replay.body.results[0].status).toBe('duplicate');
+        expect(await topicTotals()).toEqual(afterFirst);
+    });
+
+    it('applies an event whose points fell while the answer count rose', async () => {
+        const { epoch, clientAttemptId } = await startAttempt();
+        await sendEvents([
+            answered(topicSlug, clientAttemptId, { answered: 2, correct: 1, points: 5, reset_epoch: epoch }),
+        ]);
+        const before = await topicTotals();
+
+        const response = await sendEvents([
+            answered(topicSlug, clientAttemptId, { answered: 3, correct: 1, points: 0, reset_epoch: epoch }),
+        ]);
+
+        expect(response.body.results[0].status).toBe('applied');
+        const after = await topicTotals();
+        expect(after.score).toBe(before.score - 5);
+        expect(after.wrong).toBe(before.wrong + 1);
+    });
+});
+
 describe('reset', () => {
     it('clears attempts and totals, bumps the epoch, keeps quiz_events', async () => {
         const epochBefore = (await getState()).body.resetEpoch as number;
