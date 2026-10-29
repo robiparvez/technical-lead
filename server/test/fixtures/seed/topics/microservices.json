@@ -12,7 +12,7 @@
                 "trade-offs"
             ],
             "question": "What is a microservices architecture and how does it differ from a monolith?",
-            "answer": "Microservices split an app into small, independently deployable services, each owning a business capability and its data. A monolith ships as one unit. You gain independent scaling and team autonomy, and pay in latency, consistency and ops overhead.",
+            "answer": "Microservices split an app into small, independently deployable services, each owning a business capability and its data. A monolith ships as one unit. You gain independent scaling and team autonomy, and pay in latency, consistency and ops overhead. TEST",
             "keyTakeaway": "Trade deployment simplicity for independent scaling and team autonomy.",
             "diagram": "request-flow"
         },
@@ -24,7 +24,7 @@
                 "when-not-to-use",
                 "fundamentals"
             ],
-            "question": "When would you advise against microservices for a new product?",
+            "question": "XXXXXXX When would you advise against microservices for a new product?",
             "answer": "I'd say no when the domain is unstable, the team is small, or nothing needs independent scaling. Boundaries drawn too early are expensive to move. A well-modularized monolith can split later with the strangler fig, once there are several teams to justify the overhead.",
             "keyTakeaway": "Start with a modular monolith; split on stable boundaries, not on hype.",
             "diagram": {

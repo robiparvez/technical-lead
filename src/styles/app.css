@@ -3,7 +3,7 @@
  * design-system: tokens.css · designed-as-app · enrichment: none · motion: none (instant states)
  * contrast: pass (40-41) · tokens: pass (48) · mobile: pass (34, 50-57)
  */
-/* App styles. Semantic tokens only. The page canvas in reset.css is the only fill; no gradients. */
+/* App styles. Semantic tokens only. Fills (canvas, dark card surface) live in reset.css only; no gradients. */
 
 *,
 *::before,
@@ -126,6 +126,10 @@ main {
     max-width: 50rem;
     margin-inline: auto;
 }
+/* dashboards (admin) get a wider column */
+.content[data-wide='true'] {
+    max-width: 72rem;
+}
 
 /* sidebar is desktop-only; phone uses the menu panel */
 .sidebar {
@@ -170,6 +174,11 @@ main {
     .site-header .search {
         flex: 0 1 28rem;
         margin-bottom: 0;
+    }
+    /* no search on this page: controls sit at the right, in line with the page padding */
+    .site-header:not(:has(.search)) {
+        justify-content: flex-end;
+        padding-inline-end: var(--space-xl);
     }
     .app {
         grid-template-columns: 20rem minmax(0, 1fr);
@@ -350,15 +359,22 @@ main {
 }
 .nav-heading {
     display: flex;
+    align-items: center;
     justify-content: space-between;
     margin: 0 0 var(--space-2xs);
     padding-inline: var(--space-xs);
+}
+.nav-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3xs);
 }
 .nav-group {
     margin: var(--space-xs) 0 0;
     padding-inline: var(--space-xs);
 }
-.nav-link + .nav-heading {
+/* every heading after the first; sections can be folded, so no link precedes it */
+.nav-heading ~ .nav-heading {
     margin-top: var(--space-md);
 }
 .nav-link {
@@ -617,8 +633,31 @@ main {
     height: var(--leading-body);
     color: var(--color-text-secondary);
 }
-.q-toggle[aria-expanded='true'] .q-chevron {
+.q-toggle[aria-expanded='true'] .q-chevron,
+.fold-toggle[aria-expanded='true'] .q-chevron {
     transform: rotate(180deg);
+}
+
+/* section heading button (sidebar and home index) that folds its list */
+.fold-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    cursor: pointer;
+}
+.fold-toggle:hover {
+    color: var(--color-text-primary);
+}
+.fold-toggle:focus-visible {
+    outline: var(--border-width-2) solid var(--color-accent);
+    outline-offset: var(--space-3xs);
 }
 
 /* answer body */
@@ -1262,5 +1301,850 @@ pre.code .sh__token--comment {
 @media (prefers-reduced-motion: reduce) {
     .theme-icon {
         transition: none;
+    }
+}
+
+/* ---------- admin ----------
+   Content editing for the site owner. Reuses the reading pages' language:
+   outlined fields, primary-colored hover borders, accent focus rings, and the
+   quiz's ring glyphs for the build checks. Invalid fields get a 2px primary
+   border and a primary rule on the message, never a fill or a new color. */
+
+.admin-header {
+    margin-bottom: var(--space-lg);
+}
+.admin-preview {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-xl);
+    padding: var(--space-sm) var(--space-md);
+    border: var(--border-width-1) solid var(--color-border-control);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    line-height: var(--leading-ui);
+}
+.admin-preview p {
+    margin: 0;
+    max-width: var(--measure);
+}
+.admin-preview strong {
+    font-weight: var(--font-weight-semibold);
+}
+
+.admin-state {
+    margin: var(--space-md) 0;
+    padding: var(--space-md);
+    border: var(--border-width-1) solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+}
+.admin-state p {
+    margin: 0;
+}
+.admin-state .btn {
+    margin-top: var(--space-sm);
+}
+.admin-state[role='alert'] {
+    border-color: var(--color-text-primary);
+}
+p.admin-state[role='status'] {
+    color: var(--color-text-secondary);
+}
+
+.admin-section {
+    margin-top: var(--space-xl);
+}
+.admin-section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-xs) var(--space-md);
+}
+.admin-section-title,
+.admin-editor-title {
+    margin: 0;
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--leading-title-sm);
+    letter-spacing: var(--letter-spacing-tight);
+    overflow-wrap: anywhere;
+}
+.admin-editor-title:focus {
+    outline: none;
+}
+.admin-count {
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-base);
+    letter-spacing: 0;
+    color: var(--color-text-secondary);
+}
+.admin-topic-summary {
+    max-width: var(--measure);
+    margin: var(--space-2xs) 0 0;
+    font-size: var(--text-sm);
+    line-height: var(--leading-ui);
+    color: var(--color-text-secondary);
+}
+
+/* ---------- admin fields ---------- */
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3xs);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+.field-label {
+    padding: 0;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--leading-ui);
+    color: var(--color-text-primary);
+}
+.field-hint {
+    max-width: var(--measure);
+    margin: 0;
+    font-size: var(--text-sm);
+    line-height: var(--leading-ui);
+    color: var(--color-text-secondary);
+}
+.field-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-xs);
+}
+.field-foot:has(> span:only-child) {
+    display: none;
+}
+.field-error {
+    margin: 0;
+    padding-inline-start: var(--space-xs);
+    border-inline-start: var(--border-width-2) solid var(--color-text-primary);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--leading-ui);
+    color: var(--color-text-primary);
+}
+.field-count {
+    margin: 0 0 0 auto;
+    font-family: var(--font-family-mono);
+    font-size: var(--text-xs);
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+}
+.field-count[data-over='true'] {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+.input {
+    width: 100%;
+    min-height: 44px;
+    padding: var(--space-2xs) var(--space-xs);
+    border: var(--border-width-1) solid var(--color-border-control);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-primary);
+    font-family: var(--font-family-primary);
+    font-size: var(--text-base);
+    line-height: var(--leading-body);
+}
+textarea.input {
+    resize: vertical;
+}
+select.input {
+    cursor: pointer;
+}
+.input-mono {
+    font-family: var(--font-family-mono);
+    font-size: var(--text-sm);
+    line-height: var(--leading-code);
+}
+.input::placeholder {
+    color: var(--color-text-secondary);
+}
+.input:hover {
+    border-color: var(--color-text-primary);
+}
+.input:focus-visible {
+    outline: var(--border-width-2) solid var(--color-accent);
+    outline-offset: var(--space-3xs);
+}
+.input[aria-invalid='true'] {
+    border: var(--border-width-2) solid var(--color-text-primary);
+    padding: calc(var(--space-2xs) - 1px) calc(var(--space-xs) - 1px);
+}
+.input[readonly],
+.input[disabled] {
+    border-style: dashed;
+    color: var(--color-text-secondary);
+}
+.input[readonly]:hover {
+    border-color: var(--color-border-control);
+}
+
+/* radios reuse .quiz-radio; checkboxes draw the same ring as a square */
+.choice-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs) var(--space-lg);
+}
+.choice,
+.check {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: var(--space-xs);
+    min-height: 44px;
+    padding-block: var(--space-2xs);
+    font-size: var(--text-base);
+    line-height: var(--leading-body);
+    cursor: pointer;
+}
+.choice:has(:focus-visible),
+.check:has(:focus-visible) {
+    outline: var(--border-width-2) solid var(--color-accent);
+    outline-offset: var(--space-3xs);
+    border-radius: var(--radius-xs);
+}
+.choice:hover .quiz-radio,
+.check:hover .check-box {
+    border-color: var(--color-text-primary);
+}
+.choice:hover .quiz-radio:checked {
+    border-color: var(--color-accent);
+}
+.choice-hint {
+    display: block;
+    font-size: var(--text-xs);
+    line-height: var(--leading-label);
+    color: var(--color-text-secondary);
+}
+.check-box {
+    appearance: none;
+    flex: none;
+    width: var(--space-sm);
+    height: var(--space-sm);
+    margin: calc((var(--leading-body) - var(--space-sm)) / 2) 0 0;
+    border: var(--border-width-2) solid var(--color-border-control);
+    border-radius: var(--radius-xs);
+    cursor: inherit;
+}
+.check-box:checked {
+    border-width: var(--space-3xs);
+    border-color: var(--color-accent);
+}
+.check-box:focus-visible {
+    outline: none;
+}
+.admin-preview .check {
+    font-size: var(--text-sm);
+    line-height: var(--leading-ui);
+    min-height: 0;
+    padding-block: 0;
+}
+.admin-preview .check-box {
+    margin-top: calc((var(--leading-ui) - var(--space-sm)) / 2);
+}
+
+/* ---------- admin topic and question list ---------- */
+
+.admin-topic-pick {
+    max-width: 28rem;
+}
+.admin-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    min-width: 0;
+}
+.admin-topic .admin-form {
+    margin-top: var(--space-md);
+    padding-top: var(--space-md);
+    border-top: var(--border-width-1) solid var(--color-border-subtle);
+}
+.admin-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+}
+.btn.btn-primary {
+    border: var(--border-width-2) solid var(--color-accent);
+    padding: calc(var(--space-2xs) - 1px) calc(var(--space-sm) - 1px);
+    font-weight: var(--font-weight-semibold);
+}
+.btn.btn-primary:hover {
+    border-color: var(--color-text-primary);
+}
+.btn.btn-primary[disabled] {
+    border: var(--border-width-1) dashed var(--color-border-control);
+    padding: var(--space-2xs) var(--space-sm);
+}
+.admin-actions .admin-danger {
+    margin-inline-start: auto;
+}
+
+.admin-filters {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-xs) var(--space-md);
+    margin: var(--space-md) 0;
+}
+@media (min-width: 40rem) {
+    .admin-filters {
+        grid-template-columns: minmax(0, 1fr) 12rem;
+    }
+}
+
+.admin-rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: var(--border-width-1) solid var(--color-border-subtle);
+}
+.admin-rows > li {
+    border-bottom: var(--border-width-1) solid var(--color-border-subtle);
+}
+.admin-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3xs);
+    width: 100%;
+    min-height: 44px;
+    padding: var(--space-sm) var(--space-xs);
+    border: var(--border-width-1) solid transparent;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-primary);
+    font-family: var(--font-family-primary);
+    text-align: start;
+    cursor: pointer;
+}
+.admin-row:hover {
+    border-color: var(--color-text-primary);
+}
+.admin-row:focus-visible {
+    outline: var(--border-width-2) solid var(--color-accent);
+    outline-offset: calc(var(--space-3xs) * -1);
+}
+.admin-row:active {
+    border-width: var(--border-width-2);
+    padding: calc(var(--space-sm) - 1px) calc(var(--space-xs) - 1px);
+}
+.admin-row-text {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--leading-body);
+    overflow-wrap: anywhere;
+}
+.admin-row-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-3xs) var(--space-md);
+    font-size: var(--text-sm);
+    line-height: var(--leading-ui);
+    color: var(--color-text-secondary);
+}
+.admin-row-action {
+    margin-inline-start: auto;
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+    text-decoration: underline;
+    text-decoration-color: var(--color-accent);
+    text-decoration-thickness: var(--border-width-2);
+    text-underline-offset: var(--space-3xs);
+}
+
+.admin-deleted {
+    margin-top: var(--space-md);
+}
+.admin-deleted-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+    padding: var(--space-sm) var(--space-xs);
+}
+.admin-deleted-row .admin-row-text {
+    color: var(--color-text-secondary);
+}
+.admin-restore {
+    margin-inline-start: auto;
+}
+
+/* ---------- admin editor ---------- */
+
+.admin-editor {
+    container-type: inline-size;
+}
+.admin-back {
+    margin: 0 0 var(--space-sm);
+}
+.admin-back-link {
+    min-height: 44px;
+    padding: 0;
+    border: 0;
+    font-family: var(--font-family-primary);
+    text-align: start;
+    cursor: pointer;
+}
+.admin-editor-title {
+    margin-bottom: var(--space-lg);
+}
+
+.admin-confirm {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-xs);
+    margin: 0 0 var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+    border: var(--border-width-2) solid var(--color-text-primary);
+    border-radius: var(--radius-md);
+}
+.admin-confirm p {
+    flex-basis: 100%;
+    margin: 0;
+    max-width: var(--measure);
+}
+.admin-editor-foot .admin-confirm {
+    margin: var(--space-md) 0 0;
+}
+
+.admin-summary {
+    margin: 0 0 var(--space-lg);
+    padding: var(--space-sm) var(--space-md);
+    border: var(--border-width-2) solid var(--color-text-primary);
+    border-radius: var(--radius-md);
+}
+.admin-summary:focus-visible {
+    outline: var(--border-width-2) solid var(--color-accent);
+    outline-offset: var(--space-3xs);
+}
+.admin-summary-title {
+    margin: 0 0 var(--space-2xs);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-semibold);
+}
+.admin-summary ul {
+    margin: 0;
+    padding-inline-start: var(--space-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3xs);
+}
+
+.admin-editor-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-xl);
+}
+.admin-tag-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs);
+    list-style: none;
+    margin: calc(var(--space-2xs) - var(--space-md)) 0 0;
+    padding: 0;
+}
+.admin-optional {
+    padding-top: var(--space-md);
+    border-top: var(--border-width-1) solid var(--color-border-subtle);
+}
+.admin-nested {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    margin-top: var(--space-xs);
+    padding-inline-start: var(--space-md);
+    border-inline-start: var(--border-width-1) solid var(--color-border-subtle);
+}
+
+/* signature: the build checks speak the rail's ring-and-check language */
+.admin-checks {
+    align-self: start;
+    padding-inline-start: var(--space-md);
+    border-inline-start: var(--border-width-2) solid var(--color-accent);
+}
+.admin-checks-title {
+    margin: 0 0 var(--space-3xs);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-semibold);
+}
+.admin-check-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    list-style: none;
+    margin: var(--space-sm) 0 0;
+    padding: 0;
+    font-size: var(--text-sm);
+    line-height: var(--leading-ui);
+}
+.admin-check-list li {
+    display: grid;
+    grid-template-columns: var(--space-sm) minmax(0, 1fr);
+    gap: var(--space-xs);
+    align-items: start;
+}
+.admin-check-list .quiz-glyph {
+    margin-top: calc((var(--leading-ui) - var(--space-sm)) / 2);
+}
+.admin-check-list li[data-ok='false'] {
+    font-weight: var(--font-weight-semibold);
+}
+.admin-check-detail {
+    display: block;
+    font-weight: var(--font-weight-base);
+    color: var(--color-text-secondary);
+}
+
+.admin-editor-foot {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    padding-top: var(--space-md);
+    border-top: var(--border-width-1) solid var(--color-border-subtle);
+}
+
+/* wide editor: checks ride beside the form and stay in view while it scrolls */
+@container (min-width: 46rem) {
+    .admin-editor-grid {
+        grid-template-columns: minmax(0, 1fr) 14rem;
+        column-gap: var(--space-xl);
+    }
+    .admin-checks {
+        position: sticky;
+        top: calc(var(--header-h, 0px) + var(--space-md));
+    }
+    .admin-editor-foot {
+        grid-column: 1 / -1;
+    }
+}
+
+/* ---------- skeleton ----------
+   Loading placeholders for API calls (Skeleton.tsx). Shapes are outlines in
+   the subtle border color, never fills, sized like the content they stand in
+   for. A slow pulse shows work in progress and stops under reduced motion. */
+
+.skeleton {
+    margin: var(--space-md) 0;
+}
+.skeleton-inline {
+    margin: 0;
+}
+.skeleton-shapes {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    animation: skeleton-pulse 1.6s ease-in-out infinite;
+}
+.skeleton-bar {
+    display: block;
+    height: 0.75rem;
+    border: var(--border-width-1) solid var(--color-border-subtle);
+    border-radius: var(--radius-xs);
+}
+.skeleton-line {
+    width: min(22rem, 100%);
+}
+/* P4: a short bar standing in for a progress count or score number */
+.skeleton-count {
+    width: 3.5rem;
+}
+/* P4: a button-sized box, the /login fallback shape */
+.skeleton-button {
+    display: block;
+    width: 8rem;
+    min-height: 44px;
+    border: var(--border-width-1) solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+}
+.skeleton-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+}
+.skeleton-field .skeleton-bar {
+    width: 4rem;
+}
+.skeleton-box {
+    display: block;
+    min-height: 44px;
+    border: var(--border-width-1) solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+}
+.skeleton-rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: var(--border-width-1) solid var(--color-border-subtle);
+}
+.skeleton-rows > li {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-xs);
+    border-bottom: var(--border-width-1) solid var(--color-border-subtle);
+}
+.skeleton-rows > li > .skeleton-bar:first-child {
+    width: 85%;
+}
+.skeleton-rows > li:nth-child(even) > .skeleton-bar:first-child {
+    width: 60%;
+}
+.skeleton-rows > li > .skeleton-bar:last-child {
+    width: 9rem;
+}
+/* P4: the rail's per-mark placeholder — an svg circle (a Skeleton div cannot
+   live inside an <svg>), same outline vocabulary as the other shapes */
+.skeleton-mark-ring {
+    fill: none;
+    stroke: var(--color-border-subtle);
+    stroke-width: 2;
+    stroke-dasharray: 2 2;
+    animation: skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+    50% {
+        opacity: 0.4;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .skeleton-shapes {
+        animation: none;
+    }
+    .skeleton-mark-ring {
+        animation: none;
+    }
+}
+
+/* ---------- account (P4) ----------
+   Sidebar and phone-menu account control: signed-in email, sign out, or a
+   link to /login. Tokens only, no fills. */
+
+.account {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2xs);
+    margin-top: var(--space-sm);
+    padding: var(--space-xs) var(--space-xs) 0;
+    border-top: var(--border-width-1) solid var(--color-border-subtle);
+}
+.account-email {
+    max-width: 100%;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+    line-height: var(--leading-ui);
+}
+.account-email a {
+    color: inherit;
+    border-radius: var(--radius-xs);
+}
+.account-email a:hover {
+    color: var(--color-text-primary);
+    text-decoration: underline;
+    text-decoration-color: var(--color-accent);
+    text-decoration-thickness: var(--border-width-2);
+    text-underline-offset: var(--space-3xs);
+}
+.account-email a:focus-visible {
+    outline: var(--border-width-2) solid var(--color-accent);
+    outline-offset: var(--space-3xs);
+}
+.account-error,
+.account-notice {
+    margin: 0;
+    font-size: var(--text-sm);
+    line-height: var(--leading-ui);
+}
+.account-error {
+    font-weight: var(--font-weight-medium);
+}
+.account-notice {
+    color: var(--color-text-secondary);
+}
+
+/* In the desktop header the control is one row after the theme controls. The
+   phone menu keeps the stacked layout above. */
+.account-inline {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-xs);
+    margin: 0;
+    padding: 0;
+    border-top: 0;
+    min-width: 0;
+}
+.account-inline .account-email {
+    max-width: 14rem;
+}
+.account-inline .account-error,
+.account-inline .account-notice {
+    max-width: 14rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ---------- sync error (P4) ----------
+   Inline alert shown where an API wait failed; local data stays visible. */
+
+.sync-error {
+    margin: 0 0 var(--space-sm);
+    padding-inline-start: var(--space-xs);
+    border-inline-start: var(--border-width-2) solid var(--color-text-primary);
+    font-size: var(--text-sm);
+    line-height: var(--leading-ui);
+}
+
+/* ---------- sign-in page (P4) ----------
+   /login: one narrow column of fields under the page title. Reuses .field,
+   .btn and .text-link; only the column and row layout are new. */
+
+.auth {
+    max-width: 26rem;
+}
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+.auth-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+}
+.auth-error {
+    margin: 0;
+    padding-inline-start: var(--space-xs);
+    border-inline-start: var(--border-width-2) solid var(--color-text-primary);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--leading-ui);
+}
+.auth-signed-in {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-sm);
+}
+.auth-signed-in p {
+    margin: 0;
+}
+
+/* Sign-in card: a bordered panel with a short accent rule above the title.
+   Fill comes from reset.css (dark mode only; the canvas shows through in light). */
+.auth.auth-card {
+    margin-inline: auto;
+    margin-block: var(--space-lg);
+    padding: var(--space-lg);
+    border: var(--border-width-1) solid var(--color-border-control);
+    border-radius: var(--radius-md);
+}
+.auth-card .topic-header {
+    margin-bottom: var(--space-lg);
+}
+.auth-card .topic-header::before {
+    content: '';
+    display: block;
+    width: var(--space-xl);
+    margin-bottom: var(--space-sm);
+    border-top: var(--border-width-2) solid var(--color-accent);
+}
+.auth-card .topic-title {
+    font-size: var(--text-lg);
+    line-height: var(--leading-title-sm);
+}
+.auth-card .topic-meta {
+    margin-top: var(--space-2xs);
+    font-size: var(--text-sm);
+    line-height: var(--leading-ui);
+    color: var(--color-text-secondary);
+}
+.auth-card .auth-form {
+    gap: var(--space-md);
+}
+.auth-card .auth-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-xs);
+}
+.auth-card .auth-actions .btn {
+    width: 100%;
+}
+.auth-card .auth-actions .text-link {
+    border: 0;
+    align-self: center;
+    min-height: 44px;
+    padding-inline: var(--space-xs);
+}
+/* Orb panel (ThreeUI): sizing the package ships in its own style.css, scoped
+   here so its global rules stay out of the site. The package paints a fixed
+   near-black fill inline; the override lets the canvas sit on the themed page. */
+.auth-orb {
+    margin-top: var(--space-lg);
+    height: 18rem;
+    border: var(--border-width-1) solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+.auth-orb .threeui-background {
+    position: relative;
+    isolation: isolate;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: transparent !important;
+}
+.auth-orb .threeui-background > canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Wide screens: title on the left, form on the right, so the card fills the
+   content area instead of floating in blank space. */
+@media (min-width: 60rem) {
+    .auth.auth-card {
+        max-width: none;
+        margin-block: 0;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-xl);
+        align-items: start;
+        padding: var(--space-xl);
+    }
+    .auth-card .topic-header {
+        grid-column: 1;
+        margin-bottom: 0;
+    }
+    .auth-card .topic-title {
+        font-size: var(--text-xl);
+        line-height: var(--leading-title);
+    }
+    .auth-card > :not(.topic-header) {
+        grid-column: 2;
+        padding-inline-start: var(--space-xl);
+        border-inline-start: var(--border-width-1) solid var(--color-border-subtle);
+    }
+}
+@media (max-width: 40rem) {
+    .auth.auth-card {
+        margin-block: 0;
+        padding: var(--space-md);
     }
 }

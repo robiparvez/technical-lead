@@ -1,10 +1,10 @@
 import QuizIndex from '@/components/QuizIndex';
-import { TOPICS } from '@/data';
+import { getTopics } from '@/data';
 
 export const metadata = { title: 'Quiz - Technical Lead Study Guide' };
 
-export default function QuizPage() {
-    const topics = TOPICS.map((t) => ({
+export default async function QuizPage() {
+    const topics = (await getTopics()).map((t) => ({
         slug: t.slug,
         title: t.title,
         questionCount: t.questions.length,

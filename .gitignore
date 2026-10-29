@@ -7,6 +7,9 @@
 .zcode/
 CLAUDE.md
 /brag-output*/
+.archify/
+docs/
+plans/
 
 # dependencies
 /node_modules
@@ -28,6 +31,9 @@ CLAUDE.md
 # production
 /build
 
+# backend server build output
+server/dist
+
 # misc
 .DS_Store
 *.pem
@@ -40,6 +46,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel

@@ -1,0 +1,34 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1792319386942,
+      "tag": "0000_serious_valkyrie",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792323197993,
+      "tag": "0001_zippy_taskmaster",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792406887508,
+      "tag": "0002_technologies",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792410206252,
+      "tag": "0003_drop_rebuild_outbox",
+      "breakpoints": true
+    }
+  ]
+}

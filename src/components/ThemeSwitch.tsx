@@ -5,7 +5,6 @@ import { createStore } from '@/lib/storage';
 
 type Theme = 'system' | 'light' | 'dark';
 
-// key and JSON format are read by the pre-paint script in app/layout.tsx
 const store = createStore<Theme>('tl-theme', 'system', (raw) =>
     raw === 'light' || raw === 'dark' ? raw : 'system',
 );
@@ -40,7 +39,6 @@ function isDarkNow() {
  */
 export default function ThemeSwitch() {
     const theme = store.useValue();
-    // server snapshot is light; aria-pressed corrects itself after hydration
     const osDark = useSyncExternalStore(
         subscribeToOsTheme,
         () => window.matchMedia(DARK_QUERY).matches,
@@ -48,8 +46,6 @@ export default function ThemeSwitch() {
     );
     const dark = theme === 'dark' || (theme === 'system' && osDark);
 
-    // read storage, not `theme`: the hydration pass reports the server value
-    // ('system') and would briefly undo the pre-paint script
     useEffect(() => apply(store.get()), [theme]);
 
     const toggle = () => {
@@ -59,7 +55,6 @@ export default function ThemeSwitch() {
             store.set(next);
         };
         const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        // cross-fade the whole page where supported; otherwise switch instantly
         if (!reduce && document.startViewTransition) {
             document.startViewTransition(commit);
         } else {

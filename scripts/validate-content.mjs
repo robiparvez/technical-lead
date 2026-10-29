@@ -1,0 +1,207 @@
+// scripts/validate-content.mjs — the one shared content validator (plan: D9,
+// "Content rules (one validator)"). Plain ESM with zero dependencies, so the
+// root and the NestJS server (server/src/content) both run the exact same rules.
+//
+// Programmatic use:
+//   validateContent(topics, rules) -> { ok, errors }
+//
+// Rules (plan: "Content rules"):
+//   1. every tag in the technology map is carried by at least one question
+//   2. keyTakeaway is non-empty and unique per topic
+//   3. string diagram ids exist in diagram-ids.json
+//   4. all committed question ids still exist in the candidate content
+//      (guards a caller that passes a committed set apart from the candidate)
+//   5. no exported topic is empty (an empty/draft topic is legal data, but
+//      the caller must exclude it before validation)
+//   6. topics in one group share one group_sort_order
+//
+// `topics` is an array of Topic objects (src/data/types.ts shape). Topics may
+// carry `groupLabel` and `groupSortOrder` — the server stores them as columns
+// and rule 6 applies when they are present.
+
+/**
+ * @typedef {Object} TechnologyRule
+ * @property {string} slug
+ * @property {string} [label]
+ * @property {string[]} tags
+ */
+
+/**
+ * @typedef {Object} ValidationRules
+ * @property {TechnologyRule[]} technologies  the technologies table rows (the tag map)
+ * @property {string[]} diagramIds            ids from src/data/diagram-ids.json
+ * @property {Iterable<string>} committedQuestionIds
+ *   every question id the committed content carries (the questions table
+ *   when the server validates a write)
+ */
+
+/**
+ * @typedef {Object} TopicInput
+ * @property {string} slug
+ * @property {string} title
+ * @property {string} requirement
+ * @property {Array<Object>} questions
+ * @property {string} [groupLabel]
+ * @property {number} [groupSortOrder]
+ */
+
+/**
+ * @typedef {Object} ValidationResult
+ * @property {boolean} ok
+ * @property {string[]} errors
+ */
+
+/**
+ * Validates candidate content against the shared rules.
+ *
+ * @param {TopicInput[]} topics
+ * @param {ValidationRules} rules
+ * @returns {ValidationResult}
+ */
+export function validateContent(topics, rules) {
+    const errors = [];
+
+    if (!Array.isArray(topics)) {
+        return { ok: false, errors: ['topics: expected an array of topics'] };
+    }
+    if (!rules || typeof rules !== 'object') {
+        return { ok: false, errors: ['rules: expected the technologies map, diagram ids and committed ids'] };
+    }
+    const diagramIds = new Set(Array.isArray(rules.diagramIds) ? rules.diagramIds : []);
+    const technologies = Array.isArray(rules.technologies) ? rules.technologies : [];
+    const committedIds = new Set(rules.committedQuestionIds ?? []);
+
+    const carriedTags = new Set();
+    const candidateIds = new Set();
+    let usesGroups = false;
+
+    for (const topic of topics) {
+        if (!topic || typeof topic !== 'object' || typeof topic.slug !== 'string' || topic.slug === '') {
+            errors.push('topic: missing or invalid slug');
+            continue;
+        }
+        const slug = topic.slug;
+        if (!Array.isArray(topic.questions)) {
+            errors.push(`topic "${slug}": questions must be an array`);
+            continue;
+        }
+
+        // Rule 5: no exported topic is empty.
+        if (topic.questions.length === 0) {
+            errors.push(
+                `topic "${slug}": has no questions; an empty/draft topic is legal data but must be excluded before validation`,
+            );
+        }
+
+        if (topic.groupLabel !== undefined || topic.groupSortOrder !== undefined) {
+            usesGroups = true;
+        }
+
+        const takeaways = new Map();
+        for (const question of topic.questions) {
+            if (!question || typeof question !== 'object' || typeof question.id !== 'string' || question.id === '') {
+                errors.push(`topic "${slug}": a question has no id`);
+                continue;
+            }
+            candidateIds.add(question.id);
+
+            if (Array.isArray(question.tags)) {
+                for (const tag of question.tags) {
+                    if (typeof tag !== 'string') {
+                        errors.push(`topic "${slug}" question "${question.id}": tag is not a string`);
+                    } else {
+                        carriedTags.add(tag);
+                    }
+                }
+            }
+
+            // Rule 2: keyTakeaway non-empty and unique per topic.
+            const takeaway = question.keyTakeaway;
+            if (typeof takeaway !== 'string' || takeaway.trim() === '') {
+                errors.push(`topic "${slug}" question "${question.id}": keyTakeaway is empty`);
+            } else {
+                const first = takeaways.get(takeaway);
+                if (first !== undefined) {
+                    errors.push(
+                        `topic "${slug}": keyTakeaway is not unique; questions "${first}" and "${question.id}" share it`,
+                    );
+                } else {
+                    takeaways.set(takeaway, question.id);
+                }
+            }
+
+            // Rule 3: string diagram ids exist in diagram-ids.json.
+            if (typeof question.diagram === 'string' && !diagramIds.has(question.diagram)) {
+                errors.push(
+                    `topic "${slug}" question "${question.id}": diagram "${question.diagram}" is not in diagram-ids.json`,
+                );
+            }
+        }
+    }
+
+    // Rule 1: every tag in the technology map is carried by at least one question.
+    for (const technology of technologies) {
+        for (const tag of technology?.tags ?? []) {
+            if (!carriedTags.has(tag)) {
+                errors.push(
+                    `technology "${technology?.slug ?? '?'}" maps the tag "${tag}", which no question carries`,
+                );
+            }
+        }
+    }
+
+    // Rule 4: all committed question ids still exist.
+    for (const committedId of committedIds) {
+        if (!candidateIds.has(committedId)) {
+            errors.push(`committed question id "${committedId}" is missing from the candidate content`);
+        }
+    }
+
+    // Rule 6: topics in one group share one group_sort_order. Only checked
+    // when the caller passes group data (the server always does).
+    if (usesGroups) {
+        const ordersByLabel = new Map();
+        const labelsByOrder = new Map();
+        for (const topic of topics) {
+            if (!topic || typeof topic !== 'object' || typeof topic.slug !== 'string') continue;
+            const hasLabel = typeof topic.groupLabel === 'string' && topic.groupLabel !== '';
+            const hasOrder = Number.isInteger(topic.groupSortOrder);
+            if (!hasLabel || !hasOrder) {
+                errors.push(
+                    `topic "${topic.slug}": groupLabel and groupSortOrder must be set together ` +
+                        `(label: ${JSON.stringify(topic.groupLabel)}, order: ${JSON.stringify(topic.groupSortOrder)})`,
+                );
+                continue;
+            }
+            const label = topic.groupLabel;
+            const order = topic.groupSortOrder;
+            let orders = ordersByLabel.get(label);
+            if (!orders) {
+                orders = new Map();
+                ordersByLabel.set(label, orders);
+            }
+            const slugs = orders.get(order) ?? [];
+            slugs.push(topic.slug);
+            orders.set(order, slugs);
+            if (!labelsByOrder.has(order)) labelsByOrder.set(order, new Set());
+            labelsByOrder.get(order).add(label);
+        }
+        for (const [label, orders] of ordersByLabel) {
+            if (orders.size > 1) {
+                const detail = [...orders.entries()]
+                    .map(([order, slugs]) => `${order} (${slugs.join(', ')})`)
+                    .join('; ');
+                errors.push(`group "${label}": topics do not share one group_sort_order — ${detail}`);
+            }
+        }
+        for (const [order, labels] of labelsByOrder) {
+            if (labels.size > 1) {
+                errors.push(
+                    `group_sort_order ${order} is shared by different group labels: ${[...labels].join(', ')}`,
+                );
+            }
+        }
+    }
+
+    return { ok: errors.length === 0, errors };
+}

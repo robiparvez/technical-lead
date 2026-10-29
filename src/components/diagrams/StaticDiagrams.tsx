@@ -11,7 +11,6 @@ import { C, Dot, chevron, seg, tone, weight } from './shared';
 /** REST: three endpoints with fixed payloads vs GraphQL: one request, exact fields. */
 export function RestVsGraphQL() {
     const frame = useCurrentFrame();
-    // Three REST round trips (out, back), then one GraphQL round trip.
     const TRIP = 40;
     const LEG = 18;
     const GQL = 130;
@@ -19,7 +18,6 @@ export function RestVsGraphQL() {
     return (
         <AbsoluteFill>
             <svg className='static-diagram' viewBox='0 0 720 300'>
-                {/* REST half */}
                 <text
                     x='150'
                     y='24'
@@ -91,10 +89,8 @@ export function RestVsGraphQL() {
                     3 requests, server-fixed shapes
                 </text>
 
-                {/* divider: not a rule, an open chevron pointing right */}
                 {chevron(355, 150, 0, C.secondary, 'divider', 6, 1.5)}
 
-                {/* GraphQL half */}
                 <text
                     x='540'
                     y='24'
@@ -165,7 +161,6 @@ export function RestVsGraphQL() {
 /** B-tree index descent: searching key 28 touches 3 pages instead of a full scan. */
 export function BTreeIndex() {
     const frame = useCurrentFrame();
-    // root dwell, descend to internal page, dwell, descend to leaf, found.
     const T1 = 20;
     const AT_INTERNAL = 50;
     const T2 = 75;
@@ -178,7 +173,6 @@ export function BTreeIndex() {
     return (
         <AbsoluteFill>
             <svg className='static-diagram' viewBox='0 0 720 340'>
-                {/* root */}
                 <rect
                     x='290'
                     y='20'
@@ -193,7 +187,6 @@ export function BTreeIndex() {
                     root: 50
                 </text>
 
-                {/* internal nodes */}
                 <rect
                     x='100'
                     y='120'
@@ -221,7 +214,6 @@ export function BTreeIndex() {
                     70 | 85
                 </text>
 
-                {/* root -> internal */}
                 <line x1='330' y1='70' x2='220' y2='118' stroke={edge1} strokeWidth={weight(edge1)} />
                 {chevron(220, 118, 55, edge1, 'r1', 6, 1.5)}
                 <line x1='390' y1='70' x2='500' y2='118' stroke={C.secondary} strokeWidth='1.5' />
@@ -231,7 +223,6 @@ export function BTreeIndex() {
                     </text>
                 )}
 
-                {/* leaves, one row */}
                 {[
                     { x: 20, keys: '10 | 15', hot: false },
                     { x: 190, keys: '22 | 28', hot: true },
@@ -261,14 +252,12 @@ export function BTreeIndex() {
                     </g>
                 ))}
 
-                {/* internal -> leaves: left node hot path to 22|28 */}
                 <line x1='140' y1='170' x2='95' y2='228' stroke={C.secondary} strokeWidth='1.5' />
                 <line x1='200' y1='170' x2='260' y2='228' stroke={edge2} strokeWidth={weight(edge2)} />
                 {chevron(260, 228, -60, edge2, 'l1', 6, 1.5)}
                 <line x1='510' y1='170' x2='435' y2='228' stroke={C.secondary} strokeWidth='1.5' />
                 <line x1='575' y1='170' x2='605' y2='228' stroke={C.secondary} strokeWidth='1.5' />
 
-                {/* hot node target: internal -> leaf 22|28 uses x=190..340 so aim at 260 */}
                 <text x='560' y='330' textAnchor='middle' fontSize='10' fill={C.secondary}>
                     key 28: root, one internal page, one leaf page — 3 reads, no full scan
                 </text>
@@ -300,7 +289,6 @@ export function BTreeIndex() {
 /** Container deployment: push image to a registry, orchestrator schedules pods across nodes, load balancer serves users. */
 export function ContainerDeploy() {
     const frame = useCurrentFrame();
-    // push, store, deploy, schedule six pods, lose one and replace it, then serve traffic.
     const AT_REGISTRY = 24;
     const DEPLOY = 36;
     const AT_CLUSTER = 60;
@@ -327,7 +315,6 @@ export function ContainerDeploy() {
                 <line x1='100' y1='152' x2='170' y2='152' stroke={push} strokeWidth={weight(push)} />
                 {chevron(170, 152, 0, push, 'p1', 6, 1.5)}
 
-                {/* registry with image layers */}
                 <rect
                     x='175'
                     y='120'
@@ -351,7 +338,6 @@ export function ContainerDeploy() {
                 <line x1='295' y1='152' x2='365' y2='152' stroke={deploy} strokeWidth={weight(deploy)} />
                 {chevron(365, 152, 0, deploy, 'p2', 6, 1.5)}
 
-                {/* orchestrator + nodes with pods */}
                 <rect x='370' y='60' width='230' height='190' rx='10' fill='none' stroke={cluster} strokeWidth='2' />
                 <text x='485' y='82' textAnchor='middle' fontSize='11' fontWeight='600' fill={C.primary}>
                     cluster: 3 nodes
@@ -401,7 +387,6 @@ export function ContainerDeploy() {
                     replicas declared once; dead pods are replaced (one outlined)
                 </text>
 
-                {/* users via load balancer */}
                 <line x1='600' y1='152' x2='655' y2='152' stroke={serve} strokeWidth={weight(serve)} />
                 {chevron(655, 152, 0, serve, 'p3', 6, 1.5)}
                 <circle cx='680' cy='152' r='16' fill='none' stroke={C.primary} strokeWidth='2' />

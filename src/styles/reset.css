@@ -1,7 +1,8 @@
 /* The only file allowed to contain background declarations.
    The page canvas takes the themed canvas token (low-glare paper, never
-   pure white or black). Everything else is transparent or none: UI
-   surfaces carry no fills. */
+   pure white or black). Card surfaces take --color-surface, which is
+   transparent in light mode and a slate fill in dark mode. Everything else
+   is transparent or none. */
 
 html {
     background: var(--color-canvas);
@@ -11,6 +12,20 @@ html {
    it stays hidden; it is the page canvas, not a new surface color */
 .site-header {
     background: var(--color-canvas);
+}
+
+.q-card,
+.index-card,
+.result-card,
+.search-empty,
+.player-frame,
+pre.code,
+.admin-state,
+.admin-preview,
+.admin-confirm,
+.admin-summary,
+.auth-card {
+    background: var(--color-surface);
 }
 
 button,

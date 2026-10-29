@@ -3,10 +3,15 @@
 import { useCallback } from 'react';
 import { createStore } from '@/lib/storage';
 
-const store = createStore<Set<string>>(
+/**
+ * Exported so the sync provider can drive it (plan: Frontend additions): the
+ * server snapshot stays an empty set, and the provider writes the
+ * server-merged set after sign-in.
+ */
+export const knownStore = createStore<Set<string>>(
     'tl-known-questions',
     new Set<string>(),
-    (raw) => new Set<string>(raw as string[]),
+    (raw) => new Set<string>(Array.isArray(raw) ? raw.filter((id): id is string => typeof id === 'string') : []),
     (known) => [...known],
 );
 
@@ -15,16 +20,16 @@ const store = createStore<Set<string>>(
  * an empty set, so progress appears only after hydration without mismatches.
  */
 export function useKnownQuestions() {
-    const known = store.useValue();
+    const known = knownStore.useValue();
 
     const toggle = useCallback((questionId: string) => {
-        const next = new Set(store.get());
+        const next = new Set(knownStore.get());
         if (next.has(questionId)) {
             next.delete(questionId);
         } else {
             next.add(questionId);
         }
-        store.set(next);
+        knownStore.set(next);
     }, []);
 
     return { known, toggle };

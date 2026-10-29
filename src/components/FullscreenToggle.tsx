@@ -29,7 +29,6 @@ export default function FullscreenToggle() {
     );
     if (!supported) return null;
 
-    // a rejected request (blocked by the browser or policy) leaves the page as it was
     const toggle = () => {
         const request = document.fullscreenElement
             ? document.exitFullscreen()

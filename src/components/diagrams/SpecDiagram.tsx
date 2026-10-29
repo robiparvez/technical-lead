@@ -182,7 +182,6 @@ function BranchDiagram({ spec }: { spec: Extract<DiagramSpec, { kind: 'branch' }
     const leafW = 250;
     const yesX = WIDTH / 2 - leafW - 40;
     const noX = WIDTH / 2 + 40;
-    // The decision is current while the dot sits on it or leaves it, once per pass.
     const deciding = [0, PASS].some((start) => frame >= start && frame < start + DWELL + TRAVEL);
     const cond = deciding ? C.accent : C.primary;
     return (
@@ -292,10 +291,8 @@ function SequenceDiagram({ spec }: { spec: Extract<DiagramSpec, { kind: 'sequenc
     const rowH = SEQ_ROW;
     const height = sequenceHeight(spec);
     const actorX = (i: number) => PAD + colW * i + colW / 2;
-    // Each message travels first, then rests; the current message's two actors are lit.
     const step = TRAVEL + DWELL;
     const current = spec.messages[Math.min(Math.floor(frame / step), m - 1)];
-    // Lifelines break around message labels that cross them so text stays legible.
     const lifeline = (i: number): [number, number][] => {
         const gaps = spec.messages
             .map((msg, r) => ({ msg, y: top + 20 + r * rowH }))
@@ -417,7 +414,6 @@ function LayersDiagram({ spec }: { spec: Extract<DiagramSpec, { kind: 'layers' }
             {spec.rows.map((row, i) => {
                 const y = PAD + i * (rowH + LAYER_GAP);
                 const band = tone(frame, arrive(i), leave(i, n));
-                // The dot drops from the row above into this one along the left rail.
                 const go = i > 0 ? arrive(i - 1) + DWELL : 0;
                 const rail = tone(frame, go, go + TRAVEL);
                 return (
@@ -482,7 +478,6 @@ function CompareDiagram({ spec }: { spec: Extract<DiagramSpec, { kind: 'compare'
     const rowH = CMP_ROW;
     const colX = (c: number) => PAD + labelW + colW * c;
     const rowY = (r: number) => PAD + CMP_HEADER + r * rowH;
-    // A marker reads the table row by row, then slides to the next row.
     const step = READ + MOVE;
     const active = Math.min(Math.floor(frame / step), n - 1);
     const slide = active + 1 < n ? seg(frame, active * step + READ, (active + 1) * step) : 0;

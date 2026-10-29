@@ -2,11 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import QuestionRail from '@/components/QuestionRail';
-import { getTopic, TOPICS } from '@/data';
-
-export function generateStaticParams() {
-    return TOPICS.map((t) => ({ slug: t.slug }));
-}
+import { getTopic } from '@/data';
 
 export async function generateMetadata({
     params,
@@ -14,13 +10,13 @@ export async function generateMetadata({
     params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
     const { slug } = await params;
-    const topic = getTopic(slug);
+    const topic = await getTopic(slug);
     return { title: topic ? `${topic.title} — Technical Lead Study Guide` : 'Topic' };
 }
 
 export default async function TopicPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
-    const topic = getTopic(slug);
+    const topic = await getTopic(slug);
     if (!topic) notFound();
 
     return (

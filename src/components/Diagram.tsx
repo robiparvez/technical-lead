@@ -2,6 +2,7 @@
 
 import { Component, ComponentType, Suspense, lazy, useEffect, useState } from 'react';
 import type { PlayerRef } from '@remotion/player';
+import diagramIds from '@/data/diagram-ids.json';
 import type { DiagramSpec } from '@/data/types';
 import RequestFlow from '@/components/diagrams/RequestFlow';
 import SagaFlow from '@/components/diagrams/SagaFlow';
@@ -10,6 +11,9 @@ import SpecDiagram, { specDescription, specFrames, specHeight } from '@/componen
 import { RestVsGraphQL, BTreeIndex, ContainerDeploy } from '@/components/diagrams/StaticDiagrams';
 
 const LazyPlayer = lazy(() => import('@remotion/player').then((m) => ({ default: m.Player })));
+
+/** The hand-built string ids (src/data/diagram-ids.json), as a literal union. */
+export type DiagramId = keyof typeof diagramIds;
 
 interface AnimatedDef {
     component: ComponentType | ComponentType<{ spec: DiagramSpec }>;
@@ -23,7 +27,7 @@ interface AnimatedDef {
     inputProps?: { spec: DiagramSpec };
 }
 
-const ANIMATED: Record<string, AnimatedDef> = {
+const ANIMATED: Record<DiagramId, AnimatedDef> = {
     'request-flow': {
         component: RequestFlow,
         label: 'Request flow through an API gateway to the orders service',
@@ -71,6 +75,9 @@ const ANIMATED: Record<string, AnimatedDef> = {
     },
 };
 
+/** The string ids a question's `diagram` may use, with their labels (for the admin editor). */
+export const DIAGRAM_OPTIONS = Object.entries(ANIMATED).map(([id, def]) => ({ id, label: def.label }));
+
 /**
  * Renders a question's diagram as a looping Remotion animation: a string id
  * resolves against the hand-built registry above; a DiagramSpec object plays
@@ -93,7 +100,7 @@ export default function Diagram({ diagram }: { diagram: string | DiagramSpec }) 
         );
     }
 
-    const animated = ANIMATED[diagram];
+    const animated = ANIMATED[diagram as DiagramId];
     if (!animated) return null;
     return <AnimatedDiagram def={animated} />;
 }
@@ -102,8 +109,6 @@ function AnimatedDiagram({ def }: { def: AnimatedDef }) {
     const [player, setPlayer] = useState<PlayerRef | null>(null);
     const [failed, setFailed] = useState(false);
     const [playing, setPlaying] = useState(false);
-    // Whole seconds only: React skips same-value updates, so the readout
-    // re-renders once a second instead of on every frame.
     const [seconds, setSeconds] = useState(0);
     const fps = def.fps;
 

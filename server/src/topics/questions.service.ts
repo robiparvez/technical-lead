@@ -1,0 +1,97 @@
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { and, asc, eq, isNull, sql, type SQL } from 'drizzle-orm';
+import type { Database } from '../db/client.js';
+import { DB } from '../db/db.module.js';
+import { questions, topics } from '../db/schema.js';
+import {
+    decodeQuestionCursor,
+    encodeQuestionCursor,
+    questionListItemSchema,
+    type QuestionListItemDto,
+    type QuestionQueryDto,
+} from './topics.schemas.js';
+
+/**
+ * Filtered, cursor-paginated public question list ordered by the site's topic
+ * order, then question order. Stable ordering key is
+ * (topics.group_sort_order, topics.sort_order, questions.sort_order,
+ * questions.id) — the cursor is that tuple, base64url-encoded. Topic sort
+ * orders are only unique inside a group, so the group order comes first.
+ * Soft-deleted questions and questions of soft-deleted topics are excluded.
+ */
+@Injectable()
+export class QuestionsService {
+    constructor(@Inject(DB) private readonly db: Database) {}
+
+    async list(query: QuestionQueryDto): Promise<{ items: QuestionListItemDto[]; nextCursor: string | null }> {
+        const cursor = query.cursor ? decodeQuestionCursor(query.cursor) : undefined;
+        if (query.cursor && !cursor) {
+            throw new BadRequestException('cursor: invalid or expired cursor');
+        }
+        const conditions: SQL[] = [isNull(questions.deletedAt), isNull(topics.deletedAt)];
+        if (query.tag) {
+            conditions.push(sql`${query.tag} = any(${questions.tags})`);
+        }
+        if (query.difficulty) {
+            conditions.push(eq(questions.difficulty, query.difficulty));
+        }
+        if (cursor) {
+            conditions.push(
+                sql`(${topics.groupSortOrder}, ${topics.sortOrder}, ${questions.sortOrder}, ${questions.id}) > (${cursor.groupSortOrder}, ${cursor.topicSortOrder}, ${cursor.sortOrder}, ${cursor.id})`,
+            );
+        }
+        const rows = await this.db
+            .select({
+                id: questions.id,
+                topicSlug: topics.slug,
+                topicGroupSortOrder: topics.groupSortOrder,
+                topicSortOrder: topics.sortOrder,
+                difficulty: questions.difficulty,
+                tags: questions.tags,
+                question: questions.question,
+                answer: questions.answer,
+                code: questions.code,
+                keyTakeaway: questions.keyTakeaway,
+                diagram: questions.diagram,
+                sortOrder: questions.sortOrder,
+            })
+            .from(questions)
+            .innerJoin(topics, eq(questions.topicSlug, topics.slug))
+            .where(and(...conditions))
+            .orderBy(
+                asc(topics.groupSortOrder),
+                asc(topics.sortOrder),
+                asc(questions.sortOrder),
+                asc(questions.id),
+            )
+            .limit(query.limit + 1);
+        const hasMore = rows.length > query.limit;
+        const page = hasMore ? rows.slice(0, query.limit) : rows;
+        const lastRow = page.at(-1);
+        return {
+            items: page.map((row) =>
+                questionListItemSchema.parse({
+                    id: row.id,
+                    topicSlug: row.topicSlug,
+                    difficulty: row.difficulty,
+                    tags: row.tags,
+                    question: row.question,
+                    answer: row.answer,
+                    code: row.code,
+                    keyTakeaway: row.keyTakeaway,
+                    diagram: row.diagram,
+                    sortOrder: row.sortOrder,
+                }),
+            ),
+            nextCursor:
+                hasMore && lastRow
+                    ? encodeQuestionCursor({
+                          groupSortOrder: lastRow.topicGroupSortOrder,
+                          topicSortOrder: lastRow.topicSortOrder,
+                          sortOrder: lastRow.sortOrder,
+                          id: lastRow.id,
+                      })
+                    : null,
+        };
+    }
+}

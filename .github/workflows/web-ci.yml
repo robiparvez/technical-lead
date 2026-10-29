@@ -1,0 +1,24 @@
+# Checks the Next app on every pull request and on the backend branch. It does
+# not deploy: the site now needs a Node host and the API (P6 hosting decision),
+# so the old GitHub Pages deploy was removed.
+name: web-ci
+
+on:
+  push:
+    branches: [feat/nestjs-backend]
+  pull_request:
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      # every page renders per request, so the build needs no API
+      - run: npm run build

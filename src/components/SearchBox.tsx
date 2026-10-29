@@ -32,13 +32,9 @@ export default function SearchBox() {
     const inputRef = useRef<HTMLInputElement>(null);
     const [value, setValue] = useState('');
     const inputId = useId();
-    // null until the mount effect syncs the URL query into state
     const committed = useRef<string | null>(null);
 
     useEffect(() => {
-        // read the URL after mount so server and hydration markup match, and
-        // again on route changes (a tag link drops ?q=). A URL equal to the
-        // last commit came from this box, so skip it to keep newer keystrokes.
         const fromUrl = new URLSearchParams(window.location.search).get('q') ?? '';
         if (committed.current === fromUrl) return;
         setValue(fromUrl);
@@ -51,9 +47,6 @@ export default function SearchBox() {
             committed.current = value;
             const query = value ? `?q=${encodeURIComponent(value)}` : '';
             if (pathname === '/') {
-                // already on the results page: update ?q= in place. The static
-                // export has no per-query payload, so a router navigation here
-                // would fall back to a full page load on every keystroke.
                 window.history.replaceState(null, '', `${window.location.pathname}${query}`);
             } else {
                 router.replace(`/${query}`, { scroll: false });
@@ -65,7 +58,6 @@ export default function SearchBox() {
     useEffect(() => {
         const onFocus = () => {
             const input = inputRef.current;
-            // offsetParent is null while the instance's panel is display: none
             if (input && input.offsetParent !== null) input.focus();
         };
         const onClear = () => setValue('');
@@ -91,6 +83,7 @@ export default function SearchBox() {
                 value={value}
                 autoComplete='off'
                 aria-keyshortcuts='/'
+                suppressHydrationWarning
                 onChange={(e) => setValue(e.target.value)}
             />
             {!value && (
