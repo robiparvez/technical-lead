@@ -9,6 +9,7 @@ CLAUDE.md
 /brag-output*/
 .archify/
 docs/
+plans/
 
 # dependencies
 /node_modules
