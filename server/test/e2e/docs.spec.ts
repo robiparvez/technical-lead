@@ -9,18 +9,32 @@ import type { INestApplication } from '@nestjs/common';
  */
 
 let app: INestApplication | undefined;
-const savedEnv = process.env.NODE_ENV;
+const productionSettings = ['AUTH_BASE_URL', 'TRUSTED_PROXIES'] as const;
+const saved = {
+    NODE_ENV: process.env.NODE_ENV,
+    AUTH_BASE_URL: process.env.AUTH_BASE_URL,
+    TRUSTED_PROXIES: process.env.TRUSTED_PROXIES,
+};
+
+function restore(key: keyof typeof saved) {
+    if (saved[key] === undefined) delete process.env[key];
+    else process.env[key] = saved[key];
+}
 
 afterEach(async () => {
     await app?.close();
     app = undefined;
-    if (savedEnv === undefined) delete process.env.NODE_ENV;
-    else process.env.NODE_ENV = savedEnv;
+    restore('NODE_ENV');
+    for (const key of productionSettings) restore(key);
 });
 
 async function docsStatus(nodeEnv: string | undefined): Promise<number> {
     if (nodeEnv === undefined) delete process.env.NODE_ENV;
     else process.env.NODE_ENV = nodeEnv;
+    if (nodeEnv === 'production') {
+        process.env.AUTH_BASE_URL = 'http://localhost:3001';
+        process.env.TRUSTED_PROXIES = '';
+    }
     vi.resetModules();
     const { createApp } = await import('../../src/main.js');
     app = await createApp();

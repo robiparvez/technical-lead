@@ -9,8 +9,15 @@ const postgresUrl = z
  * Boot-time environment contract (plan: Hardening / P1). Validated once by
  * @nestjs/config before the app starts; a failure aborts startup.
  */
-export const envSchema = z.object({
+const REQUIRED_IN_PRODUCTION = {
+    AUTH_BASE_URL: 'the public URL of the API; reset links and origin checks use it',
+    TRUSTED_ORIGINS: 'the comma-separated site origins allowed by CORS',
+    TRUSTED_PROXIES: 'the proxy addresses in front of the API; set it empty (TRUSTED_PROXIES=) only when no proxy exists',
+} as const;
+
+const baseEnvSchema = z.object({
     NODE_ENV: z.enum(['development', 'test', 'production']).optional(),
+    AUTH_BASE_URL: z.string().url().optional(),
     PORT: z
         .string()
         .regex(/^\d+$/, 'must be a number')
@@ -26,6 +33,15 @@ export const envSchema = z.object({
     SMTP_PORT: z.string().regex(/^\d+$/, 'must be a number').optional(),
     MAIL_FROM: z.string().optional(),
     CONTENT_RULES_DIR: z.string().optional(),
+});
+
+export const envSchema = baseEnvSchema.superRefine((env, ctx) => {
+    if (env.NODE_ENV !== 'production') return;
+    for (const [key, meaning] of Object.entries(REQUIRED_IN_PRODUCTION)) {
+        if (env[key as keyof typeof REQUIRED_IN_PRODUCTION] === undefined) {
+            ctx.addIssue({ code: 'custom', path: [key], message: `is required in production: ${meaning}` });
+        }
+    }
 });
 
 export type Env = z.infer<typeof envSchema>;
