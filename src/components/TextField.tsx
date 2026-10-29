@@ -62,7 +62,7 @@ export default function TextField({
             )}
             <div className='field-foot'>
                 {error ? (
-                    <p className='field-error' id={`${id}-error`}>
+                    <p className='field-error' id={`${id}-error`} role='alert'>
                         {error}
                     </p>
                 ) : (
